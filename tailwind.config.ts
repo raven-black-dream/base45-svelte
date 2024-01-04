@@ -1,7 +1,7 @@
 import { join } from 'path'
 import type { Config } from 'tailwindcss'
 import { skeleton } from '@skeletonlabs/tw-plugin';
-import { Base45Slytherin } from './src/Base45Slytherin'
+import { base45Slytherin } from './src/base45Slytherin'
 
 export default {
 	darkMode: 'class',
@@ -19,7 +19,7 @@ export default {
 					},
 				],
 				custom: [
-					Base45Slytherin,
+					base45Slytherin,
 				],
 			},
 		}),
