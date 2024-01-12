@@ -1,0 +1,22 @@
+version: "3"
+
+services:
+  base45:
+    container_name: base45
+    # The name of the image that will be created when building this container
+    image: base45
+    build:
+      context: .
+      dockerfile: Dockerfile
+    user: "node"
+    environment:
+      # Internal server error messages will not send stacktrace to the browser in production
+      - NODE_ENV=development
+      # Sets the timezone of the containers OS
+      - TZ=Americas/Vancouver
+    # Points to a file with the sensitive environment variables
+    env_file:
+      - .env
+    restart: unless-stopped
+    ports:
+      - 3000:5050
