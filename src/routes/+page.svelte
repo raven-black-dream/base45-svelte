@@ -22,8 +22,3 @@
 		/>
 	</div>
 </div>
-<ul>
-	{#each data.exercises as exercise}
-		<li>{exercise.exercise_name}</li>
-	{/each}
-</ul>

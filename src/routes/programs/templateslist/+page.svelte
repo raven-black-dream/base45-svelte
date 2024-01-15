@@ -25,7 +25,7 @@
                     </thead>
                     <tbody>
                         {#each program.template_day as day}
-                        <tr>
+                            <tr>
                                 <td>{day.template_day_name}</td>
                                 <td>
                                     <ul>
@@ -40,6 +40,11 @@
                 </table>
             </div>
         </section>
+        <footer class="card-footer">
+            <a class="btn btn-sm variant-ghost-primary" href="/programs/templateslist/{program.id}">
+                Create a Mesocycle
+            </a>
+        </footer>
         </div>
 	{/each}
 </ul>
