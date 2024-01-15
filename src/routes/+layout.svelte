@@ -29,16 +29,16 @@
 				<strong class="text-xl uppercase">Base45</strong>
 			</svelte:fragment>
 			<svelte:fragment slot="trail">
-				<a class="btn btn-sm variant-ghost-surface" href="/landing">
+				<a class="btn btn-sm variant-ghost-primary" href="/landing">
 					Home
 				</a>
-				<a class="btn btn-sm variant-ghost-surface" href="/workout">
+				<a class="btn btn-sm variant-ghost-primary" href="/workout">
 					Record Workout
 				</a>
-				<a class="btn btn-sm variant-ghost-surface" href="/programs/templateslist">
+				<a class="btn btn-sm variant-ghost-primary" href="/programs/templateslist">
 					Programs
 				</a>
-				<a class="btn btn-sm variant-ghost-surface" href="/account">
+				<a class="btn btn-sm variant-ghost-primary" href="/account">
 					Account
 				</a>
 			</svelte:fragment>
