@@ -35,7 +35,9 @@ export const load = async ({ locals: { supabase, getSession }, params }) => {
       .select()
       .eq('public', true)
 
-  
+  // cookies.set("user_id", session.user.id)
+  //cookies.set("exercises", exercises?.entries())
+
   // console.log(program)
   return { session, program, exercises }
 }
@@ -53,12 +55,30 @@ export const actions = {
             create an exercise record which records 
               the exercise (id) and the number of sets (from the program template for each muscle group)
   */
-  create: async ({request}) => {
+  create: async ({ locals: { supabase, getSession }, params, request}) => {
     const data = await request.formData();
-    console.log("form")
-    // Display the key/value pairs
+
+    const session = await getSession()
+    if (!session) {
+      throw redirect(303, '/')
+    }
+
+    let form = []
+    // Display the key/value pairs, put them somewhere more easily reusable
     for (const pair of data.entries()) {
+      form.push(pair)
       console.log(`${pair[0]}, ${pair[1]}`);
     }
+
+    // update all the previous mesocycles for the user to no longer be current
+    const {  } = await supabase
+      .from('mesocycle')
+      .update({current: false})
+      .eq('user', session.user.id)
+
+    // create a new mesocycle record
+    const { error } = await supabase
+      .from('mesocycle')
+      .insert({user: session.user.id, meso_name: form[0][1], template: params.slug, current: true})
   }
 }
