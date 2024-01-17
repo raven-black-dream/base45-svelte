@@ -26,6 +26,5 @@ export const load = async ({ locals: { supabase, getSession } }) => {
     // select all program templates that are either authored by the user, or public
     .or('author.eq.' + session.user.id + ',public.eq.true')
 
-  console.log(programs)
   return { session, programs }
 }
