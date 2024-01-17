@@ -82,46 +82,73 @@ export const actions = {
     // extract the rest of the form into a more useable state
     // from: {day.id}_{template_muscle_group.id}, exercise.id
     let day_and_exercises = new Map()
+    let day_of_weeks = new Map()
 
     for (let index = 3; index < form.length; index++) {
-      const day_id = form[index][0].split("_")[0];
-      const muscle_group_id = form[index][0].split("_")[1];
-      const exercise_id = form[index][1];
-
-      const day_entry = {muscle: muscle_group_id, exercise: exercise_id, order: index}
-      if (day_and_exercises.has(day_id)){
-        const day_entries = day_and_exercises.get(day_id)
-        day_entries.push(day_entry)
-        day_and_exercises.set(day_id, day_entries)
+      // if the form is a day of the week selection, deal with it as such
+      // otherwise treat it as an exercise selection
+      if (form[index][0].includes("dayofweek_")) {
+        day_of_weeks.set(form[index][0].split("_")[1], form[index][1])
       } else {
-        day_and_exercises.set(day_id, [day_entry,])
+
+        const day_id = form[index][0].split("_")[0];
+        const muscle_group_id = form[index][0].split("_")[1];
+        const exercise_id = form[index][1];
+
+        const day_entry = {muscle: muscle_group_id, exercise: exercise_id, order: index}
+        if (day_and_exercises.has(day_id)){
+          const day_entries = day_and_exercises.get(day_id)
+          day_entries.push(day_entry)
+          day_and_exercises.set(day_id, day_entries)
+        } else {
+          day_and_exercises.set(day_id, [day_entry,])
+        }
       }
     }
 
-    day_and_exercises.forEach(async (exercises, day) => {
+    day_and_exercises.forEach(async (day_entries, day) => {
+      // get the template name for the day
+      const { data: template_day } = await supabase
+        .from('template_day')
+        .select(`
+          template_day_name,
+          template_muscle_group(
+            id,
+            sets
+          )
+        `)
+        .eq('id', day)
+        .limit(1)
+        .single()
+
+      // make the set number easily retrievable by muscle group id
+      let sets_map = new Map()
+      template_day?.template_muscle_group.forEach(element => {
+        sets_map.set(element.id.toString(), element.sets.toString())
+      });
+
       // create the mesocycle day record and get the id
       const { data: meso_day_id, error } = await supabase
-      .from('meso_day')
-      .insert({
-        meso_day_name: "test",
-        mesocycle: current_meso?.id 
-        // TODO: add day of week
-      })
-      .select('id')
-      .limit(1)
-      .single()
-
-      exercises.forEach(async entry => {
-        const { error } = await supabase
-        .from('meso_exercise')
+        .from('meso_day')
         .insert({
-          exercise: entry.exercise,
-          // TODO: the number of sets (from the program template for each muscle group)
-          num_sets: 0,
-          meso_day: meso_day_id?.id,
-          sort_order: entry.order
+          meso_day_name: template_day?.template_day_name,
+          mesocycle: current_meso?.id,
+          day_of_week: day_of_weeks.get(day) ?? "unselected",
         })
-      })
+        .select('id')
+        .limit(1)
+        .single()
+
+        day_entries.forEach(async entry => {
+          const { error } = await supabase
+            .from('meso_exercise')
+            .insert({
+              exercise: entry.exercise,
+              num_sets: sets_map.get(entry.muscle) ?? 0,
+              meso_day: meso_day_id?.id,
+              sort_order: entry.order
+            })
+        })
 
     });
   }

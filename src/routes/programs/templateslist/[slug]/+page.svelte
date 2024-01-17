@@ -24,6 +24,16 @@
         <div class="card variant-ghost-primary">
             <header class="card-header">{day.template_day_name}</header>
             <section class="p-4">        
+                Day of the Week
+                <select class="select" name="dayofweek_{day.id}">
+                    <option value="Monday">Monday</option>
+                    <option value="Tuesday">Tuesday</option>
+                    <option value="Wednesday">Wednesday</option>
+                    <option value="Thursday">Thursday</option>
+                    <option value="Friday">Friday</option>
+                    <option value="Saturday">Saturday</option>
+                    <option value="Sunday">Sunday</option>
+                </select>
                 {#each day.template_muscle_group as template_muscle_group}
                     {template_muscle_group.muscle_group}
                     <select class="select" name="{day.id}_{template_muscle_group.id}">
