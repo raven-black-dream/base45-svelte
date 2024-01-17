@@ -35,26 +35,10 @@ export const load = async ({ locals: { supabase, getSession }, params }) => {
       .select()
       .eq('public', true)
 
-  // cookies.set("user_id", session.user.id)
-  //cookies.set("exercises", exercises?.entries())
-
-  // console.log(program)
   return { session, program, exercises }
 }
 
 export const actions = {
-  /*
-    TODO:
-    Create a mesocycle record capturing 
-      (user, meso_name, that the meso is the current meso, template, start and end dates, 
-      and perhaps somewhere less obvious whether the user is enhanced.)
-    for each meso_day:
-        create a meso_day record which has 
-          the name of the day, day of the week, and the mesocycle created above
-        for each exercise:
-            create an exercise record which records 
-              the exercise (id) and the number of sets (from the program template for each muscle group)
-  */
   create: async ({ locals: { supabase, getSession }, params, request}) => {
     const data = await request.formData();
 
@@ -76,9 +60,69 @@ export const actions = {
       .update({current: false})
       .eq('user', session.user.id)
 
+    // third form field is the number of weeks
+    let end_date = new Date(Date.parse(form[1][1].toString())).setDate(Number(form[2][1]) * 7)
+
     // create a new mesocycle record
-    const { error } = await supabase
+    // this will break currently if the initial form fields are reordered
+    const { data: current_meso, error } = await supabase
       .from('mesocycle')
-      .insert({user: session.user.id, meso_name: form[0][1], template: params.slug, current: true})
+      .insert({
+        user: session.user.id, 
+        meso_name: form[0][1], // first form field is the name
+        template: params.slug, 
+        start_date: form[1][1], // second form field is the start date
+        end_date: new Date(end_date).toISOString(),
+        current: true
+      })
+      .select('id')
+      .limit(1)
+      .single()
+
+    // extract the rest of the form into a more useable state
+    // from: {day.id}_{template_muscle_group.id}, exercise.id
+    let day_and_exercises = new Map()
+
+    for (let index = 3; index < form.length; index++) {
+      const day_id = form[index][0].split("_")[0];
+      const muscle_group_id = form[index][0].split("_")[1];
+      const exercise_id = form[index][1];
+
+      const day_entry = {muscle: muscle_group_id, exercise: exercise_id, order: index}
+      if (day_and_exercises.has(day_id)){
+        const day_entries = day_and_exercises.get(day_id)
+        day_entries.push(day_entry)
+        day_and_exercises.set(day_id, day_entries)
+      } else {
+        day_and_exercises.set(day_id, [day_entry,])
+      }
+    }
+
+    day_and_exercises.forEach(async (exercises, day) => {
+      // create the mesocycle day record and get the id
+      const { data: meso_day_id, error } = await supabase
+      .from('meso_day')
+      .insert({
+        meso_day_name: "test",
+        mesocycle: current_meso?.id 
+        // TODO: add day of week
+      })
+      .select('id')
+      .limit(1)
+      .single()
+
+      exercises.forEach(async entry => {
+        const { error } = await supabase
+        .from('meso_exercise')
+        .insert({
+          exercise: entry.exercise,
+          // TODO: the number of sets (from the program template for each muscle group)
+          num_sets: 0,
+          meso_day: meso_day_id?.id,
+          sort_order: entry.order
+        })
+      })
+
+    });
   }
 }

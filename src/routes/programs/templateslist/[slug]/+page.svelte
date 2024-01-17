@@ -16,6 +16,10 @@
 <form method="post">
     Mesocycle Name
 	<input class="input" type="text" value="{data.program.template_name}" name="mesocycle_name" />
+    Start Date
+	<input class="input" type="date" value="{new Date(Date.now()).toISOString().split("T")[0]}" name="start_date" />
+    Mesocycle Weeks
+	<input class="input" type="number" value=5 name="mesocycle_length" />
     {#each data.program.template_day as day}
         <div class="card variant-ghost-primary">
             <header class="card-header">{day.template_day_name}</header>
