@@ -1,11 +1,21 @@
 <!-- src/routes/programs/templateslist/[slug]/+page.svelte -->
 
 <script lang="ts">
-	export let data
-</script>
+    import SortableList from "$lib/components/sortable_list.svelte";
 
-<!-- TODO: build a mesocycle from here -->
-<!-- TODO: add dates for the mesocycle -->
+	export let data
+
+    function sortExercises(e: CustomEvent, day_id: any) {
+      let new_template_days: { id: any; template_muscle_group: any; }[] = []
+      data.program.template_day.forEach((day: { id: any; template_muscle_group: any; }) => {
+        if (day.id === day_id) {
+            day.template_muscle_group = e.detail
+        }
+        new_template_days.push(day)
+      });
+      data.program.template_day = new_template_days
+    }
+</script>
 
 <svelte:head>
 	<title>Build a Mesocycle</title>
@@ -34,16 +44,16 @@
                     <option value="6">Saturday</option>
                     <option value="0">Sunday</option>
                 </select>
-                {#each day.template_muscle_group as template_muscle_group}
-                    {template_muscle_group.muscle_group}
-                    <select class="select" name="{day.id}_{template_muscle_group.id}">
+                <SortableList list={day.template_muscle_group} on:sort={event => sortExercises(event, day.id)} let:item let:index>
+                    {item.muscle_group}
+                    <select class="select" name="{day.id}_{item.id}">
                         {#each data.exercises as exercise}
-                            {#if exercise.muscle_group === template_muscle_group.muscle_group}                        
+                            {#if exercise.muscle_group === item.muscle_group}                        
                                 <option value="{exercise.id}">{exercise.exercise_name}</option>
                             {/if}
                         {/each}
                     </select>
-                {/each}
+                </SortableList>
             </section>
         </div>
     {/each}
