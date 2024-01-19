@@ -20,6 +20,7 @@ export const load = async ({ locals: { supabase, getSession }, params }) => {
         sort_order,
         num_sets,
         exercises(
+          id,
           exercise_name,
           weighted,
           weight_step
@@ -36,4 +37,27 @@ export const load = async ({ locals: { supabase, getSession }, params }) => {
   console.log(selected_day)
 
   return { session, selected_day }
+}
+
+
+export const actions = {
+  create: async ({ locals: { supabase, getSession }, params, request}) => {
+    const data = await request.formData();
+
+    const session = await getSession()
+    if (!session) {
+      throw redirect(303, '/')
+    }
+
+
+    let form = []
+    // Display the key/value pairs, put them somewhere more easily reusable
+    for (const pair of data.entries()) {
+      form.push(pair)
+      console.log(`${pair[0]}, ${pair[1]}`);
+    }
+
+    console.log(form)
+  }
+  
 }
