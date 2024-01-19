@@ -20,6 +20,8 @@
   let month = now.getMonth();
   let eventText = "Click an item or date";
 
+  let selectedEvent: { title: any; id: any; } | null = null;
+
   var days: {name: string; enabled: boolean; date: Date;}[] = [];  //  The days to display in each box
 
   function randInt(max: number) {
@@ -107,13 +109,16 @@
 
   function itemClick(event: CustomEvent) {
     eventText='itemClick '+JSON.stringify(event.detail) + ' localtime='+event.detail.date.toString();
+    selectedEvent = {title: event.detail.title, id: event.detail.id}
   }
 
   function dayClick(event: CustomEvent) {
+    // not currently used
     eventText='onDayClick '+JSON.stringify(event.detail) + ' localtime='+event.detail.date.toString();
   }
 
   function headerClick(event: CustomEvent) {
+    // not currently used
     eventText='onHheaderClick '+JSON.stringify(event.detail);
   }
 
@@ -145,10 +150,14 @@
       <button on:click={next}>&gt;</button>
       <button on:click={()=>year++}>&Gt;</button>
     </h1>
-    {eventText}
   </div>
   <Calendar {headers} {days} {items} on:dayClick={dayClick} on:itemClick={itemClick} on:headerClick={headerClick}/>
 </div>
+{#if selectedEvent}
+  <a class="btn btn-sm variant-ghost-primary" href="/workout/{selectedEvent.id}">
+    Create {selectedEvent.title} workout
+  </a>
+{/if}
   
 <style>
   .calendar-container {
