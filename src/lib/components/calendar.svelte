@@ -14,21 +14,23 @@
 	{/each}
 		
 	{#each items as item}
-		<section
-			on:click={()=>dispatch('itemClick',item)} 
-			class="task {item.className}"
-      style="grid-column: {item.startCol} / span {item.len};      
-      grid-row: {item.startRow};  
-      align-self: {item.isBottom?'end':'center'};"
-			>
-			{item.title}
-			{#if item.detailHeader}
-			<div class="task-detail">
-				<h2>{item.detailHeader}</h2>
-				<p>{item.detailContent}</p>
-			</div>
-			{/if}
-		</section>
+    {#if item.startCol !== -1 && item.startRow !== -1}
+      <section
+        on:click={()=>dispatch('itemClick',item)} 
+        class="task {item.className}"
+        style="grid-column: {item.startCol} / span {item.len};      
+        grid-row: {item.startRow};  
+        align-self: {item.isBottom?'end':'center'};"
+        >
+        {item.title}
+        {#if item.detailHeader}
+        <div class="task-detail">
+          <h2>{item.detailHeader}</h2>
+          <p>{item.detailContent}</p>
+        </div>
+        {/if}
+      </section>      
+    {/if}
 	{/each}
 </div>
 
@@ -39,7 +41,10 @@
 	export let days = [];
 	export let items = [];
 	
-	let dispatch = createEventDispatcher();
+  $:console.log('items: %d', items);
+  $:console.log(items);
+
+  let dispatch = createEventDispatcher();
 	
 </script>
 

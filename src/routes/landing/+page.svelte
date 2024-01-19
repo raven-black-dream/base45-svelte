@@ -1,9 +1,15 @@
 <!-- src/routes/landing/+page.svelte -->
 
 <!-- TODO: this will be the landing page / the user metrics dashboard -->
+<!-- TODO: events aren't changing when the month changes -->
 
 <script lang="ts">
   import Calendar from "$lib/components/calendar.svelte";
+
+  export let data
+
+	let { calendar_items } = data
+	$: ({ calendar_items } = data)
 
   var dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   let monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
@@ -12,11 +18,9 @@
   let now = new Date();
   let year = now.getFullYear();    //  this is the month & year displayed
   let month = now.getMonth();
-  let eventText="Click an item or date";
-
+  let eventText = "Click an item or date";
 
   var days: {name: string; enabled: boolean; date: Date;}[] = [];  //  The days to display in each box
-
 
   function randInt(max: number) {
     return Math.floor(Math.random()*max)+1;
@@ -27,22 +31,13 @@
   //  You need to call findRowCol() to calc the row/col based on each items start date. Each date box has a Date() property.
   //  And, if an item overlaps rows, then you need to add a 2nd item on the subsequent row.
 
-  var items: ({ title: string; className: string; date: Date; len: number; 
+  let items: ({ title: string; className: string; date: Date; len: number; 
    isBottom?: boolean; detailHeader?: string; detailContent?: string; vlen?: number; 
-   startCol?: number; startRow?: number;})[] = [];
+   startCol?: number; startRow?: number;})[] = calendar_items ?? [];
+   
+  $: month, year, items, initContent();
 
   function initMonthItems() {
-    let y = year;
-    let m = month;
-    let d1 = new Date(y,m,randInt(7)+7);
-    items=[
-      {title:"Example 1", date:new Date(y,m,randInt(6)), className:"task--primary", len:1},
-      {title:"Example 2", date:d1, className:"task--warning",len:1},
-      {title:"Example 3", date:d1, className:"task--info",len:1, isBottom:true},
-      {title:"Example 4", date:new Date(y,m,randInt(7)+14),className:"task--info", len:1, detailHeader:"Difficult", detailContent:"But not especially so"},
-      {title:"Example 5", date:new Date(y,m,randInt(7)+21),className:"task--danger",len:1},
-    ];
-
     // This is where you calc the row/col to put each dated item
     for (let i of items) {
       let rc = findRowCol(i.date);
@@ -50,15 +45,15 @@
         console.log('didn`t find date for ',i);
         console.log(i.date);
         console.log(days);
-        i.startCol = i.startRow = 0;
+        i.startCol = -1;
+        i.startRow = -1;
       } else {
         i.startCol = rc.col;
         i.startRow = rc.row;
       }
     }
+    items = items
   }
-
-  $: month,year,initContent();
 
   // choose what date/day gets displayed in each date box.
   function initContent() {
@@ -96,6 +91,7 @@
       if (i==0) days.push({name:nextMonthAbbrev+' '+(i+1),enabled:false,date:d,});
       else days.push({name:''+(i+1),enabled:false,date:d,});
     }
+    days = days
   }
 
   function findRowCol(dt: Date) {
@@ -112,12 +108,15 @@
   function itemClick(event: CustomEvent) {
     eventText='itemClick '+JSON.stringify(event.detail) + ' localtime='+event.detail.date.toString();
   }
+
   function dayClick(event: CustomEvent) {
     eventText='onDayClick '+JSON.stringify(event.detail) + ' localtime='+event.detail.date.toString();
   }
+
   function headerClick(event: CustomEvent) {
     eventText='onHheaderClick '+JSON.stringify(event.detail);
   }
+
   function next() {
     month++;
     if (month == 12) {
@@ -125,6 +124,7 @@
       month=0;
     }
   }
+
   function prev() {
     if (month==0) {
       month=11;
@@ -140,9 +140,9 @@
   <div class="calendar-header">
     <h1>
       <button on:click={()=>year--}>&Lt;</button>
-      <button on:click={()=>prev()}>&lt;</button>
+      <button on:click={prev}>&lt;</button>
        {monthNames[month]} {year}
-      <button on:click={()=>next()}>&gt;</button>
+      <button on:click={next}>&gt;</button>
       <button on:click={()=>year++}>&Gt;</button>
     </h1>
     {eventText}
@@ -168,6 +168,7 @@
   }
   .calendar-header h1 {
   margin: 0;
+  color: black;
   font-size: 18px;
   }
   .calendar-header button {
