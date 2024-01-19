@@ -32,9 +32,6 @@
 				<a class="btn btn-sm variant-ghost-primary" href="/landing">
 					Home
 				</a>
-				<a class="btn btn-sm variant-ghost-primary" href="/workout">
-					Record Workout
-				</a>
 				<a class="btn btn-sm variant-ghost-primary" href="/programs/templateslist">
 					Programs
 				</a>
