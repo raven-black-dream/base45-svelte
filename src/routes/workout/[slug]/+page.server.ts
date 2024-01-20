@@ -10,20 +10,23 @@ export const load = async ({ locals: { supabase, getSession }, params }) => {
   }
 
   const { data: selected_day, error } = await supabase
-    .from('meso_day')
+    .from('workouts')
     .select(`
       id,
-      meso_day_name,
-      day_of_week,
-      mesocycle,
-      meso_exercise(
-        sort_order,
-        num_sets,
-        exercises(
-          id,
-          exercise_name,
-          weighted,
-          weight_step
+      meso_day(
+        id,
+        meso_day_name,
+        day_of_week,
+        mesocycle,
+        meso_exercise(
+          sort_order,
+          num_sets,
+          exercises(
+            id,
+            exercise_name,
+            weighted,
+            weight_step
+          )
         )
       )
     `)  
@@ -32,11 +35,12 @@ export const load = async ({ locals: { supabase, getSession }, params }) => {
     .single()
 
   // put the exercises in the correct order
-  selected_day?.meso_exercise.sort((a, b) => a.sort_order - b.sort_order)
+  let meso_day = selected_day?.meso_day
+  meso_day?.meso_exercise.sort((a: { sort_order: number }, b: { sort_order: number }) => a.sort_order - b.sort_order)
 
   console.log(selected_day)
 
-  return { session, selected_day }
+  return { session, meso_day }
 }
 
 

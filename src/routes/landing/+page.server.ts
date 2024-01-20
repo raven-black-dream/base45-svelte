@@ -15,10 +15,11 @@ export const load = async ({ locals: { supabase, getSession } }) => {
       id,
       start_date,
       end_date,
-      meso_day(
+      workouts(
         id,
-        meso_day_name,
-        day_of_week
+        day_name,
+        date,
+        complete
       )
     `)  
     .eq('user', session.user.id)
@@ -32,25 +33,17 @@ export const load = async ({ locals: { supabase, getSession } }) => {
   // startCol?: number; startRow?: number;})
   
   let calendar_items: { title: any; id: any; className: string; date: Date; len: number }[] = []
-  let start = new Date(mesocycle?.start_date)
-  let end = new Date(mesocycle?.end_date)
-  let current = start
-  while (current.getTime() < end.getTime()) {
-    mesocycle?.meso_day.forEach(meso_day => {
-      if (current.getDay() === Number(meso_day.day_of_week)) {
-        calendar_items.push(
-          {
-            title: meso_day.meso_day_name,
-            id: meso_day.id,
-            className: "task--primary",
-            date: new Date(current.getTime()),
-            len: 1
-          }
-        )
+  mesocycle?.workouts.forEach(workout => {
+    calendar_items.push(
+      {
+        title: workout.day_name,
+        id: workout.id,
+        className: "task--primary", // can make styling here conditional on 'complete' 
+        date: new Date(workout.date),
+        len: 1
       }
-    });
-    current.setDate(current.getDate() + 1)
-  }
+    )
+  });
 
   return { session, calendar_items }
 }

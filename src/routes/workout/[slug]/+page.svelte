@@ -10,10 +10,10 @@
 	<title>Record a Workout</title>
 </svelte:head>
 
-{#if data.selected_day}
+{#if data.meso_day}
     <form method="post">
         <ul>
-            {#each data.selected_day.meso_exercise as meso_exercise}
+            {#each data.meso_day.meso_exercise as meso_exercise}
                 <li>{meso_exercise.sort_order}, {meso_exercise.exercises.exercise_name}</li>
                 {#each Array(meso_exercise.num_sets-1) as _, i }
                     <li>Set Number {i + 1}</li>

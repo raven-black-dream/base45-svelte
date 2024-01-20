@@ -156,7 +156,7 @@ export const actions = {
 
       // for every day between the start and the end of the mesocycle, check if a workout should be created
 
-      let workouts: { user: any; mesocycle: any; day_name: string; date: Date; complete: boolean}[] = []
+      let workouts: { user: any; mesocycle: any; meso_day: any, day_name: string; date: Date; complete: boolean}[] = []
       let current = new Date(start_date.getTime())
 
       while (current.getTime() < end_date.getTime()) {
@@ -164,6 +164,7 @@ export const actions = {
           workouts.push({
             user: session.user.id, 
             mesocycle: current_meso?.id,
+            meso_day: meso_day_id?.id,
             day_name: template_day?.template_day_name,
             date: new Date(current),
             complete: false
