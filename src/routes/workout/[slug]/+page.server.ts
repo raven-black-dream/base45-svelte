@@ -55,10 +55,14 @@ export const actions = {
 
 
     let form = []
+    let first_key: string = data.keys().next().value
+    let exercise_id = first_key.split('_')[0]
+    let set_num = Number(first_key[0].split('_')[1])
     // Display the key/value pairs, put them somewhere more easily reusable
     for (const pair of data.entries()) {
-      form.push(pair)
-      console.log(`${pair[0]}, ${pair[1]}`);
+      let name = pair[0].split('_')[2]
+      form.push([name, pair[1]])
+      console.log(`${name}, ${pair[1]}`);
     }
 
     console.log(form)
