@@ -60,8 +60,12 @@ export const actions = {
       .update({current: false})
       .eq('user', session.user.id)
 
+    // second form field is the start date
+    let start_date: Date =  new Date(Date.parse(form[1][1].toString()))
     // third form field is the number of weeks
-    let end_date = new Date(Date.parse(form[1][1].toString())).setDate(Number(form[2][1]) * 7)
+    let start_copy: Date = new Date(start_date.getTime())
+    let day_duration: number = Number(form[2][1]) * 7
+    let end_date: Date = new Date(start_copy.setDate(start_date.getDate() + day_duration))
 
     // create a new mesocycle record
     // this will break currently if the initial form fields are reordered
@@ -71,8 +75,8 @@ export const actions = {
         user: session.user.id, 
         meso_name: form[0][1], // first form field is the name
         template: params.slug, 
-        start_date: form[1][1], // second form field is the start date
-        end_date: new Date(end_date).toISOString(),
+        start_date: start_date.toISOString(),
+        end_date: end_date.toISOString(),
         current: true
       })
       .select('id')
@@ -97,7 +101,7 @@ export const actions = {
 
         const day_entry = {muscle: muscle_group_id, exercise: exercise_id, order: index}
         if (day_and_exercises.has(day_id)){
-          const day_entries = day_and_exercises.get(day_id)
+          let day_entries = day_and_exercises.get(day_id)
           day_entries.push(day_entry)
           day_and_exercises.set(day_id, day_entries)
         } else {
@@ -139,17 +143,38 @@ export const actions = {
         .limit(1)
         .single()
 
-        day_entries.forEach(async entry => {
-          const { error } = await supabase
-            .from('meso_exercise')
-            .insert({
-              exercise: entry.exercise,
-              num_sets: sets_map.get(entry.muscle) ?? 0,
-              meso_day: meso_day_id?.id,
-              sort_order: entry.order
-            })
-        })
+      day_entries.forEach(async (entry: { exercise: any; muscle: any; order: any }) => {
+        const { error } = await supabase
+          .from('meso_exercise')
+          .insert({
+            exercise: entry.exercise,
+            num_sets: sets_map.get(entry.muscle) ?? 0,
+            meso_day: meso_day_id?.id,
+            sort_order: entry.order
+          })
+      })
 
-    });
+      // for every day between the start and the end of the mesocycle, check if a workout should be created
+
+      let workouts: { user: any; mesocycle: any; day_name: string; date: Date; complete: boolean}[] = []
+      let current = new Date(start_date.getTime())
+
+      while (current.getTime() < end_date.getTime()) {
+        if (current.getDay() === Number(day_of_weeks.get(day))) {
+          workouts.push({
+            user: session.user.id, 
+            mesocycle: current_meso?.id,
+            day_name: template_day?.template_day_name,
+            date: new Date(current),
+            complete: false
+          })
+        }
+        current.setDate(current.getDate() + 1)
+      }
+
+      const {  } = await supabase
+        .from('workouts')
+        .insert(workouts)
+      });
   }
 }
