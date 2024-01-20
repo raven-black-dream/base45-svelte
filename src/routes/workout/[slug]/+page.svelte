@@ -20,13 +20,21 @@
                         so exerciseid_setnum may not be unique either -->
                     <li>Set Number {i + 1}</li>
                     Target Reps: 
-                    <input class="input" type="number" name="{meso_exercise.exercises.id}_{i+1}_targetreps" />
+                    <input class="input" type="number" name="{meso_exercise.exercises.id}_{i+1}_targetreps" 
+                        value="{data.existing_sets?.get(meso_exercise.exercises.exercise_name + "_" + (i+1))?.target_reps ?? ""}"
+                    />
                     Reps: 
-                    <input class="input" type="number" name="{meso_exercise.exercises.id}_{i+1}_actualreps" />
+                    <input class="input" type="number" name="{meso_exercise.exercises.id}_{i+1}_actualreps" 
+                        value="{data.existing_sets?.get(meso_exercise.exercises.exercise_name + "_" + (i+1))?.reps ?? ""}"
+                    />
                     Target Weight: 
-                    <input class="input" type="number" name="{meso_exercise.exercises.id}_{i+1}_targetweight" />
+                    <input class="input" type="number" name="{meso_exercise.exercises.id}_{i+1}_targetweight" 
+                        value="{data.existing_sets?.get(meso_exercise.exercises.exercise_name + "_" + (i+1))?.target_weight ?? ""}"
+                    />
                     Weight: 
-                    <input class="input" type="number" name="{meso_exercise.exercises.id}_{i+1}_actualweight" />
+                    <input class="input" type="number" name="{meso_exercise.exercises.id}_{i+1}_actualweight" 
+                        value="{data.existing_sets?.get(meso_exercise.exercises.exercise_name + "_" + (i+1))?.weight ?? ""}"
+                    />
                     <button class="btn variant-ghost-primary" type="submit" formaction="?/create">
                         Log Set
                     </button>
