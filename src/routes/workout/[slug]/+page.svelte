@@ -14,25 +14,25 @@
     <ul>
         {#each data.meso_day.meso_exercise as meso_exercise}
             <li>{meso_exercise.sort_order}, {meso_exercise.exercises.exercise_name}</li>
-            {#each Array(meso_exercise.num_sets-1) as _, i }
+            {#each Array(meso_exercise.num_sets) as _, i }
                 <form method="post">
                     <!-- exercises are not required to be unique in a workout, 
                         so exerciseid_setnum may not be unique either -->
                     <li>Set Number {i + 1}</li>
                     Target Reps: 
-                    <input class="input" type="number" name="{meso_exercise.exercises.id}_{i+1}_targetreps" 
+                    <input class="input" type="number" name="{meso_exercise.exercises.id}_{i+1}_{meso_exercise.num_sets}_targetreps" 
                         value="{data.existing_sets?.get(meso_exercise.exercises.exercise_name + "_" + (i+1))?.target_reps ?? ""}"
                     />
                     Reps: 
-                    <input class="input" type="number" name="{meso_exercise.exercises.id}_{i+1}_actualreps" 
+                    <input class="input" type="number" name="{meso_exercise.exercises.id}_{i+1}_{meso_exercise.num_sets}_actualreps" 
                         value="{data.existing_sets?.get(meso_exercise.exercises.exercise_name + "_" + (i+1))?.reps ?? ""}"
                     />
                     Target Weight: 
-                    <input class="input" type="number" name="{meso_exercise.exercises.id}_{i+1}_targetweight" 
+                    <input class="input" type="number" name="{meso_exercise.exercises.id}_{i+1}_{meso_exercise.num_sets}_targetweight" 
                         value="{data.existing_sets?.get(meso_exercise.exercises.exercise_name + "_" + (i+1))?.target_weight ?? ""}"
                     />
                     Weight: 
-                    <input class="input" type="number" name="{meso_exercise.exercises.id}_{i+1}_actualweight" 
+                    <input class="input" type="number" name="{meso_exercise.exercises.id}_{i+1}_{meso_exercise.num_sets}_actualweight" 
                         value="{data.existing_sets?.get(meso_exercise.exercises.exercise_name + "_" + (i+1))?.weight ?? ""}"
                     />
                     <button class="btn variant-ghost-primary" type="submit" formaction="?/create">

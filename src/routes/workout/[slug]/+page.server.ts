@@ -79,6 +79,7 @@ export const actions = {
     let first_key: string = data.keys().next().value
     let exercise_id = first_key.split('_')[0]
     let set_num = Number(first_key.split('_')[1])
+    let total_sets = Number(first_key.split('_')[2])
 
     // check if an existing exercise / set num already exists for the workout
 
@@ -93,12 +94,11 @@ export const actions = {
 
     // Display the key/value pairs, put them somewhere more easily reusable
     for (const pair of data.entries()) {
-      let name = pair[0].split('_')[2]
+      let name = pair[0].split('_')[3]
       form_map.set(name, Number(pair[1]))
       // console.log(`${name}, ${Number(pair[1])}`);
     }
 
-    // TODO: add is_last into create call
     let workout = {
       workout: params.slug,
       exercise: exercise_id,
@@ -107,7 +107,8 @@ export const actions = {
       weight: Number(form_map.get("actualweight")),
       target_weight: Number(form_map.get("targetweight")),
       set_num: set_num,
-      is_first: set_num === 1
+      is_first: set_num === 1,
+      is_last: set_num === total_sets
     }
 
     if (existing_set_id) {
