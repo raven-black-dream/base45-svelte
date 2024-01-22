@@ -43,6 +43,12 @@
             <hr class="solid">
         {/each}
     </ul>
+    <form method="post" action="?/complete">
+		<div class="p-4">
+            <!-- This currently does exactly "Mark Workout Complete" - it doesn't log any unlogged sets -->
+			<button class="btn variant-ghost-primary">Mark Workout Complete</button>
+		</div>
+	</form>
 {:else}
     <p>Error loading day</p>
 {/if}

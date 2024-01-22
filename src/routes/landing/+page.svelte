@@ -44,9 +44,9 @@
     for (let i of items) {
       let rc = findRowCol(i.date);
       if (rc == null) {
-        console.log('didn`t find date for ',i);
-        console.log(i.date);
-        console.log(days);
+        // console.log('didn`t find date for ',i);
+        // console.log(i.date);
+        // console.log(days);
         i.startCol = -1;
         i.startRow = -1;
       } else {

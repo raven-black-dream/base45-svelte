@@ -124,6 +124,20 @@ export const actions = {
 
     // console.log(form_map)
     // console.log(workout)
+  },
+  complete: async ({ locals: { supabase, getSession }, params }) => {
+    const session = await getSession()
+    if (!session) {
+      throw redirect(303, '/')
+    }
+
+    // mark the workout complete and set the date of the workout to the date it was completed (today)
+    const { error } = await supabase
+      .from('workouts')
+      .update({
+        date: new Date(Date.now()),
+        complete: true
+      })
+      .eq("id", params.slug)
   }
-  
 }
