@@ -103,9 +103,7 @@ export const actions = {
       workout: params.slug,
       exercise: exercise_id,
       reps: Number(form_map.get("actualreps")),
-      target_reps: Number(form_map.get("targetreps")),
       weight: Number(form_map.get("actualweight")),
-      target_weight: Number(form_map.get("targetweight")),
       set_num: set_num,
       is_first: set_num === 1,
       is_last: set_num === total_sets

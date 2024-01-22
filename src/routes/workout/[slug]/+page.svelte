@@ -19,21 +19,27 @@
                     <!-- exercises are not required to be unique in a workout, 
                         so exerciseid_setnum may not be unique either -->
                     <li>Set Number {i + 1}</li>
-                    Target Reps: 
-                    <input class="input" type="number" name="{meso_exercise.exercises.id}_{i+1}_{meso_exercise.num_sets}_targetreps" 
-                        value="{data.existing_sets?.get(meso_exercise.exercises.exercise_name + "_" + (i+1))?.target_reps ?? ""}"
-                    />
+                    <!-- if there is an existing rep/weight record, display that
+                        if not, but there is a target, display that
+                        if not that either, empty field -->
                     Reps: 
-                    <input class="input" type="number" name="{meso_exercise.exercises.id}_{i+1}_{meso_exercise.num_sets}_actualreps" 
-                        value="{data.existing_sets?.get(meso_exercise.exercises.exercise_name + "_" + (i+1))?.reps ?? ""}"
-                    />
-                    Target Weight: 
-                    <input class="input" type="number" name="{meso_exercise.exercises.id}_{i+1}_{meso_exercise.num_sets}_targetweight" 
-                        value="{data.existing_sets?.get(meso_exercise.exercises.exercise_name + "_" + (i+1))?.target_weight ?? ""}"
+                    <input 
+                        class="input" 
+                        type="number" name="{meso_exercise.exercises.id}_{i+1}_{meso_exercise.num_sets}_actualreps" 
+                        value="{
+                            (data.existing_sets?.get(meso_exercise.exercises.exercise_name + "_" + (i+1))?.reps ?? 
+                            data.existing_sets?.get(meso_exercise.exercises.exercise_name + "_" + (i+1))?.target_reps) ?? ""
+                        }"
                     />
                     Weight: 
-                    <input class="input" type="number" name="{meso_exercise.exercises.id}_{i+1}_{meso_exercise.num_sets}_actualweight" 
-                        value="{data.existing_sets?.get(meso_exercise.exercises.exercise_name + "_" + (i+1))?.weight ?? ""}"
+                    <input 
+                        class="input" 
+                        type="number" 
+                        name="{meso_exercise.exercises.id}_{i+1}_{meso_exercise.num_sets}_actualweight" 
+                        value="{
+                            (data.existing_sets?.get(meso_exercise.exercises.exercise_name + "_" + (i+1))?.weight ?? 
+                            data.existing_sets?.get(meso_exercise.exercises.exercise_name + "_" + (i+1))?.target_weight) ?? ""
+                        }"
                     />
                     <button class="btn variant-ghost-primary" type="submit" formaction="?/create">
                         Log Set
