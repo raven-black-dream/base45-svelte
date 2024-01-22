@@ -13,7 +13,7 @@
 
 <ul>
 	{#each data.programs as program}
-        <Accordion>
+        <Accordion class="py-2">
             <AccordionItem class="card variant-glass-primary">
                 <svelte:fragment slot="lead">
                     <a class="btn btn-sm variant-ghost-secondary" href="/programs/templateslist/{program.id}">

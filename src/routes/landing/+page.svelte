@@ -154,9 +154,11 @@
   <Calendar {headers} {days} {items} on:dayClick={dayClick} on:itemClick={itemClick} on:headerClick={headerClick}/>
 </div>
 {#if selectedEvent}
-  <a class="btn btn-sm variant-ghost-primary" href="/workout/{selectedEvent.id}">
-    Create {selectedEvent.title} workout
-  </a>
+  <div class="p-2">
+    <a class="btn btn-sm variant-ghost-primary" href="/workout/{selectedEvent.id}">
+      Create {selectedEvent.title} workout
+    </a>
+  </div>
 {/if}
   
 <style>
@@ -164,27 +166,25 @@
   width: 90%;
   margin: auto;
   overflow: hidden;
-  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
   border-radius: 10px;
-  background: #fff;
   max-width: 1200px;
   }
   .calendar-header {
   text-align: center;
   padding: 20px 0;
-  background: #eef;
-  border-bottom: 1px solid rgba(166, 168, 179, 0.12);
+  background:  rgba(var(--color-surface-500) / 1);
+  border-bottom: 1px solid rgba(var(--color-surface-900)/ 0.2);
   }
   .calendar-header h1 {
   margin: 0;
-  color: black;
+  color: rgba(var(--on-surface) / 1);;
   font-size: 18px;
   }
   .calendar-header button {
-  background: #eef;
+  background:  rgba(var(--color-surface-500) / 1);
   border: 1px ;
   padding: 6;
-  color: rgba(81, 86, 93, 0.7);
+  color: rgba(var(--on-surface) / 0.5);;
   cursor: pointer;
   outline: 0;
   }

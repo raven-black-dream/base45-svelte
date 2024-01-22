@@ -42,27 +42,27 @@
 		use:enhance={handleSubmit}
 		bind:this={profileForm}
 	>
-		<div>
+		<div class="p-2">
 			<label for="email">Email</label>
 			<input class="input" id="email" type="text" value={session.user.email} disabled />
 		</div>
 
-		<div>
+		<div class="p-2">
 			<label for="displayName">Display Name</label>
 			<input class="input" id="displayName" name="displayName" type="text" value={form?.displayName ?? displayName} />
 		</div>
 
-		<div>
+		<div class="p-2">
 			<label for="gender">Gender</label>
 			<input class="input" id="gender" name="gender" type="text" value={form?.gender ?? gender} />
 		</div>
 
-		<div>
+		<div class="p-2">
 			<label for="dob">Date of Birth</label>
 			<input class="input" id="dob" name="dob" type="date" value={form?.dob ?? dob} />
 		</div>
 
-		<div>
+		<div class="p-2">
 			<input
 				type="submit"
 				class="button block primary"
@@ -73,7 +73,7 @@
 	</form>
 
 	<form method="post" action="?/signout" use:enhance={handleSignOut}>
-		<div>
+		<div class="p-2">
 			<button class="button block" disabled={loading}>Sign Out</button>
 		</div>
 	</form>

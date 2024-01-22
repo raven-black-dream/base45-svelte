@@ -13,9 +13,9 @@
 {#if data.meso_day}
     <ul>
         {#each data.meso_day.meso_exercise as meso_exercise}
-            <li>{meso_exercise.sort_order}, {meso_exercise.exercises.exercise_name}</li>
+            <li class="p-4">{meso_exercise.sort_order}, {meso_exercise.exercises.exercise_name}</li>
             {#each Array(meso_exercise.num_sets) as _, i }
-                <form method="post">
+                <form class="p-4" method="post">
                     <!-- exercises are not required to be unique in a workout, 
                         so exerciseid_setnum may not be unique either -->
                     <li>Set Number {i + 1}</li>
@@ -40,8 +40,16 @@
                     </button>
                 </form>                
             {/each}
+            <hr class="solid">
         {/each}
     </ul>
 {:else}
     <p>Error loading day</p>
 {/if}
+
+<style>
+    hr.solid {
+        border-top: 3px solid rgba(var(--color-surface-500) / 1);
+        padding-bottom: 24px;
+    }
+</style>

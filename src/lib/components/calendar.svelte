@@ -40,7 +40,7 @@
 	export var headers = [];
 	export let days = [];
 	export let items = [];
-	
+  
   $:console.log('items: %d', items);
   $:console.log(items);
 
@@ -58,14 +58,15 @@
   overflow: auto;
 }
 .day {
-  border-bottom: 1px solid rgba(166, 168, 179, 0.12);
-  border-right: 1px solid rgba(166, 168, 179, 0.12);
+  border-bottom: 1px solid rgba(var(--color-surface-900)/ 0.2);
+  border-right: 1px solid rgba(var(--color-surface-900)/ 0.2);
   text-align: right;
   padding: 14px 20px;
   letter-spacing: 1px;
   font-size: 14px;
   box-sizing: border-box;
-  color: #98a0a6;
+  color:  rgba(var(--theme-font-color-base) / 1);
+  background:  rgba(var(--color-surface-200) / 1);
   position: relative;
   z-index: 1;
 }
@@ -114,16 +115,16 @@
 .day-name {
   font-size: 12px;
   text-transform: uppercase;
-  color: #e9a1a7;
+  color: rgba(var(--theme-font-color-dark) / 1);
   text-align: center;
   border-bottom: 1px solid rgba(166, 168, 179, 0.12);
+  background: rgba(var(--color-surface-400) / 1);
   line-height: 50px;
   font-weight: 500;
 }
 .day-disabled {
-  color: rgba(152, 160, 166, 0.5);
-  background-color: #ffffff;
-  background-image: url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23fdf9ff' fill-opacity='1' fill-rule='evenodd'%3E%3Cpath d='M0 40L40 0H20L0 20M40 40V20L20 40'/%3E%3C/g%3E%3C/svg%3E");
+  color:  rgba(var(--color-warning-600) / 1);
+  background-color:  rgba(var(--color-warning-100) / 1);
   cursor: not-allowed;
 }
 
@@ -159,11 +160,11 @@
   color: #0a5eff;
 }
 .task--primary {
-  background: #4786ff;
+  background: rgba(var(--color-primary-700) / 1);
   border: 0;
   border-radius: 14px;
-  color: #f00;
-  box-shadow: 0 10px 14px rgba(71, 134, 255, 0.4);
+  color: rgba(var(--theme-font-color-dark) / 1);
+  box-shadow: 0 10px 14px rgba(var(--color-primary-900) / 0.4);
 }
 .task-detail {
   position: absolute;

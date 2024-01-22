@@ -21,9 +21,9 @@
 	<title>Build a Mesocycle</title>
 </svelte:head>
 
-<p>{data.program.template_name}</p>
+<p class="p-4">{data.program.template_name}</p>
 
-<form method="post">
+<form method="post" class="p-4">
     Mesocycle Name
 	<input class="input" type="text" value="{data.program.template_name}" name="mesocycle_name" />
     Start Date
@@ -31,30 +31,32 @@
     Mesocycle Weeks
 	<input class="input" type="number" value=5 name="mesocycle_length" />
     {#each data.program.template_day as day}
-        <div class="card variant-ghost-primary">
-            <header class="card-header">{day.template_day_name}</header>
-            <section class="p-4">        
-                Day of the Week
-                <select class="select" name="dayofweek_{day.id}">
-                    <option value="1">Monday</option>
-                    <option value="2">Tuesday</option>
-                    <option value="3">Wednesday</option>
-                    <option value="4">Thursday</option>
-                    <option value="5">Friday</option>
-                    <option value="6">Saturday</option>
-                    <option value="0">Sunday</option>
-                </select>
-                <SortableList list={day.template_muscle_group} on:sort={event => sortExercises(event, day.id)} let:item let:index>
-                    {item.muscle_group}
-                    <select class="select" name="{day.id}_{item.id}">
-                        {#each data.exercises as exercise}
-                            {#if exercise.muscle_group === item.muscle_group}                        
-                                <option value="{exercise.id}">{exercise.exercise_name}</option>
-                            {/if}
-                        {/each}
+        <div class="py-4">
+            <div class="card variant-ghost-primary">
+                <header class="card-header">{day.template_day_name}</header>
+                <section class="p-4">        
+                    Day of the Week
+                    <select class="select" name="dayofweek_{day.id}">
+                        <option value="1">Monday</option>
+                        <option value="2">Tuesday</option>
+                        <option value="3">Wednesday</option>
+                        <option value="4">Thursday</option>
+                        <option value="5">Friday</option>
+                        <option value="6">Saturday</option>
+                        <option value="0">Sunday</option>
                     </select>
-                </SortableList>
-            </section>
+                    <SortableList list={day.template_muscle_group} on:sort={event => sortExercises(event, day.id)} let:item let:index>
+                        {item.muscle_group}
+                        <select class="select" name="{day.id}_{item.id}">
+                            {#each data.exercises as exercise}
+                                {#if exercise.muscle_group === item.muscle_group}                        
+                                    <option value="{exercise.id}">{exercise.exercise_name}</option>
+                                {/if}
+                            {/each}
+                        </select>
+                    </SortableList>
+                </section>
+            </div>
         </div>
     {/each}
 
