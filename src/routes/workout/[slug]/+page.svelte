@@ -14,15 +14,18 @@
     <ul>
         {#each data.meso_day.meso_exercise as meso_exercise}
             <li class="p-4">{meso_exercise.sort_order}, {meso_exercise.exercises.exercise_name}</li>
+            <div class="p-4 grid grid-cols-2">
+                <span>Reps</span>
+                <span>Weight</span>
+            </div>
             {#each Array(meso_exercise.num_sets) as _, i }
                 <form class="p-4" method="post">
                     <!-- exercises are not required to be unique in a workout, 
                         so exerciseid_setnum may not be unique either -->
-                    <li>Set Number {i + 1}</li>
                     <!-- if there is an existing rep/weight record, display that
                         if not, but there is a target, display that
                         if not that either, empty field -->
-                    Reps: 
+                    <div class="input-group input-group-divider grid-cols-[1fr_1fr_auto]">
                     <input 
                         class="input" 
                         type="number" name="{meso_exercise.exercises.id}_{i+1}_{meso_exercise.num_sets}_actualreps" 
@@ -31,7 +34,6 @@
                             data.existing_sets?.get(meso_exercise.exercises.exercise_name + "_" + (i+1))?.target_reps) ?? ""
                         }"
                     />
-                    Weight: 
                     <input 
                         class="input" 
                         type="number" 
@@ -44,6 +46,7 @@
                     <button class="btn variant-ghost-primary" type="submit" formaction="?/create">
                         Log Set
                     </button>
+                    </div>
                 </form>                
             {/each}
             <hr class="solid">
