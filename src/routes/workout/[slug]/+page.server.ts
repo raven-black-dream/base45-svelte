@@ -1,6 +1,11 @@
 // src/routes/workout/[slug]/+page.server.ts
 
 import { redirect } from '@sveltejs/kit'
+import { getModalStore } from '@skeletonlabs/skeleton';
+import type { ModalSettings, ModalComponent } from '@skeletonlabs/skeleton';
+import ExerciseModal from '$lib/components/ExerciseModal.svelte';
+
+const modalStore = getModalStore();
 
 export const load = async ({ locals: { supabase, getSession }, params }) => {
   const session = await getSession()

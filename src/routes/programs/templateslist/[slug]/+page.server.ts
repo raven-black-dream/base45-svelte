@@ -9,31 +9,13 @@ export const load = async ({ locals: { supabase, getSession }, params }) => {
     throw redirect(303, '/')
   }
 
-  const { data: programs } = await supabase
-    .from('program_templates')
-    .select(`
-      id,
-      template_name,
-      template_day(
-        id, 
-        template_day_name,
-        template_muscle_group(
-          id,
-          muscle_group
-        )
-      )
-    `)
-    // in theory someone could get to a private program if they have the correct id, 
-    // am not checking that here
-    .eq('id', params.slug)
+  const program = getProgramData(supabase, params.slug)
 
-    // TODO: if we can't get exactly one progam we should throw an error, or maybe a redirect... something
-    const program = programs[0]
+  if (!program) {
+    throw new Error('Invalid program slug or access denied');
+  }
 
-    const { data: exercises } = await supabase
-      .from('exercises')
-      .select()
-      .eq('public', true)
+  const exercises = getPublicExercises(supabase)
 
   return { session, program, exercises }
 }
@@ -41,7 +23,6 @@ export const load = async ({ locals: { supabase, getSession }, params }) => {
 export const actions = {
   create: async ({ locals: { supabase, getSession }, params, request}) => {
     const data = await request.formData();
-
     const session = await getSession()
     if (!session) {
       throw redirect(303, '/')
@@ -178,4 +159,58 @@ export const actions = {
         .insert(workouts)
       });
   }
+}
+
+async function getProgramData(supabase, slug) {
+const { data, error } = await supabase
+  .from('program_templates')
+  .select(`
+    id,
+    template_name,
+    template_day(
+      id,
+      template_day_name,
+      template_muscle_group(
+        id,
+        muscle_group
+      )
+    )
+  `)
+  .eq('id', slug)
+  .single();
+
+if (error || !data) {
+  return null;
+}
+
+return data;
+}
+
+async function getPublicExercises(supabase) {
+return (await supabase.from('exercises').select().eq('public', true).fetch()).data;
+}
+
+function parseForm(formData) {
+  return [
+    formData.get('mesoName'),
+    new Date(formData.get('startDate')),
+    Number(formData.get('numWeeks')),
+  ];
+}
+
+async function updatePreviousMesocycles(supabase, userId) {
+  await supabase
+    .from('mesocycle')
+    .update({ current: false })
+    .eq('user', userId);
+}
+
+function calculateEndDate(startDate, numWeeks) {
+  const copy = new Date(startDate.getTime());
+  copy.setDate(copy.getDate() + numWeeks * 7);
+  return copy;
+}
+
+function parseDailyExercises(formData) {
+
 }
