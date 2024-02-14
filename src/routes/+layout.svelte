@@ -1,8 +1,9 @@
 <script lang="ts">
 	import '../app.postcss';
-	import { AppShell, AppBar } from '@skeletonlabs/skeleton';
+	import { AppShell, AppBar, Modal } from '@skeletonlabs/skeleton';
 	import { invalidate } from '$app/navigation'
 	import { onMount } from 'svelte'
+	import { initializeStores } from '@skeletonlabs/skeleton';
 
 	export let data
 
@@ -18,9 +19,12 @@
 
 		return () => data.subscription.unsubscribe()
 	})
+
+	initializeStores();
 </script>
 
 <!-- App Shell -->
+<Modal />
 <AppShell>
 	<svelte:fragment slot="header">
 		<!-- App Bar -->
