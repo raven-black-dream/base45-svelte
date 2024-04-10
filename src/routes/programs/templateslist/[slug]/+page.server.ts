@@ -1,6 +1,7 @@
 // src/routes/programs/templateslist/[slug]/+page.server.ts
 
 import { redirect } from '@sveltejs/kit'
+import type { UUID } from 'crypto'
 
 export const load = async ({ locals: { supabase, getSession }, params }) => {
   const session = await getSession()
@@ -36,6 +37,30 @@ export const load = async ({ locals: { supabase, getSession }, params }) => {
       .eq('public', true)
 
   return { session, program, exercises }
+}
+
+async function createWorkouts(conn:any, user_id:string, start_date:Date, end_date:Date, meso_id:string, meso_day_id:string, day_of_weeks:Map<any,any>, day:any ,day_name:string) {
+  let workouts: { user: string; mesocycle: string; meso_day: string, day_name: string; date: Date; complete: boolean}[] = []
+  let current = new Date(start_date.getTime())
+
+  while (current.getTime() < end_date.getTime()) {
+    if (current.getDay() === Number(day_of_weeks.get(day))) {
+      workouts.push({
+        user: user_id, 
+        mesocycle: meso_id,
+        meso_day: meso_day_id,
+        day_name: day_name,
+        date: new Date(current),
+        complete: false
+      })
+    }
+    current.setDate(current.getDate() + 1)
+  }
+
+  const {  } = await conn
+    .from('workouts')
+    .insert(workouts)
+
 }
 
 export const actions = {
@@ -153,29 +178,17 @@ export const actions = {
             sort_order: entry.order
           })
       })
-
-      // for every day between the start and the end of the mesocycle, check if a workout should be created
-
-      let workouts: { user: any; mesocycle: any; meso_day: any, day_name: string; date: Date; complete: boolean}[] = []
-      let current = new Date(start_date.getTime())
-
-      while (current.getTime() < end_date.getTime()) {
-        if (current.getDay() === Number(day_of_weeks.get(day))) {
-          workouts.push({
-            user: session.user.id, 
-            mesocycle: current_meso?.id,
-            meso_day: meso_day_id?.id,
-            day_name: template_day?.template_day_name,
-            date: new Date(current),
-            complete: false
-          })
-        }
-        current.setDate(current.getDate() + 1)
-      }
-
-      const {  } = await supabase
-        .from('workouts')
-        .insert(workouts)
+      createWorkouts(
+        supabase,
+        session.user.id,
+        start_date,
+        end_date,
+        current_meso?.id,
+        meso_day_id?.id,
+        day_of_weeks,
+        day,
+        template_day?.template_day_name
+      );
       });
   }
 }
