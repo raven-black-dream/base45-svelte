@@ -10,9 +10,9 @@
 	<title>Record a Workout</title>
 </svelte:head>
 
-{#if data.meso_day}
+{#if data.mesoDay}
     <ul>
-        {#each data.meso_day.meso_exercise as meso_exercise}
+        {#each data.mesoDay.meso_exercise as meso_exercise}
             <li class="p-4">{meso_exercise.sort_order}, {meso_exercise.exercises.exercise_name}</li>
             <div class="p-4 grid grid-cols-2">
                 <span>Reps</span>
@@ -30,8 +30,8 @@
                         class="input" 
                         type="number" name="{meso_exercise.exercises.id}_{i+1}_{meso_exercise.num_sets}_actualreps" 
                         value="{
-                            (data.existing_sets?.get(meso_exercise.exercises.exercise_name + "_" + (i+1))?.reps ?? 
-                            data.existing_sets?.get(meso_exercise.exercises.exercise_name + "_" + (i+1))?.target_reps) ?? ""
+                            (data.existingSets?.get(meso_exercise.exercises.exercise_name + "_" + (i+1))?.reps ?? 
+                            data.existingSets?.get(meso_exercise.exercises.exercise_name + "_" + (i+1))?.target_reps) ?? ""
                         }"
                     />
                     <input 
@@ -39,8 +39,8 @@
                         type="number" 
                         name="{meso_exercise.exercises.id}_{i+1}_{meso_exercise.num_sets}_actualweight" 
                         value="{
-                            (data.existing_sets?.get(meso_exercise.exercises.exercise_name + "_" + (i+1))?.weight ?? 
-                            data.existing_sets?.get(meso_exercise.exercises.exercise_name + "_" + (i+1))?.target_weight) ?? ""
+                            (data.existingSets?.get(meso_exercise.exercises.exercise_name + "_" + (i+1))?.weight ?? 
+                            data.existingSets?.get(meso_exercise.exercises.exercise_name + "_" + (i+1))?.target_weight) ?? ""
                         }"
                     />
                     <button class="btn variant-ghost-primary" type="submit" formaction="?/create">
