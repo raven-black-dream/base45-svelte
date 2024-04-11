@@ -10,10 +10,10 @@
 	<title>Record a Workout</title>
 </svelte:head>
 
-{#if data.mesoDay}
+{#if data.meso_day}
     <ul>
-        {#each data.mesoDay.meso_exercise as meso_exercise}
-            <li class="p-4">{meso_exercise.sort_order}, {meso_exercise.exercises.exercise_name}</li>
+        {#each data.meso_day.meso_exercise as meso_exercise}
+            <li class="p-4">{meso_exercise.exercises.exercise_name}</li>
             <div class="p-4 grid grid-cols-2">
                 <span>Reps</span>
                 <span>Weight</span>
