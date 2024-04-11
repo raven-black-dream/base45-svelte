@@ -77,7 +77,7 @@ async function createSets(conn: any, workoutData: any ) {
   // create a set record for each exercise in the workout record
   
   workoutData.forEach(async (workout: { id: string; meso_day: string; }) => {
-    let sets: { workout: string; exercise: string; is_first: boolean, is_last:boolean}[] = [];
+    let sets: { workout: string; exercise: string; set_num: number, is_first: boolean, is_last:boolean}[] = [];
     const { data: exercises } = await conn
       .from('meso_exercise')
       .select(`
@@ -112,6 +112,7 @@ async function createSets(conn: any, workoutData: any ) {
           sets.push({
             workout: workout.id,
             exercise: exercise.exercise.id,
+            set_num: i,
             is_first: isFirst,
             is_last: isLast
           });
