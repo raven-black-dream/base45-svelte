@@ -60,17 +60,22 @@ export const load = async ({ locals: { supabase, getSession }, params }) => {
   // put the exercises in the correct order
   let meso_day = selected_day?.meso_day
   meso_day?.meso_exercise.sort((a: { sort_order: number }, b: { sort_order: number }) => a.sort_order - b.sort_order)
-
+  // TODO: meso_exercises were ordered, but no longer used - may want to define order of existing sets
   let existing_sets = new Map()
   selected_day?.workout_set.forEach(wset => {
     // TODO: things become a mess if a given exercise has more than one set with the same number for a workout
-    let key: string= wset.exercises.exercise_name + "_" + wset.set_num
-    existing_sets.set(key, wset)
+    let key: string= wset.exercises.exercise_name
+
+    if (existing_sets.get(key)) {
+      existing_sets.set(key, existing_sets.get(key).concat([wset,]))
+    }
+    else {
+      existing_sets.set(key, [wset,])
+    }
   });
 
   // console.log(meso_day)
   // console.log(existing_sets)
-
 
   return { session, meso_day, existing_sets }
 }
@@ -87,51 +92,26 @@ export const actions = {
 
     let form_map = new Map()
     let first_key: string = data.keys().next().value
-    let exercise_id = first_key.split('_')[0]
-    let set_num = Number(first_key.split('_')[1])
-    let total_sets = Number(first_key.split('_')[2])
-
-    // check if an existing exercise / set num already exists for the workout
-
-    const { data: existing_set_id, error } = await supabase
-      .from('workout_set')
-      .select(`id`)
-      .eq("workout", params.slug)
-      .eq("exercise", exercise_id)
-      .eq("set_num", set_num)
-      .limit(1)
-      .single()
+    let set_id = first_key.split('_')[0]
 
     // Display the key/value pairs, put them somewhere more easily reusable
     for (const pair of data.entries()) {
-      let name = pair[0].split('_')[3]
+      let name = pair[0].split('_')[1]
       form_map.set(name, Number(pair[1]))
-      // console.log(`${name}, ${Number(pair[1])}`);
+      console.log(`${name}, ${Number(pair[1])}`);
     }
 
     let workout = {
       workout: params.slug,
-      exercise: exercise_id,
       reps: Number(form_map.get("actualreps")),
-      weight: Number(form_map.get("actualweight")),
-      set_num: set_num,
-      is_first: set_num === 1,
-      is_last: set_num === total_sets
+      weight: Number(form_map.get("actualweight"))
     }
 
-    if (existing_set_id) {
-      const { error } = await supabase
-        .from('workout_set')
-        .update(workout)
-        .eq("id", existing_set_id.id)
-    } else {
-      const { error } = await supabase
-        .from('workout_set')
-        .insert(workout)
-    }
+    const { error } = await supabase
+      .from('workout_set')
+      .update(workout)
+      .eq("id", set_id)
 
-    // console.log(form_map)
-    // console.log(workout)
   },
   complete: async ({ locals: { supabase, getSession }, params }) => {
     const session = await getSession()

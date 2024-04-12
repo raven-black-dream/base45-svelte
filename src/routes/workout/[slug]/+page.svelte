@@ -4,44 +4,37 @@
 	export let data
 </script>
 
-<!-- TODO: create a form for the selected day's workout -->
-
 <svelte:head>
 	<title>Record a Workout</title>
 </svelte:head>
 
-{#if data.meso_day}
+{#if data.existing_sets}
     <ul>
-        {#each data.meso_day.meso_exercise as meso_exercise}
-            <li class="p-4">{meso_exercise.exercises.exercise_name}</li>
+        {#each data.existing_sets.keys() as exercise_name}
+            <li class="p-4">{exercise_name}</li>
             <div class="p-4 grid grid-cols-2">
                 <span>Reps</span>
                 <span>Weight</span>
             </div>
-            {#each Array(meso_exercise.num_sets) as _, i }
+            <!-- exercises are not required to be unique in a workout, 
+                and will be grouped together if there are multiple of the same,
+                creating problems with set numbers potentially -->
+            <!-- if there is an existing rep/weight record, display that
+                if not, but there is a target, display that
+                if not that either, empty field -->
+            {#each data.existing_sets.get(exercise_name) as set, i }
                 <form class="p-4" method="post">
-                    <!-- exercises are not required to be unique in a workout, 
-                        so exerciseid_setnum may not be unique either -->
-                    <!-- if there is an existing rep/weight record, display that
-                        if not, but there is a target, display that
-                        if not that either, empty field -->
                     <div class="input-group input-group-divider grid-cols-[1fr_1fr_auto]">
                     <input 
                         class="input" 
-                        type="number" name="{meso_exercise.exercises.id}_{i+1}_{meso_exercise.num_sets}_actualreps" 
-                        value="{
-                            (data.existingSets?.get(meso_exercise.exercises.exercise_name + "_" + (i+1))?.reps ?? 
-                            data.existingSets?.get(meso_exercise.exercises.exercise_name + "_" + (i+1))?.target_reps) ?? ""
-                        }"
+                        type="number" name="{set.id}_actualreps" 
+                        value="{set.reps? set.reps: set.target_reps}"
                     />
                     <input 
                         class="input" 
                         type="number" 
-                        name="{meso_exercise.exercises.id}_{i+1}_{meso_exercise.num_sets}_actualweight" 
-                        value="{
-                            (data.existingSets?.get(meso_exercise.exercises.exercise_name + "_" + (i+1))?.weight ?? 
-                            data.existingSets?.get(meso_exercise.exercises.exercise_name + "_" + (i+1))?.target_weight) ?? ""
-                        }"
+                        name="{set.id}_actualweight"
+                        value="{set.weight? set.weight: set.target_weight}"
                     />
                     <button class="btn variant-ghost-primary" type="submit" formaction="?/create">
                         Log Set
