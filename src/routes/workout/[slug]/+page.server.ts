@@ -50,8 +50,11 @@ export const load = async ({ locals: { supabase, getSession }, params }) => {
           exercise_name,
           weighted,
           weight_step
-        )
-      )
+        ),
+        is_first,
+        is_last
+      ),
+      target_rir
     `)  
     .eq('id', params.slug)
     .limit(1)
@@ -61,21 +64,34 @@ export const load = async ({ locals: { supabase, getSession }, params }) => {
   let meso_day = selected_day?.meso_day
   meso_day?.meso_exercise.sort((a: { sort_order: number }, b: { sort_order: number }) => a.sort_order - b.sort_order)
   // TODO: meso_exercises were ordered, but no longer used - may want to define order of existing sets
+  
   let existing_sets = new Map()
-  selected_day?.workout_set.forEach(wset => {
-    // TODO: things become a mess if a given exercise has more than one set with the same number for a workout
-    let key: string= wset.exercises.exercise_name
 
-    if (existing_sets.get(key)) {
-      existing_sets.set(key, existing_sets.get(key).concat([wset,]))
+  const exerciseNamesInOrder = meso_day?.meso_exercise.map((exercise) => exercise.exercises.exercise_name);
+  exerciseNamesInOrder.forEach((exercise, index) => {
+    const matchingSets = selected_day?.workout_set.filter(wset => wset.exercises.exercise_name === exercise);
+
+    if (matchingSets){
+      existing_sets.set(exercise, matchingSets)
     }
-    else {
-      existing_sets.set(key, [wset,])
-    }
+
   });
 
+  //selected_day?.workout_set.forEach(wset => {
+    // TODO: things become a mess if a given exercise has more than one set with the same number for a workout
+  //  let key = exerciseNamesInOrder.indexOf(wset.exercises.exercise_name);
+    // let key: string= wset.exercises.exercise_name
+
+  //  if (existing_sets.get(key)) {
+  //    existing_sets.set(key, existing_sets.get(key).concat([wset,]))
+  //  }
+  //  else {
+  //    existing_sets.set(key, [wset,])
+  //  }
+  // });
+
   // console.log(meso_day)
-  // console.log(existing_sets)
+  console.log(existing_sets)
 
   return { session, meso_day, existing_sets }
 }
@@ -127,5 +143,24 @@ export const actions = {
         complete: true
       })
       .eq("id", params.slug)
+  },
+
+  feedback: async ({ locals: { supabase, getSession }, params, request}) => {
+    const session = await getSession()
+    if (!session) {
+      throw redirect(303, '/')
+    }
+    const data = request.formData();
+    console.log(await request.formData())
+    if(data.is_first){
+
+
+    }
+    else if (data.is_last) {
+
+    }
+    else {
+
+    };
   }
 }
