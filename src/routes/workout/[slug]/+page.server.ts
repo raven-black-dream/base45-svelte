@@ -77,19 +77,6 @@ export const load = async ({ locals: { supabase, getSession }, params }) => {
 
   });
 
-  //selected_day?.workout_set.forEach(wset => {
-    // TODO: things become a mess if a given exercise has more than one set with the same number for a workout
-  //  let key = exerciseNamesInOrder.indexOf(wset.exercises.exercise_name);
-    // let key: string= wset.exercises.exercise_name
-
-  //  if (existing_sets.get(key)) {
-  //    existing_sets.set(key, existing_sets.get(key).concat([wset,]))
-  //  }
-  //  else {
-  //    existing_sets.set(key, [wset,])
-  //  }
-  // });
-
   // console.log(meso_day)
   console.log(existing_sets)
 
