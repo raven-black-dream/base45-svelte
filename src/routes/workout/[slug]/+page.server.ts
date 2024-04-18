@@ -49,7 +49,8 @@ export const load = async ({ locals: { supabase, getSession }, params }) => {
           id,
           exercise_name,
           weighted,
-          weight_step
+          weight_step,
+          muscle_group
         ),
         is_first,
         is_last
@@ -137,17 +138,98 @@ export const actions = {
     if (!session) {
       throw redirect(303, '/')
     }
-    const data = request.formData();
-    console.log(await request.formData())
+    const data = await request.formData();
+    console.log(data)
     if(data.is_first){
 
+      // TODO: Query Database for the last time this muscle group was worked and get the null question response from that.
+      // Otherwise, get the last null question response.
+      let questions:string[] = ["How sore did your" + data.get("muscle_group") +  "get after your last workout?"]
+
+      const { data: current_mesocycle, error } = await supabase
+        .from('mesocycles')
+        .select('id')
+        .eq('user', session.user.id)
+        .eq('current', true)
+        .limit(1)
+
+      
+
+      const { data: recovery, error } = await supabase
+        .from('workout_feedback')
+        .select(`
+          question,
+          value,
+          workouts(
+            mesocycle,
+          ),
+        `)
+        .eq('question_type', 'mg_soreness')
+        .eq('workouts.mesocycle', current_mesocycle[0].id)
+        .order('created_at', {ascending: false})
+        .limit(1)
+
+
+        if (recovery[0].value === null){ {
+          // TODO: Trigger modal. Get question response from the modal. Update the workout_feedback table with the response.
+
+        }
+        else {  
+          const question = {
+            feedback_type: 'workout_feedback',
+            question_type: 'mg_soreness',
+            value: null,
+            workout: params.slug,
+            exercise: data.get("exercise_id"),
+            muscle_group: data.get("muscle_group")
+
+          }
+          const {} = await supabase
+          
+        }
+    }
+    else if (data.is_last_set) {
+
+      let questions:string[] = ["How sore did your joints get doing " + data.get("exercise_name") + "?",];
+      
+      if (data.is_last){
+        questions.push("How much of a pump did you get working your " + data.get("muscle_group") + "?")
+        questions.push("How hard, on average, did you find working your " + data.get("muscle_group") + "?")
+
+      }
+      const modalComponent: ModalComponent = { ref: ExerciseModal, props: {questions: questions}};
+
+      new Promise<Map<string, number>>((resolve) => {
+
+        const modal: ModalSettings = {
+          type: 'component',
+          component: modalComponent,
+          response: (response: Map<string, number>) => {
+            resolve(response);
+          }
+        };
+        modalStore.trigger(modal);
+      }).then((response) => {
+        console.log(response)
+      })
+  
+
+
 
     }
-    else if (data.is_last) {
 
+
+    const set = {
+      workout: params.slug,
+      reps: Number(data.get("actualreps")),
+      weight: Number(data.get("actualweight")),
     }
-    else {
 
-    };
+    const { error } = await supabase
+      .from('workout_set')
+      .update(set)
+      .eq("id", data.get("set_id"))
+
+
   }
 }

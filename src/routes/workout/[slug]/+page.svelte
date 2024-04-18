@@ -1,6 +1,8 @@
 <!-- src/routes/workout/[slug]/+page.svelte -->
 
 <script lang="ts">
+  import WorkoutRow from '$lib/components/WorkoutRow.svelte';
+
 	export let data
 </script>
 
@@ -23,27 +25,7 @@
                 if not, but there is a target, display that
                 if not that either, empty field -->
             {#each data.existing_sets.get(exercise_name) as set, i }
-                <form class="p-4" method="post">
-                    <div class="input-group input-group-divider grid-cols-[1fr_1fr_auto]">
-                    <input type="hidden" name="id" value={set.id}>
-                    <input 
-                        class="input" 
-                        type="number" name="actualreps" 
-                        value="{set.reps? set.reps: set.target_reps}"
-                    />
-                    <input 
-                        class="input" 
-                        type="number" 
-                        name="actualweight"
-                        value="{set.weight? set.weight: set.target_weight}"
-                    />
-                    <input type="hidden" name="is_first" value={set.is_first} />
-                    <input type="hidden" name="is_last" value={set.is_last} />
-                    <button class="btn variant-ghost-primary" type="submit" formaction="?/feedback">
-                        Log Set
-                    </button>
-                    </div>
-                </form>                
+                <WorkoutRow {set} {i} len={data.existing_sets.get(exercise_name).length - 1} />
             {/each}
             <hr class="solid">
         {/each}
