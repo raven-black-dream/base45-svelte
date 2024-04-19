@@ -146,7 +146,7 @@ export const actions = {
       // Otherwise, get the last null question response.
       let questions:string[] = ["How sore did your" + data.get("muscle_group") +  "get after your last workout?"]
 
-      const { data: current_mesocycle, error } = await supabase
+      const { data: current_mesocycle} = await supabase
         .from('mesocycles')
         .select('id')
         .eq('user', session.user.id)
@@ -155,7 +155,7 @@ export const actions = {
 
       
 
-      const { data: recovery, error } = await supabase
+      const { data: recovery } = await supabase
         .from('workout_feedback')
         .select(`
           question,
@@ -170,8 +170,9 @@ export const actions = {
         .limit(1)
 
 
-        if (recovery[0].value === null){ {
+        if (recovery[0].value === null){
           // TODO: Trigger modal. Get question response from the modal. Update the workout_feedback table with the response.
+          console.log("trigger modal")
 
         }
         else {  
