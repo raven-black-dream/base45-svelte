@@ -3,6 +3,10 @@
     reps:number, target_reps:number, target_weight:number, weight:number, is_first:boolean, is_last:boolean};
     export let i: number;
     export let len: number;
+
+    function logSet(e) {
+        
+    }
 </script>
 
 <form class="p-4" method="post">

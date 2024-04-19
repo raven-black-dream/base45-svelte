@@ -1,9 +1,12 @@
 <!-- src/routes/workout/[slug]/+page.svelte -->
 
 <script lang="ts">
-  import WorkoutRow from './WorkoutRow.svelte';
+    import { getModalStore } from '@skeletonlabs/skeleton';
+    import WorkoutRow from './WorkoutRow.svelte';
+    export let data
 
-  export let data
+    const modalStore = getModalStore();
+
 </script>
 
 <svelte:head>
