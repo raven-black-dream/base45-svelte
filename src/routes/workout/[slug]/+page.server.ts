@@ -172,7 +172,21 @@ export const actions = {
 
         if (recovery[0].value === null){
           // TODO: Trigger modal. Get question response from the modal. Update the workout_feedback table with the response.
-          console.log("trigger modal")
+          const modalComponent: ModalComponent = { ref: ExerciseModal, props: {questions: questions}};
+
+          new Promise<Map<string, number>>((resolve) => {
+
+            const modal: ModalSettings = {
+              type: 'component',
+              component: modalComponent,
+              response: (response: Map<string, number>) => {
+                resolve(response);
+              }
+            };
+            modalStore.trigger(modal);
+          }).then((response) => {
+            console.log(response)
+          })
 
         }
         else {  
@@ -185,7 +199,6 @@ export const actions = {
             muscle_group: data.get("muscle_group")
 
           }
-          const {} = await supabase
           
         }
     }
@@ -213,13 +226,8 @@ export const actions = {
       }).then((response) => {
         console.log(response)
       })
-  
-
-
 
     }
-
-
     const set = {
       workout: params.slug,
       reps: Number(data.get("actualreps")),
@@ -230,7 +238,6 @@ export const actions = {
       .from('workout_set')
       .update(set)
       .eq("id", data.get("set_id"))
-
 
   }
 }
