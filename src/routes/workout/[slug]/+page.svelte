@@ -1,9 +1,9 @@
 <!-- src/routes/workout/[slug]/+page.svelte -->
 
 <script lang="ts">
-  import WorkoutRow from '$lib/components/WorkoutRow.svelte';
+  import WorkoutRow from './WorkoutRow.svelte';
 
-	export let data
+  export let data
 </script>
 
 <svelte:head>
@@ -24,7 +24,7 @@
             <!-- if there is an existing rep/weight record, display that
                 if not, but there is a target, display that
                 if not that either, empty field -->
-            {#each data.existing_sets.get(exercise_name) as set, i }
+            {#each data.existing_sets.get(exercise_name) as set, i (set.id) }
                 <WorkoutRow {set} {i} len={data.existing_sets.get(exercise_name).length - 1} />
             {/each}
             <hr class="solid">

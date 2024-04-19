@@ -4,12 +4,9 @@ import { redirect } from '@sveltejs/kit'
 import { getModalStore } from '@skeletonlabs/skeleton';
 import type { ModalSettings, ModalComponent } from '@skeletonlabs/skeleton';
 import ExerciseModal from '$lib/components/ExerciseModal.svelte';
-import { onMount } from 'svelte';
 
+const modalStore = getModalStore();
 
-onMount(async () => {
-  const modalStore = getModalStore();
-})
 
 export const load = async ({ locals: { supabase, getSession }, params }) => {
   const session = await getSession()
@@ -17,7 +14,6 @@ export const load = async ({ locals: { supabase, getSession }, params }) => {
   if (!session) {
     throw redirect(303, '/')
   }
-
   const { data: selected_day, error } = await supabase
     .from('workouts')
     .select(`
@@ -79,7 +75,7 @@ export const load = async ({ locals: { supabase, getSession }, params }) => {
   });
 
   // console.log(meso_day)
-  console.log(existing_sets)
+  // console.log(existing_sets)
 
   return { session, meso_day, existing_sets }
 }
@@ -139,30 +135,27 @@ export const actions = {
       throw redirect(303, '/')
     }
     const data = await request.formData();
-    console.log(data)
-    if(data.is_first){
+    if(data.get('is_first')){
 
       // TODO: Query Database for the last time this muscle group was worked and get the null question response from that.
       // Otherwise, get the last null question response.
       let questions:string[] = ["How sore did your" + data.get("muscle_group") +  "get after your last workout?"]
 
       const { data: current_mesocycle} = await supabase
-        .from('mesocycles')
+        .from('mesocycle')
         .select('id')
         .eq('user', session.user.id)
         .eq('current', true)
         .limit(1)
 
-      
-
       const { data: recovery } = await supabase
         .from('workout_feedback')
         .select(`
-          question,
+          question_type,
           value,
           workouts(
-            mesocycle,
-          ),
+            mesocycle
+          )
         `)
         .eq('question_type', 'mg_soreness')
         .eq('workouts.mesocycle', current_mesocycle[0].id)
@@ -170,7 +163,24 @@ export const actions = {
         .limit(1)
 
 
-        if (recovery[0].value === null){
+        if (recovery === null){
+
+          const question = {
+            feedback_type: 'workout_feedback',
+            question_type: 'mg_soreness',
+            value: null,
+            workout: params.slug,
+            exercise: data.get("exercise_id"),
+            muscle_group: data.get("muscle_group")
+
+          }
+
+          const { error } = await supabase
+            .from('workout_feedback')
+            .insert(question)
+        }
+        else {
+
           // TODO: Trigger modal. Get question response from the modal. Update the workout_feedback table with the response.
           const modalComponent: ModalComponent = { ref: ExerciseModal, props: {questions: questions}};
 
@@ -187,26 +197,14 @@ export const actions = {
           }).then((response) => {
             console.log(response)
           })
-
-        }
-        else {  
-          const question = {
-            feedback_type: 'workout_feedback',
-            question_type: 'mg_soreness',
-            value: null,
-            workout: params.slug,
-            exercise: data.get("exercise_id"),
-            muscle_group: data.get("muscle_group")
-
-          }
-          
+      
         }
     }
-    else if (data.is_last_set) {
+    else if (data.get(is_last_set)) {
 
       let questions:string[] = ["How sore did your joints get doing " + data.get("exercise_name") + "?",];
       
-      if (data.is_last){
+      if (data.get(is_last)){
         questions.push("How much of a pump did you get working your " + data.get("muscle_group") + "?")
         questions.push("How hard, on average, did you find working your " + data.get("muscle_group") + "?")
 
