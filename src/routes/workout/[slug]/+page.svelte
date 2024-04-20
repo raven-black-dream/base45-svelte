@@ -1,11 +1,9 @@
 <!-- src/routes/workout/[slug]/+page.svelte -->
 
 <script lang="ts">
-    import { getModalStore } from '@skeletonlabs/skeleton';
     import WorkoutRow from './WorkoutRow.svelte';
     export let data
 
-    const modalStore = getModalStore();
 
 </script>
 
@@ -28,7 +26,7 @@
                 if not, but there is a target, display that
                 if not that either, empty field -->
             {#each data.existing_sets.get(exercise_name) as set, i (set.id) }
-                <WorkoutRow {set} {i} len={data.existing_sets.get(exercise_name).length - 1} />
+                <WorkoutRow {set} {i} len={data.existing_sets.get(exercise_name).length - 1} modal={data.modal} />
             {/each}
             <hr class="solid">
         {/each}

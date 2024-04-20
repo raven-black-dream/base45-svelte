@@ -5,8 +5,6 @@ import { getModalStore } from '@skeletonlabs/skeleton';
 import type { ModalSettings, ModalComponent } from '@skeletonlabs/skeleton';
 import ExerciseModal from '$lib/components/ExerciseModal.svelte';
 
-const modalStore = getModalStore();
-
 
 export const load = async ({ locals: { supabase, getSession }, params }) => {
   const session = await getSession()
@@ -77,7 +75,18 @@ export const load = async ({ locals: { supabase, getSession }, params }) => {
   // console.log(meso_day)
   // console.log(existing_sets)
 
-  return { session, meso_day, existing_sets }
+  // TODO: the modal can be created in the server if it needs to be, and then passed through to where you will need to trigger it
+  // this is one generic modal as an example with no questions in it, but you could create many, or create 
+  // the details for the modal here and the actual modal further down the line, etc
+  const modal: ModalSettings = {
+      type: 'alert',
+      // Data
+      title: 'Example Alert',
+      body: 'This is an example modal.',
+      image: 'https://i.imgur.com/WOgTG96.gif',
+  };
+
+  return { session, meso_day, existing_sets, modal }
 }
 
 
