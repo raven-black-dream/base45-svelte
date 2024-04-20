@@ -1,20 +1,74 @@
 <script lang="ts">
     import { getModalStore } from '@skeletonlabs/skeleton';
-    import type { ModalSettings } from '@skeletonlabs/skeleton';
+    import type { ModalSettings, ModalComponent } from '@skeletonlabs/skeleton';
+    import ExerciseModal from '$lib/components/ExerciseModal.svelte';
     import { enhance } from '$app/forms';
 
-    export let set: {id: number, exercises: {id: string, exercise_name:string, weighted: boolean, weight_step:number, muscle_group:string}, 
+    export let set: {id: number, workout: string, exercises: {id: string, exercise_name:string, weighted: boolean, weight_step:number, muscle_group:string}, 
     reps:number, target_reps:number, target_weight:number, weight:number, is_first:boolean, is_last:boolean};
     export let i: number;
     export let len: number;
-    export let modal: ModalSettings;
+    export let recovery: boolean;
     // modalStore needs to be where the trigger will be
     const modalStore = getModalStore();
 
     // TODO: over here you could have logic about if a modal is to be shown or not, or
     // simply trigger it as below
     function askForFeedback() {
-        modalStore.trigger(modal)
+
+    if (set.is_first) {
+
+        let questions:string[] = ["How sore did your" + set.exercises.muscle_group +  "get after your last workout?"]
+
+        if (recovery === true){
+
+            // TODO: Trigger modal. Get question response from the modal. Update the workout_feedback table with the response.
+            const modalComponent: ModalComponent = { ref: ExerciseModal, props: {questions: questions}};
+
+            new Promise<Map<string, number>>((resolve) => {
+
+            const modal: ModalSettings = {
+                type: 'component',
+                component: modalComponent,
+                response: (response: Map<string, number>) => {
+                resolve(response);
+                }
+            };
+            modalStore.trigger(modal);
+            }).then((response) => {
+            console.log(response)
+            })
+
+            }
+            }
+        else if (i == len) {
+
+        let questions:string[] = ["How sore did your joints get doing " + set.exercises.exercise_name + "?",];
+
+        if (set.is_last){
+        questions.push("How much of a pump did you get working your " + set.exercises.muscle_group + "?")
+        questions.push("How hard, on average, did you find working your " + set.exercises.muscle_group + "?")
+
+        }
+        const modalComponent: ModalComponent = { ref: ExerciseModal, props: {questions: questions}};
+
+
+        new Promise<Map<string, number>>((resolve) => {
+
+        const modal: ModalSettings = {
+        type: 'component',
+        component: modalComponent,
+        response: (response: Map<string, number>) => {
+        resolve(response);
+        }
+        };
+        modalStore.trigger(modal);
+        }).then((response) => {
+        console.log(response)
+        })
+    }
+
+
     }
 </script>
 

@@ -1,9 +1,6 @@
 // src/routes/workout/[slug]/+page.server.ts
 
 import { redirect } from '@sveltejs/kit'
-import { getModalStore } from '@skeletonlabs/skeleton';
-import type { ModalSettings, ModalComponent } from '@skeletonlabs/skeleton';
-import ExerciseModal from '$lib/components/ExerciseModal.svelte';
 
 
 export const load = async ({ locals: { supabase, getSession }, params }) => {
@@ -27,6 +24,7 @@ export const load = async ({ locals: { supabase, getSession }, params }) => {
           exercises(
             id,
             exercise_name,
+            muscle_group,
             weighted,
             weight_step
           )
@@ -34,6 +32,7 @@ export const load = async ({ locals: { supabase, getSession }, params }) => {
       ),
       workout_set(
         id,
+        workout,
         reps,
         target_reps,
         weight,
@@ -56,7 +55,8 @@ export const load = async ({ locals: { supabase, getSession }, params }) => {
     .single()
 
   // put the exercises in the correct order
-  let meso_day = selected_day?.meso_day
+  let meso_day: {id: string, meso_day_name:string, day_of_week:string, mesocycle:string, 
+    meso_exercise: {sort_order: number, num_sets: number, exercises: {id: string, muscle_group: string, exercise_name: string, weighted: boolean, weight_step: number}[]}[]}[]| undefined = selected_day?.meso_day
   meso_day?.meso_exercise.sort((a: { sort_order: number }, b: { sort_order: number }) => a.sort_order - b.sort_order)
   // TODO: meso_exercises were ordered, but no longer used - may want to define order of existing sets
   
@@ -74,19 +74,38 @@ export const load = async ({ locals: { supabase, getSession }, params }) => {
 
   // console.log(meso_day)
   // console.log(existing_sets)
+  const {data: recovery} = await supabase
+    .from('workout_feedback')
+    .select(`
+      question_type,
+      value,
+      muscle_group,
+      workouts(
+        mesocycle
+      )
+    `)
+    .eq('question_type', 'mg_soreness')
+    .eq('workouts.mesocycle', selected_day?.meso_day.mesocycle)
+    .order('created_at', {ascending: false})
+    .limit(1)
+    const muscleGroupRecovery = new Map();
 
-  // TODO: the modal can be created in the server if it needs to be, and then passed through to where you will need to trigger it
-  // this is one generic modal as an example with no questions in it, but you could create many, or create 
-  // the details for the modal here and the actual modal further down the line, etc
-  const modal: ModalSettings = {
-      type: 'alert',
-      // Data
-      title: 'Example Alert',
-      body: 'This is an example modal.',
-      image: 'https://i.imgur.com/WOgTG96.gif',
-  };
+    for (const mesoExercise of meso_day?.meso_exercise) {
+      const muscleGroup = mesoExercise.exercises.muscle_group;
 
-  return { session, meso_day, existing_sets, modal }
+      if (!muscleGroupRecovery.has(muscleGroup)) {
+        muscleGroupRecovery.set(muscleGroup, false);
+      }
+
+      const recoveryEntry = recovery?.find(
+        (entry) => entry.muscle_group === muscleGroup
+      );
+      if (recoveryEntry) {
+        muscleGroupRecovery.set(muscleGroup, true);
+    }
+  }
+
+  return { session, meso_day, existing_sets, muscleGroupRecovery }
 }
 
 
@@ -144,18 +163,10 @@ export const actions = {
       throw redirect(303, '/')
     }
     const data = await request.formData();
-    if(data.get('is_first')){
 
       // TODO: Query Database for the last time this muscle group was worked and get the null question response from that.
       // Otherwise, get the last null question response.
-      let questions:string[] = ["How sore did your" + data.get("muscle_group") +  "get after your last workout?"]
-
-      const { data: current_mesocycle} = await supabase
-        .from('mesocycle')
-        .select('id')
-        .eq('user', session.user.id)
-        .eq('current', true)
-        .limit(1)
+      
 
       const { data: recovery } = await supabase
         .from('workout_feedback')
@@ -172,69 +183,7 @@ export const actions = {
         .limit(1)
 
 
-        if (recovery === null){
-
-          const question = {
-            feedback_type: 'workout_feedback',
-            question_type: 'mg_soreness',
-            value: null,
-            workout: params.slug,
-            exercise: data.get("exercise_id"),
-            muscle_group: data.get("muscle_group")
-
-          }
-
-          const { error } = await supabase
-            .from('workout_feedback')
-            .insert(question)
-        }
-        else {
-
-          // TODO: Trigger modal. Get question response from the modal. Update the workout_feedback table with the response.
-          const modalComponent: ModalComponent = { ref: ExerciseModal, props: {questions: questions}};
-
-          new Promise<Map<string, number>>((resolve) => {
-
-            const modal: ModalSettings = {
-              type: 'component',
-              component: modalComponent,
-              response: (response: Map<string, number>) => {
-                resolve(response);
-              }
-            };
-            modalStore.trigger(modal);
-          }).then((response) => {
-            console.log(response)
-          })
-      
-        }
-    }
-    else if (data.get(is_last_set)) {
-
-      let questions:string[] = ["How sore did your joints get doing " + data.get("exercise_name") + "?",];
-      
-      if (data.get(is_last)){
-        questions.push("How much of a pump did you get working your " + data.get("muscle_group") + "?")
-        questions.push("How hard, on average, did you find working your " + data.get("muscle_group") + "?")
-
-      }
-      const modalComponent: ModalComponent = { ref: ExerciseModal, props: {questions: questions}};
-
-      new Promise<Map<string, number>>((resolve) => {
-
-        const modal: ModalSettings = {
-          type: 'component',
-          component: modalComponent,
-          response: (response: Map<string, number>) => {
-            resolve(response);
-          }
-        };
-        modalStore.trigger(modal);
-      }).then((response) => {
-        console.log(response)
-      })
-
-    }
+     
     const set = {
       workout: params.slug,
       reps: Number(data.get("actualreps")),
