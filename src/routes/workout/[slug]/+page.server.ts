@@ -63,7 +63,7 @@ export const load = async ({ locals: { supabase, getSession }, params }) => {
 
   const exerciseNamesInOrder = meso_day?.meso_exercise.map((exercise) => exercise.exercises.exercise_name);
   exerciseNamesInOrder.forEach((exercise, index) => {
-    const matchingSets = selected_day?.workout_set.filter(wset => wset.exercises.exercise_name === exercise);
+    const matchingSets = selected_day?.workout_set.filter(wset => wset.exercises.exercise_name === exercise).sort((a, b) => a.set_num - b.set_num);
 
     if (matchingSets){
       existing_sets.set(exercise, matchingSets)
@@ -164,25 +164,7 @@ export const actions = {
     const data = await request.formData();
 
       // TODO: Query Database for the last time this muscle group was worked and get the null question response from that.
-      // Otherwise, get the last null question response.
-      
-
-      const { data: recovery } = await supabase
-        .from('workout_feedback')
-        .select(`
-          question_type,
-          value,
-          workouts(
-            mesocycle
-          )
-        `)
-        .eq('question_type', 'mg_soreness')
-        .eq('workouts.mesocycle', current_mesocycle[0].id)
-        .order('created_at', {ascending: false})
-        .limit(1)
-
-
-     
+      // Otherwise, get the last null question response.     
     const set = {
       workout: params.slug,
       reps: Number(data.get("actualreps")),
@@ -197,6 +179,6 @@ export const actions = {
   },
 
   example: async ({ locals: { supabase, getSession }, params, request}) => {
-    console.log("example modal submit")
+    console.log(request.formData())
   }
 }
