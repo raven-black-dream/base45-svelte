@@ -61,7 +61,7 @@
         f.action = "?/example"; // Add action and method attributes
         f.method = "POST";
         f.submit(); // Call the form's submit() method
-        modalStore[0].clear()
+        modalStore.clear()
     })
 
 }
