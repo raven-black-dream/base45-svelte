@@ -2,7 +2,6 @@
 
 import { redirect } from '@sveltejs/kit'
 
-
 export const load = async ({ locals: { supabase, getSession }, params }) => {
   const session = await getSession()
 
@@ -195,5 +194,9 @@ export const actions = {
       .update(set)
       .eq("id", data.get("set_id"))
 
+  },
+
+  example: async ({ locals: { supabase, getSession }, params, request}) => {
+    console.log("example modal submit")
   }
 }

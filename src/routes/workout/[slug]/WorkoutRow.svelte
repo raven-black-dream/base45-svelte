@@ -36,7 +36,17 @@
             };
             modalStore.trigger(modal);
             }).then((response) => {
-            console.log(response)
+                console.log(response)
+                // <exasperated sigh at skeleton> It appears that a form can not be submitted from a skeleton modal because
+                // if the modal is destroyed, the form action never gets submitted. It works if you just don't clear the modal...
+                // but we want it to go away. So, here we are in fact just making an entirely new form, and then we can submit the
+                // new form with the response from the modal <eyeroll> does this feel hacky? Yes. Yay flavour comments!
+                // Here are the docs for the HTMLFormElement: https://developer.mozilla.org/en-US/docs/Web/API/HTMLFormElement
+                const f = document.createElement("form"); // Create a form
+                document.body.appendChild(f); // Add it to the document body
+                f.action = "?/example"; // Add action and method attributes
+                f.method = "POST";
+                f.submit(); // Call the form's submit() method
             })
 
             }
