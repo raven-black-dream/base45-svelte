@@ -61,10 +61,14 @@
         document.body.appendChild(f); // Add it to the document body
         f.action = "?/example"; // Add action and method attributes
         f.method = "POST";
-        f.formData = new FormData();
-        f.formData.set("response_1", "string_1");
-        console.log(f.formData);
-        f.submit(); // Call the form's submit() method
+        // register an event listener for form data
+        // formdata info can be added through the listener
+        f.addEventListener("formdata", (e) => {
+            const formData = e.formData;
+            formData.append("field1", "a");
+            formData.append("field2", "b");
+        });
+        f.requestSubmit(); // Call the form's submit() method
         modalStore.clear()
     }).catch((error) => {
         console.error(error);
