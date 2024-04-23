@@ -44,13 +44,14 @@
     const modal: ModalSettings = {
         type: 'component',
         component: modalComponent,
+        title: 'Feedback',
+        body: "Please assign a value between 1 (minimal) and 4 (extreme) regarding the following : ",
         response: (response: Map<string, number>) => {
         resolve(response);
         }
     };
     modalStore.trigger(modal);
     }).then((response) => {
-        console.log(response)
         // <exasperated sigh at skeleton> It appears that a form can not be submitted from a skeleton modal because
         // if the modal is destroyed, the form action never gets submitted. It works if you just don't clear the modal...
         // but we want it to go away. So, here we are in fact just making an entirely new form, and then we can submit the
@@ -60,9 +61,14 @@
         document.body.appendChild(f); // Add it to the document body
         f.action = "?/example"; // Add action and method attributes
         f.method = "POST";
+        f.formData = new FormData();
+        f.formData.set("response_1", "string_1");
+        console.log(f.formData);
         f.submit(); // Call the form's submit() method
         modalStore.clear()
-    })
+    }).catch((error) => {
+        console.error(error);
+    });
 
 }
 

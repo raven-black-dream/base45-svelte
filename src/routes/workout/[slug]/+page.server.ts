@@ -179,6 +179,11 @@ export const actions = {
   },
 
   example: async ({ locals: { supabase, getSession }, params, request}) => {
-    console.log(request.formData())
+    const session = await getSession()
+    if (!session) {
+      throw redirect(303, '/')
+    }
+    const data = await request.formData();
+    console.log(data)
   }
 }
