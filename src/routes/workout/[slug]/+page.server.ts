@@ -45,7 +45,8 @@ export const load = async ({ locals: { supabase, getSession }, params }) => {
           muscle_group
         ),
         is_first,
-        is_last
+        is_last,
+        completed
       ),
       target_rir
     `)  
@@ -109,37 +110,6 @@ export const load = async ({ locals: { supabase, getSession }, params }) => {
 
 
 export const actions = {
-  create: async ({ locals: { supabase, getSession }, params, request}) => {
-    const data = await request.formData();
-
-    const session = await getSession()
-    if (!session) {
-      throw redirect(303, '/')
-    }
-
-    let form_map = new Map()
-    let first_key: string = data.keys().next().value
-    let set_id = first_key.split('_')[0]
-
-    // Display the key/value pairs, put them somewhere more easily reusable
-    for (const pair of data.entries()) {
-      let name = pair[0].split('_')[1]
-      form_map.set(name, Number(pair[1]))
-      console.log(`${name}, ${Number(pair[1])}`);
-    }
-
-    let workout = {
-      workout: params.slug,
-      reps: Number(form_map.get("actualreps")),
-      weight: Number(form_map.get("actualweight"))
-    }
-
-    const { error } = await supabase
-      .from('workout_set')
-      .update(workout)
-      .eq("id", set_id)
-
-  },
   complete: async ({ locals: { supabase, getSession }, params }) => {
     const session = await getSession()
     if (!session) {
@@ -156,7 +126,7 @@ export const actions = {
       .eq("id", params.slug)
   },
 
-  feedback: async ({ locals: { supabase, getSession }, params, request}) => {
+  recordSet: async ({ locals: { supabase, getSession }, params, request}) => {
     const session = await getSession()
     if (!session) {
       throw redirect(303, '/')
@@ -169,6 +139,7 @@ export const actions = {
       workout: params.slug,
       reps: Number(data.get("actualreps")),
       weight: Number(data.get("actualweight")),
+      // completed: true
     }
 
     const { error } = await supabase
@@ -178,12 +149,49 @@ export const actions = {
 
   },
 
-  example: async ({ locals: { supabase, getSession }, params, request}) => {
+  feedback: async ({ locals: { supabase, getSession }, params, request}) => {
     const session = await getSession()
     if (!session) {
       throw redirect(303, '/')
     }
     const data = await request.formData();
-    console.log(data)
+
+    const workout = data.get("workout");
+    const exercise = data.get("exercise");
+    const muscleGroup = data.get("muscle_group"); 
+
+    data.delete("workout");
+    data.delete("exercise");
+    data.delete("muscle_group");
+
+    let feedback = [];
+
+    for(let entry of data.entries()) {
+      feedback.push({
+        question_type: entry[0],
+        value: entry[1] != '' ? entry[1]: null,
+        workout,
+        exercise,
+        muscleGroup
+      })
+    }
+    if (feedback.length === 1 && feedback[0].value != null) {
+      const {} = await supabase
+        .from('workout_feedback')
+        .update(feedback[0])
+        .eq('workout', workout)
+        .eq('musclegroup', muscleGroup)
+        .eq('question_type', feedback[0].question_type)
+
+
+    }
+    else {
+
+      const { error } = await supabase
+      .from('workout_feedback')
+      .insert(feedback)
+
+    }
+
   }
 }

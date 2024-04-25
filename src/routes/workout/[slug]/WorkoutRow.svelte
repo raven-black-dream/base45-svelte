@@ -5,7 +5,7 @@
     import { enhance } from '$app/forms';
 
     export let set: {id: number, workout: string, exercises: {id: string, exercise_name:string, weighted: boolean, weight_step:number, muscle_group:string}, 
-    reps:number, target_reps:number, target_weight:number, weight:number, is_first:boolean, is_last:boolean};
+    reps:number, target_reps:number, target_weight:number, weight:number, is_first:boolean, is_last:boolean, completed:boolean};
     export let i: number;
     export let len: number;
     export let recovery: boolean;
@@ -20,22 +20,24 @@
 
     if (set.is_first) {
 
-        questions.push("How sore did your " + set.exercises.muscle_group +  " get after your last workout?")
 
         if (recovery === true){
+            questions.push("How sore did your " + set.exercises.muscle_group +  " get after your last workout?")
             }
-        else if (i == len) {
+
+    }
+    if (i == len) {
 
         questions.push("How sore did your joints get doing " + set.exercises.exercise_name + "?");
+    }
 
-        if (set.is_last){
+    if (set.is_last){
         questions.push("How much of a pump did you get working your " + set.exercises.muscle_group + "?")
         questions.push("How hard, on average, did you find working your " + set.exercises.muscle_group + "?")
 
             }
-        }
-    }
-
+    
+    if (questions.length > 0) {
     // TODO: Trigger modal. Get question response from the modal. Update the workout_feedback table with the response.
     const modalComponent: ModalComponent = { ref: ExerciseModal, props: {questions: questions}};
 
@@ -59,27 +61,70 @@
         // Here are the docs for the HTMLFormElement: https://developer.mozilla.org/en-US/docs/Web/API/HTMLFormElement
         const f = document.createElement("form"); // Create a form
         document.body.appendChild(f); // Add it to the document body
-        f.action = "?/example"; // Add action and method attributes
+        f.action = "?/feedback"; // Add action and method attributes
         f.method = "POST";
         // register an event listener for form data
         // formdata info can be added through the listener
         f.addEventListener("formdata", (e) => {
             const formData = e.formData;
-            formData.append("field1", "a");
-            formData.append("field2", "b");
+            console.log(typeof response)
+            for (const question in response) {
+                const typeOjb = {
+                    "after": "mg_soreness",
+                    "joints": "ex_soreness",
+                    "pump": "mg_pump",
+                    "hard": "mg_difficulty"
+                }
+                let key = "";
+                if (question.includes("after")){
+                    key = typeOjb["after"];
+                }
+                else if (question.includes("joints")){
+                    key = typeOjb["joints"];
+                }
+                else if (question.includes("pump")){
+                    key = typeOjb["pump"];
+                }
+                else if (question.includes("hard")){
+                    key = typeOjb["hard"];
+                }
+                formData.append(key, response[question]);
+            formData.append("exercise", set.exercises.id);
+            formData.append("workout", set.workout);
+            formData.append("muscle_group", set.exercises.muscle_group);
+            }
         });
         f.requestSubmit(); // Call the form's submit() method
         modalStore.clear()
     }).catch((error) => {
         console.error(error);
     });
+    }
+
+    else{
+        const f = document.createElement("form"); // Create a form
+        document.body.appendChild(f); // Add it to the document body
+        f.action = "?/feedback"; // Add action and method attributes
+        f.method = "POST";
+        // register an event listener for form data
+        // formdata info can be added through the listener
+        f.addEventListener("formdata", (e) => {
+            const formData = e.formData;
+            formData.append("mg_soreness", '');
+            formData.append("exercise", set.exercises.id);
+            formData.append("workout", set.workout);
+            formData.append("muscle_group", set.exercises.muscle_group);
+            });
+        f.requestSubmit(); // Call the form's submit() method
+    }
 
 }
+    
 
 </script>
 
 <!-- use:enhance keeps the page from reloading on form submission; reloading also clears any modals -->
-<form class="p-4" method="post" use:enhance action="?/feedback">
+<form class="p-4" method="post" use:enhance action="?/recordSet">
                     <div class="input-group input-group-divider grid-cols-[1fr_1fr_auto]">
                     <input type="hidden" name="set_id" value={set.id}>
                     <input type="hidden" name="exercise_id" value={set.exercises.id}>
@@ -99,10 +144,10 @@
                     <input type="hidden" name="is_first" value={set.is_first} />
                     <input type="hidden" name="is_last" value={set.is_last} />
                     <input type="hidden" name="is_last_set" value={i === len}>
-
-                    <button class="btn variant-ghost-primary" type="submit" on:click={askForFeedback}>
+                    <button class="btn variant-ghost-primary" type="submit" on:click={askForFeedback} disabled={set.completed}>
                         Log Set
-                    </button>
+                    </button>                    
+                    
                     </div>
                 </form>                
 
