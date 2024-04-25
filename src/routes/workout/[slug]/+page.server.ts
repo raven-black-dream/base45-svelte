@@ -210,9 +210,8 @@ function setProgressionAlgorithm() {
 
 function repProgressionAlgorithm() {
 
-
 }
 
 function loadProgressionAlgorithm() {
-  
+
 }
