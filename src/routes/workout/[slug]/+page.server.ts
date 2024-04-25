@@ -195,3 +195,24 @@ export const actions = {
 
   }
 }
+
+function calculateMetrics() {
+
+}
+
+function progression() {
+
+}
+
+function setProgressionAlgorithm() {
+
+}
+
+function repProgressionAlgorithm() {
+
+
+}
+
+function loadProgressionAlgorithm() {
+  
+}
