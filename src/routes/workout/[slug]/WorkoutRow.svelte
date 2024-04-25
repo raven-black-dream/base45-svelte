@@ -100,8 +100,8 @@
         console.error(error);
     });
     }
-
-    else{
+    else if (set.is_first) {
+        
         const f = document.createElement("form"); // Create a form
         document.body.appendChild(f); // Add it to the document body
         f.action = "?/feedback"; // Add action and method attributes

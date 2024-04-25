@@ -168,25 +168,25 @@ export const actions = {
 
     for(let entry of data.entries()) {
       feedback.push({
+        feedback_type: 'workout_feedback',
         question_type: entry[0],
         value: entry[1] != '' ? entry[1]: null,
-        workout,
-        exercise,
-        muscleGroup
+        workout: workout,
+        exercise: exercise,
+        muscle_group: muscleGroup
       })
     }
-    if (feedback.length === 1 && feedback[0].value != null) {
+    if (feedback.length === 1 && feedback[0].question_type == 'mg_soreness' && feedback[0].value != null) {
       const {} = await supabase
         .from('workout_feedback')
         .update(feedback[0])
         .eq('workout', workout)
-        .eq('musclegroup', muscleGroup)
+        .eq('muscle_group', muscleGroup)
         .eq('question_type', 'mg_soreness')
 
 
     }
     else {
-
       const { error } = await supabase
       .from('workout_feedback')
       .insert(feedback)
