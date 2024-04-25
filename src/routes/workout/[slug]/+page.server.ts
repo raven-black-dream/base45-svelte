@@ -181,7 +181,7 @@ export const actions = {
         .update(feedback[0])
         .eq('workout', workout)
         .eq('musclegroup', muscleGroup)
-        .eq('question_type', feedback[0].question_type)
+        .eq('question_type', 'mg_soreness')
 
 
     }
