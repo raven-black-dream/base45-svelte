@@ -108,7 +108,6 @@ export const load = async ({ locals: { supabase, getSession }, params }) => {
   return { session, meso_day, existing_sets, muscleGroupRecovery }
 }
 
-
 export const actions = {
   complete: async ({ locals: { supabase, getSession }, params }) => {
     const session = await getSession()
@@ -133,8 +132,8 @@ export const actions = {
     }
     const data = await request.formData();
 
-      // TODO: Query Database for the last time this muscle group was worked and get the null question response from that.
-      // Otherwise, get the last null question response.     
+    // TODO: Query Database for the last time this muscle group was worked and get the null question response from that.
+    // Otherwise, get the last null question response.     
     const set = {
       workout: params.slug,
       reps: Number(data.get("actualreps")),
@@ -183,16 +182,12 @@ export const actions = {
         .eq('workout', workout)
         .eq('muscle_group', muscleGroup)
         .eq('question_type', 'mg_soreness')
-
-
     }
     else {
       const { error } = await supabase
-      .from('workout_feedback')
-      .insert(feedback)
-
+        .from('workout_feedback')
+        .insert(feedback)
     }
-
   }
 }
 

@@ -1,8 +1,6 @@
 // src/routes/programs/templateslist/[slug]/+page.server.ts
 
-import { supabase } from '@supabase/auth-ui-shared'
 import { redirect } from '@sveltejs/kit'
-import type { UUID } from 'crypto'
 
 export const load = async ({ locals: { supabase, getSession }, params }) => {
   const session = await getSession()
@@ -77,8 +75,6 @@ async function createWorkouts(conn:any, user_id:string, start_date:Date, end_dat
     .eq('meso_day', meso_day_id)
 
   await createSets(conn, workouts_data)
-
-
 };
 
 async function createSets(conn: any, workoutData: any ) {
@@ -248,6 +244,7 @@ export const actions = {
             sort_order: entry.order
           })
       })
+
       await createWorkouts(
         supabase,
         session.user.id,
@@ -260,6 +257,6 @@ export const actions = {
         template_day?.template_day_name
       )
       
-      });
+    });
   }
 }

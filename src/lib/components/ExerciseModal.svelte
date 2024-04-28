@@ -15,7 +15,6 @@
 
 	// Form Data
 	let ratings: Map<string, number> = new Map();
-	
 
 	// We've created a custom submit function to pass the response and close the modal.
 	function onFormSubmit(): void {

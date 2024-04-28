@@ -3,8 +3,6 @@
 <script lang="ts">
     import WorkoutRow from './WorkoutRow.svelte';
     export let data
-
-
 </script>
 
 <svelte:head>
