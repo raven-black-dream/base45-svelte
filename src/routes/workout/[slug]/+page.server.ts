@@ -86,7 +86,7 @@ export const load = async ({ locals: { supabase, getSession }, params }) => {
       question_type,
       value,
       muscle_group,
-      workouts(
+      workouts!inner(
         id,
         mesocycle
       )
@@ -107,6 +107,7 @@ export const load = async ({ locals: { supabase, getSession }, params }) => {
       const recoveryEntry = recovery?.find(
         (entry) => entry.muscle_group === muscleGroup
       );
+      console.log(recoveryEntry)
       if (recoveryEntry && recoveryEntry.workouts.id !== params.slug) {
         muscleGroupRecovery.set(muscleGroup, {completed: true, workout: recoveryEntry.workouts.id});
     }
