@@ -74,6 +74,12 @@ export const load = async ({ locals: { supabase, getSession }, params }) => {
 
   // console.log(meso_day)
   // console.log(existing_sets)
+
+  const muscleGroups = new Set();
+  for (const mesoExercise of meso_day?.meso_exercise) {
+    muscleGroups.add(mesoExercise.exercises.muscle_group);
+  }
+
   const {data: recovery} = await supabase
     .from('workout_feedback')
     .select(`
@@ -81,28 +87,32 @@ export const load = async ({ locals: { supabase, getSession }, params }) => {
       value,
       muscle_group,
       workouts(
+        id,
         mesocycle
       )
     `)
     .eq('question_type', 'mg_soreness')
     .eq('workouts.mesocycle', selected_day?.meso_day.mesocycle)
     .order('created_at', {ascending: false})
-    .limit(1)
+    .limit(muscleGroups.size)
     const muscleGroupRecovery = new Map();
 
     for (const mesoExercise of meso_day?.meso_exercise) {
       const muscleGroup = mesoExercise.exercises.muscle_group;
 
       if (!muscleGroupRecovery.has(muscleGroup)) {
-        muscleGroupRecovery.set(muscleGroup, false);
+        muscleGroupRecovery.set(muscleGroup, {completed: false, workout: null});
       }
 
       const recoveryEntry = recovery?.find(
         (entry) => entry.muscle_group === muscleGroup
       );
-      if (recoveryEntry) {
-        muscleGroupRecovery.set(muscleGroup, true);
+      if (recoveryEntry && recoveryEntry.workouts.id !== params.slug) {
+        muscleGroupRecovery.set(muscleGroup, {completed: true, workout: recoveryEntry.workouts.id});
     }
+      else {
+        muscleGroupRecovery.set(muscleGroup, {completed: false, workout: null});
+      }
   }
 
   return { session, meso_day, existing_sets, muscleGroupRecovery }
@@ -123,6 +133,9 @@ export const actions = {
         complete: true
       })
       .eq("id", params.slug)
+
+    const { data: workoutData } = await supabase
+      
   },
 
   recordSet: async ({ locals: { supabase, getSession }, params, request}) => {
@@ -138,7 +151,7 @@ export const actions = {
       workout: params.slug,
       reps: Number(data.get("actualreps")),
       weight: Number(data.get("actualweight")),
-      // completed: true
+      completed: true
     }
 
     const { error } = await supabase
@@ -157,11 +170,14 @@ export const actions = {
 
     const workout = data.get("workout");
     const exercise = data.get("exercise");
-    const muscleGroup = data.get("muscle_group"); 
+    const muscleGroup = data.get("muscle_group");
+    const currentWorkout = data.get("current_workout"); 
 
     data.delete("workout");
     data.delete("exercise");
     data.delete("muscle_group");
+    data.delete("current_workout");
+    
 
     let feedback = [];
 
@@ -176,14 +192,29 @@ export const actions = {
       })
     }
     if (feedback.length === 1 && feedback[0].question_type == 'mg_soreness' && feedback[0].value != null) {
-      const {} = await supabase
+      console.log(feedback[0])
+      const {error: sorenessError} = await supabase
         .from('workout_feedback')
         .update(feedback[0])
         .eq('workout', workout)
         .eq('muscle_group', muscleGroup)
         .eq('question_type', 'mg_soreness')
+      if (sorenessError) {
+        console.log(sorenessError)
+      }
+      const {error: currentSorenessError} = await supabase
+        .from("workout_feedback")
+        .insert({
+          feedback_type: 'workout_feedback',
+          question_type: 'mg_soreness',
+          value: null,
+          workout: currentWorkout,
+          exercise: exercise,
+          muscle_group: muscleGroup
+        })
     }
     else {
+      console.log(feedback)
       const { error } = await supabase
         .from('workout_feedback')
         .insert(feedback)
@@ -192,6 +223,7 @@ export const actions = {
 }
 
 function calculateMetrics() {
+
 
 }
 

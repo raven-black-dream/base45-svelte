@@ -8,7 +8,7 @@
     reps:number, target_reps:number, target_weight:number, weight:number, is_first:boolean, is_last:boolean, completed:boolean};
     export let i: number;
     export let len: number;
-    export let recovery: boolean;
+    export let recovery: {completed: boolean, workout: string};
     // modalStore needs to be where the trigger will be
     const modalStore = getModalStore();
 
@@ -18,9 +18,10 @@
         let questions:string[] = [];
 
         if (set.is_first) {
-            if (recovery === true){
+            if (recovery.completed === true){
                 questions.push("How sore did your " + set.exercises.muscle_group +  " get after your last workout?")
             }
+            
         }
         if (i == len) {
             questions.push("How sore did your joints get doing " + set.exercises.exercise_name + "?");
@@ -31,7 +32,7 @@
             questions.push("How hard, on average, did you find working your " + set.exercises.muscle_group + "?")
         }
         
-        if (questions.length > 0) {
+        if (questions.length > 0 && questions[0] !== "") {
             // TODO: Trigger modal. Get question response from the modal. Update the workout_feedback table with the response.
             const modalComponent: ModalComponent = { ref: ExerciseModal, props: {questions: questions}};
 
@@ -84,7 +85,13 @@
                         }
                         formData.append(key, response[question]);
                         formData.append("exercise", set.exercises.id);
-                        formData.append("workout", set.workout);
+                        if (set.is_first && recovery.completed === true){
+                            formData.append("workout", recovery.workout);
+                            formData.append("current_workout", set.workout)
+                        }
+                        else {
+                            formData.append("workout", set.workout);
+                        }
                         formData.append("muscle_group", set.exercises.muscle_group);
                     }
                 });
@@ -109,7 +116,7 @@
                 formData.append("muscle_group", set.exercises.muscle_group);
             });
             f.requestSubmit(); // Call the form's submit() method
-        }
+        }    
     }
 </script>
 
@@ -129,6 +136,7 @@
             class="input" 
             type="number" 
             name="actualweight"
+            step="0.5"
             value="{set.weight? set.weight: set.target_weight}"
         />
         <input type="hidden" name="is_first" value={set.is_first} />
