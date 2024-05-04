@@ -39,16 +39,16 @@ export const load = async ({ locals: { supabase, getSession }, params }) => {
 }
 
 async function createWorkouts(conn:any, user_id:string, start_date:Date, end_date:Date, meso_id:string, meso_day_id:string, day_of_weeks:Map<any,any>, day:any ,day_name:string) {
-  let workouts: { user: string; mesocycle: string; meso_day: string, day_name: string; date: Date; target_rir: number; complete: boolean}[] = []
+  let workouts: { user: string; mesocycle: string; meso_day: string, day_name: string; date: Date; target_rir: number; deload: boolean; complete: boolean}[] = []
   let current = new Date(start_date.getTime())
 
   const timeDifference = Math.abs(end_date.getTime() - start_date.getTime());
 
-  // Calculate number of weeks (rounded down to nearest whole week)
-  let weeks:number = Math.ceil(timeDifference / (1000 * 60 * 60 * 24 * 7)) - 2;
-
   while (current.getTime() < end_date.getTime()) {
 
+    // Calculate number of weeks (rounded down to nearest whole week)
+    let weeks:number = Math.ceil(timeDifference / (1000 * 60 * 60 * 24 * 7)) - 2;
+    let currentWeek = Math.floor((Math.abs(current.getTime() - start_date.getTime())) / (1000 * 60 * 60 * 24 * 7));
     if (current.getDay() === Number(day_of_weeks.get(day))) {
       workouts.push({
         user: user_id, 
@@ -56,12 +56,12 @@ async function createWorkouts(conn:any, user_id:string, start_date:Date, end_dat
         meso_day: meso_day_id,
         day_name: day_name,
         date: new Date(current),
-        target_rir: weeks,
+        target_rir: weeks - currentWeek,
+        deload: weeks - currentWeek >= 0? false: true,
         complete: false
       })
     }
     current.setDate(current.getDate() + 1)
-    weeks--
   }
 
   const { } = await conn

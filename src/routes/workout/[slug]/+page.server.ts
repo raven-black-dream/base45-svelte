@@ -1,5 +1,6 @@
 // src/routes/workout/[slug]/+page.server.ts
 
+import { supabase } from '$lib/supabaseClient.js'
 import { redirect } from '@sveltejs/kit'
 
 export const load = async ({ locals: { supabase, getSession }, params }) => {
@@ -80,21 +81,35 @@ export const load = async ({ locals: { supabase, getSession }, params }) => {
     muscleGroups.add(mesoExercise.exercises.muscle_group);
   }
 
-  const {data: recovery} = await supabase
-    .from('workout_feedback')
-    .select(`
-      question_type,
-      value,
-      muscle_group,
-      workouts!inner(
-        id,
-        mesocycle
-      )
-    `)
-    .eq('question_type', 'mg_soreness')
-    .eq('workouts.mesocycle', selected_day?.meso_day.mesocycle)
-    .order('created_at', {ascending: false})
-    .limit(muscleGroups.size)
+  const {data: workoutList} = await supabase
+    .from('recent_workout_id')
+    .select()
+    .eq('mesocycle_id', selected_day?.meso_day.mesocycle)
+    .in('muscle_group', Array.from(muscleGroups))
+
+  let recovery: {question_type: string, value: number, muscle_group: string, workout:string}[] = [];
+  if (workoutList) {
+    for(const workout of workoutList) {
+      const {data: feedback} = await supabase
+      .from('workout_feedback')
+      .select(`
+        question_type,
+        value,
+        muscle_group,
+        workout
+      `)
+      .eq('workout', workout.most_recent_workout_id)
+      .eq('muscle_group', workout.muscle_group)
+      .eq('question_type', 'mg_soreness')
+      .limit(1)
+      if (feedback){
+        recovery.push(feedback[0])
+      }
+      
+    }
+  }
+
+    // console.log(recovery)
     const muscleGroupRecovery = new Map();
 
     for (const mesoExercise of meso_day?.meso_exercise) {
@@ -107,15 +122,12 @@ export const load = async ({ locals: { supabase, getSession }, params }) => {
       const recoveryEntry = recovery?.find(
         (entry) => entry.muscle_group === muscleGroup
       );
-      console.log(recoveryEntry)
-      if (recoveryEntry && recoveryEntry.workouts.id !== params.slug) {
-        muscleGroupRecovery.set(muscleGroup, {completed: true, workout: recoveryEntry.workouts.id});
+      if (recoveryEntry && recoveryEntry.workout !== params.slug) {
+        muscleGroupRecovery.set(muscleGroup, {completed: true, workout: recoveryEntry.workout});
     }
-      else {
-        muscleGroupRecovery.set(muscleGroup, {completed: false, workout: null});
-      }
   }
 
+  console.log(muscleGroupRecovery)
   return { session, meso_day, existing_sets, muscleGroupRecovery }
 }
 
@@ -193,7 +205,6 @@ export const actions = {
       })
     }
     if (feedback.length === 1 && feedback[0].question_type == 'mg_soreness' && feedback[0].value != null) {
-      console.log(feedback[0])
       const {error: sorenessError} = await supabase
         .from('workout_feedback')
         .update(feedback[0])
@@ -215,7 +226,6 @@ export const actions = {
         })
     }
     else {
-      console.log(feedback)
       const { error } = await supabase
         .from('workout_feedback')
         .insert(feedback)
@@ -223,7 +233,12 @@ export const actions = {
   }
 }
 
-function calculateMetrics() {
+async function calculateMetrics( workoutId: string ) {
+
+  const {data: exerciseData} = await supabase
+    .from('workout_set')
+    .select()
+    .eq("workout", workoutId)
 
 
 }
