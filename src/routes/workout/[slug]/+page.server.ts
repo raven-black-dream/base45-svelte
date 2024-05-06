@@ -9,6 +9,8 @@ export const load = async ({ locals: { supabase, getSession }, params }) => {
   if (!session) {
     throw redirect(303, '/')
   }
+
+  // Pull all of the information for the day's workout
   const { data: selected_day, error } = await supabase
     .from('workouts')
     .select(`
@@ -55,32 +57,38 @@ export const load = async ({ locals: { supabase, getSession }, params }) => {
     .limit(1)
     .single()
 
+  // define meso day for a shorthand
+  const meso_day: {id: string, meso_day_name:string, day_of_week:string, mesocycle:string, 
+    meso_exercise: {sort_order: number, num_sets: number, exercises: 
+      {id: string, muscle_group: string, exercise_name: string, weighted: boolean, weight_step: number}[]}[]}[]
+      | undefined = selected_day?.meso_day
+
   // put the exercises in the correct order
-  let meso_day: {id: string, meso_day_name:string, day_of_week:string, mesocycle:string, 
-    meso_exercise: {sort_order: number, num_sets: number, exercises: {id: string, muscle_group: string, exercise_name: string, weighted: boolean, weight_step: number}[]}[]}[]| undefined = selected_day?.meso_day
   meso_day?.meso_exercise.sort((a: { sort_order: number }, b: { sort_order: number }) => a.sort_order - b.sort_order)
-  // TODO: meso_exercises were ordered, but no longer used - may want to define order of existing sets
   
   let existing_sets = new Map()
 
+  // get a list of just the titles of the exercises, ordered as the user requested
   const exerciseNamesInOrder = meso_day?.meso_exercise.map((exercise) => exercise.exercises.exercise_name);
-  exerciseNamesInOrder.forEach((exercise, index) => {
-    const matchingSets = selected_day?.workout_set.filter(wset => wset.exercises.exercise_name === exercise).sort((a, b) => a.set_num - b.set_num);
+
+  // for each exercise name, add an ordered list of the relevent sets for the key of the exercise name
+  exerciseNamesInOrder.forEach((exercise) => {
+    const matchingSets = selected_day?.workout_set
+      .filter(wset => wset.exercises.exercise_name === exercise)
+      .sort((a, b) => a.set_num - b.set_num);
 
     if (matchingSets){
       existing_sets.set(exercise, matchingSets)
     }
-
   });
 
-  // console.log(meso_day)
-  // console.log(existing_sets)
-
+  // collect a list of all the muscle groups applicable to the day's workout
   const muscleGroups = new Set();
   for (const mesoExercise of meso_day?.meso_exercise) {
     muscleGroups.add(mesoExercise.exercises.muscle_group);
   }
 
+  // retrieve workout ids given the mesocycle and muscle groups worked
   const {data: workoutList} = await supabase
     .from('recent_workout_id')
     .select()
@@ -88,42 +96,48 @@ export const load = async ({ locals: { supabase, getSession }, params }) => {
     .in('muscle_group', Array.from(muscleGroups))
 
   let recovery: {question_type: string, value: number, muscle_group: string, workout:string}[] = [];
+
+  // for every workout that was relevant to the mesocycle and muscle groups worked,
+  // fetch the muscle soreness feedback question, and add it to the recovery questions array
   if (workoutList) {
     for(const workout of workoutList) {
       const {data: feedback} = await supabase
-      .from('workout_feedback')
-      .select(`
-        question_type,
-        value,
-        muscle_group,
-        workout
-      `)
-      .eq('workout', workout.most_recent_workout_id)
-      .eq('muscle_group', workout.muscle_group)
-      .eq('question_type', 'mg_soreness')
-      .limit(1)
+        .from('workout_feedback')
+        .select(`
+          question_type,
+          value,
+          muscle_group,
+          workout
+        `)
+        .eq('workout', workout.most_recent_workout_id)
+        .eq('muscle_group', workout.muscle_group)
+        .eq('question_type', 'mg_soreness')
+        .limit(1)
+
       if (feedback){
         recovery.push(feedback[0])
-      }
-      
+      } 
     }
   }
 
-    // console.log(recovery)
-    const muscleGroupRecovery = new Map();
+  const muscleGroupRecovery = new Map();
+  // for every exercise of the workout, 
+  // if the muscle group does not yet exist in the muscleGroupRecovery map,
+  // then add a default of not completed and null
+  // if there was a recovery question in the database for the muscle group, and it was not for the current page's workout,
+  // set that there is a completed answer and the attached workout
+  for (const mesoExercise of meso_day?.meso_exercise) {
+    const muscleGroup = mesoExercise.exercises.muscle_group;
 
-    for (const mesoExercise of meso_day?.meso_exercise) {
-      const muscleGroup = mesoExercise.exercises.muscle_group;
+    if (!muscleGroupRecovery.has(muscleGroup)) {
+      muscleGroupRecovery.set(muscleGroup, {completed: false, workout: null});
+    }
 
-      if (!muscleGroupRecovery.has(muscleGroup)) {
-        muscleGroupRecovery.set(muscleGroup, {completed: false, workout: null});
-      }
-
-      const recoveryEntry = recovery?.find(
-        (entry) => entry.muscle_group === muscleGroup
-      );
-      if (recoveryEntry && recoveryEntry.workout !== params.slug) {
-        muscleGroupRecovery.set(muscleGroup, {completed: true, workout: recoveryEntry.workout});
+    const recoveryEntry = recovery?.find(
+      (entry) => entry.muscle_group === muscleGroup
+    );
+    if (recoveryEntry && recoveryEntry.workout !== params.slug) {
+      muscleGroupRecovery.set(muscleGroup, {completed: true, workout: recoveryEntry.workout});
     }
   }
 
