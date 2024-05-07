@@ -219,7 +219,7 @@ export const actions = {
       feedback.push({
         feedback_type: 'workout_feedback',
         question_type: entry[0],
-        value: entry[1] != '' ? entry[1]: null,
+        value: entry[1] != '' ? entry[1] - 1: null,
         workout: workout,
         exercise: exercise,
         muscle_group: muscleGroup
@@ -256,7 +256,7 @@ export const actions = {
 
 async function calculateMetrics( workoutId: string) {
 
-const exerciseData =  await calculateExerciseMetrics(workoutId)
+await calculateExerciseMetrics(workoutId)
 
 // First get a list of muscle groups worked in the workout
 const { data: muscleGroups } = await supabase
@@ -365,10 +365,9 @@ async function calculateExerciseMetrics(workoutId: string) {
       exerciseMetrics.get(exerciseId).weightDiff += item.target_weight - item.weight
 
     }
-
-    for (const exercise in exerciseMetrics) {
-      const exerciseObject = exerciseMetrics.get(exercise)
+    for (const [key ,exerciseObject] of exerciseMetrics) {
       const { totalReps, totalWeight, exerciseSets: repsAndWeights } = exerciseObject
+
 
       exerciseObject.averageReps = totalReps / repsAndWeights.length
       exerciseObject.averageWeight = totalWeight / repsAndWeights.length
@@ -404,9 +403,8 @@ async function calculateExerciseMetrics(workoutId: string) {
       }
       else {
         exerciseObject.performanceScore = 3
-      }
+      } 
     }
-
     exerciseMetrics.forEach((exercise, key) => {
       userExerciseMetrics.push({
         exercise: key,
@@ -458,15 +456,12 @@ async function calculateExerciseMetrics(workoutId: string) {
         workout: workoutId
       })
     })
-
-
-    const { error } = await supabase
-      .from('user_exercise_metrics')
-      .insert(userExerciseMetrics)
-
-    if (error) {
-      console.log(error)
-    }
+    //const { error } = await supabase
+    //  .from('user_exercise_metrics')
+    //  .insert(userExerciseMetrics)
+    //if (error) {
+    //  console.log(error)
+    //}
 
   }
 
@@ -499,23 +494,85 @@ async function calculateMuscleGroupMetrics(currentWorkoutId: string, workoutIds:
       `)
       .eq('workout', workout.workoutId)
       .eq('muscle_group', workout.muscleGroup)
-      .in('question_type', ['ex_soreness', 'mg_pump', 'mg_difficulty'])
+      .in('question_type', ['mg_soreness', 'mg_pump', 'mg_difficulty'])
 
     if (feedback) {
       previousWorkoutFeedback.push(...feedback)
     }
   }
 
+  const exercises: string[] = [...new Set(previousWorkoutFeedback.map(feedback => feedback.exercise))];
+  console.log(exercises);
+  let exerciseMetrics: Map<string, {}> = new Map();
+  let muscleGroupMetrics: Map<string, {rawStimulusMagnitude: number, fatigueScore: number, stimulusToFatigueRatio: number}> = new Map();
+  let userMuscleGroupMetrics: {muscle_group: string, mesocycle: string, metric_name: string, value: number, workout: string}[] = []
 
+  // calculate exercise Raw Stimulus Magnitude, Fatigue Score, and Stimulus to Fatigue Ratio -> requires previous workout feedback and previous workout metrics (specifically the performance score for the exercise following a given exercise)
+  exercises.forEach(async (exercise) => {
+
+    const exerciseFeedback = previousWorkoutFeedback.filter(feedback => feedback.exercise === exercise)
+    // calculate the raw stimulus magnitude for the exercise
+    let rawStimulusMagnitude = 0;
+    exerciseFeedback.forEach(feedback => {
+      if (['mg_pump', 'mg_difficulty', 'mg_soreness'].includes(feedback.question_type)) {
+        rawStimulusMagnitude += feedback.value
+      }
+    })
+    console.log(rawStimulusMagnitude) 
+  })
+
+  // calculate muscle group Raw Stimulus Magnitude and Fatigue Score -> requires previous workout feedback and previous workout metrics (specifically the performance score for the exercise following a given exercise)
+  // calculate 
 
 
 
 
 }
 
-function progression() {
+async function progression(workoutId: string) {
 
   // Determine the progression algorithm to use based on the user's performance and the exercise selection.
+  const { data: workoutData } = await supabase
+    .from('workouts')
+    .select(`
+    id,
+    mesocycle(
+      id,
+      start_date,
+    ),
+    date    
+    `)
+    .eq('id', workoutId)
+
+  // Determine which week of the mesocycle the workout is in.
+  const workout = workoutData[0]
+  const workoutDate = new Date(workout.date)
+  let currentWeek = Math.floor((Math.abs(workoutDate.getTime() - workout.mesocycle.start_date.getTime())) / (1000 * 60 * 60 * 24 * 7));
+  if (currentWeek === 0) {
+    // If the workout is in the first week of the mesocycle, use the RP MEV Estimator to determine the number of sets to add or remove from the next week's workout.
+    await rpMevEstimator(workoutId)
+  }
+  else{
+    // Otherwise deternine which combination of set, rep, and load progression algorithms to use.
+
+  }
+
+
+
+  
+
+}
+
+async function rpMevEstimator(workoutId: string) {
+
+  // Estimate the MEV for the first week of the mesocycle. Use that to add or remove sets from the next week's workouts.
+
+  // First Step: Get the muscle groups worked in the workout
+  // Second Step: Get the workout ids for the most recent workouts that worked those muscle groups
+  // Third Step: Get the workout feedback for those workouts
+  // Fourth Step: Add the feedback values together for each muscle group
+  // Fifth Step: Apply heuristics to determine the number of sets to add or remove from the next week's workout
+  
 
 }
 
