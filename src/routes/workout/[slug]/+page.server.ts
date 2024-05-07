@@ -339,8 +339,8 @@ async function calculateExerciseMetrics(workoutId: string) {
           return obj.exercise === exerciseId
         }
       )
-      if (!exerciseMetrics[exerciseId]) {
-        exerciseMetrics[exerciseId] = {
+      if (!exerciseMetrics.has(exerciseId)) {
+        exerciseMetrics.set(exerciseId, {
           totalReps: 0,
           averageReps: 0,
           averageWeight: 0,
@@ -355,19 +355,19 @@ async function calculateExerciseMetrics(workoutId: string) {
           mesocycle: item.workouts.mesocycle,
           num_sets: 0,
           weight_step: item.exercises.weight_step
-        }
+        })
       }
-      exerciseMetrics[exerciseId].exerciseSets.push(item)
-      exerciseMetrics[exerciseId].totalReps += item.reps
-      exerciseMetrics[exerciseId].totalWeight += item.weight
-      exerciseMetrics[exerciseId].num_sets++
-      exerciseMetrics[exerciseId].repDiff += item.target_reps - item.reps
-      exerciseMetrics[exerciseId].weightDiff += item.target_weight - item.weight
+      exerciseMetrics.get(exerciseId).exerciseSets.push(item)
+      exerciseMetrics.get(exerciseId).totalReps += item.reps
+      exerciseMetrics.get(exerciseId).totalWeight += item.weight
+      exerciseMetrics.get(exerciseId).num_sets++
+      exerciseMetrics.get(exerciseId).repDiff += item.target_reps - item.reps
+      exerciseMetrics.get(exerciseId).weightDiff += item.target_weight - item.weight
 
     }
 
     for (const exercise in exerciseMetrics) {
-      const exerciseObject = exerciseMetrics[exercise]
+      const exerciseObject = exerciseMetrics.get(exercise)
       const { totalReps, totalWeight, exerciseSets: repsAndWeights } = exerciseObject
 
       exerciseObject.averageReps = totalReps / repsAndWeights.length
@@ -393,19 +393,21 @@ async function calculateExerciseMetrics(workoutId: string) {
       }
       else if (exercisePerformance == 0) {
         const workload = exerciseObject.feedback.find((entry) => entry.question_type === 'mg_difficulty')
-        if (workload.value < 2) {
-          exerciseObject.performanceScore = 1
-        }
-        else {
-          exerciseObject.performanceScore = 2
+        if (workload) {
+          if (workload.value < 2) {
+            exerciseObject.performanceScore = 1
+          }
+          else {
+            exerciseObject.performanceScore = 2
+          }
         }
       }
       else {
         exerciseObject.performanceScore = 3
       }
     }
+
     exerciseMetrics.forEach((exercise, key) => {
-      
       userExerciseMetrics.push({
         exercise: key,
         mesocycle: exercise.mesocycle,
