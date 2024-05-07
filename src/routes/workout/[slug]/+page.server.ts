@@ -3,6 +3,13 @@
 import { supabase } from '$lib/supabaseClient.js'
 import { redirect } from '@sveltejs/kit'
 
+interface ExerciseMetric {
+  totalReps: number, averageReps: number, averageWeight: number, 
+  totalWeight: number, repStdDev: number, weightStdDev: number, 
+  repDiff: number, weightDiff: number, performanceScore: number,
+  exerciseSets: Array<Object>, feedback: Array<Object>, mesocycle: string, 
+  num_sets: number, weight_step: number}
+
 export const load = async ({ locals: { supabase, getSession }, params }) => {
   const session = await getSession()
 
@@ -141,7 +148,7 @@ export const load = async ({ locals: { supabase, getSession }, params }) => {
     }
   }
 
-  console.log(muscleGroupRecovery)
+  // console.log(muscleGroupRecovery)
   return { session, meso_day, existing_sets, muscleGroupRecovery }
 }
 
@@ -156,12 +163,12 @@ export const actions = {
     const { error } = await supabase
       .from('workouts')
       .update({
-        date: new Date(Date.now()),
-        complete: true
+        //date: new Date(Date.now()),
+        //complete: true
       })
       .eq("id", params.slug)
 
-    const { data: workoutData } = await supabase
+    calculateMetrics(params.slug)
       
   },
 
@@ -247,28 +254,282 @@ export const actions = {
   }
 }
 
-async function calculateMetrics( workoutId: string ) {
+async function calculateMetrics( workoutId: string) {
 
-  const {data: exerciseData} = await supabase
+const exerciseData =  await calculateExerciseMetrics(workoutId)
+
+// First get a list of muscle groups worked in the workout
+const { data: muscleGroups } = await supabase
+  .from('workout_set')
+  .select(`
+    exercises!inner(
+      muscle_group
+    ),
+    workouts!inner(
+      mesocycle
+    )
+  `)
+  .eq('workout', workoutId)
+
+  // Then get a list of the most recent workouts that worked those muscle groups
+  const { data: workoutList } = await supabase
+    .from('recent_workout_id')
+    .select(`
+      muscle_group,
+      most_recent_workout_id
+    `)
+    .in('muscle_group', muscleGroups.map((group) => group.exercises.muscle_group))
+    .eq('mesocycle_id', muscleGroups[0].workouts.mesocycle)
+
+  // reformat the names of the properties to match the expected names
+  let workoutIds: {muscleGroup: string, workoutId: string}[] = [];
+  workoutList.forEach((workout) => {
+    workoutIds.push({muscleGroup: workout.muscle_group, workoutId: workout.most_recent_workout_id})
+  })
+
+  await calculateMuscleGroupMetrics(workoutId, workoutIds)
+
+  
+  
+  
+}
+
+async function calculateExerciseMetrics(workoutId: string) {
+  const { data: exerciseData } = await supabase
     .from('workout_set')
-    .select()
-    .eq("workout", workoutId)
+    .select(`
+      id,
+      exercises!inner(
+        id,
+        muscle_group,
+        weight_step
+      ),
+      reps,
+      target_reps,
+      target_weight,
+      weight,
+      workouts!inner(
+        id,
+        mesocycle
+      )
+    `)
+    .eq("workouts.id", workoutId)
+
+  const { data: currentWorkoutFeedback } = await supabase
+    .from('workout_feedback')
+    .select(`
+      question_type,
+      value,
+      exercise,
+      muscle_group,
+      workout
+    `)
+    .eq('workout', workoutId)
+    .in('question_type', ['ex_soreness', 'mg_difficulty'])
+
+  let exerciseMetrics: Map<string, ExerciseMetric> = new Map();
+  let userExerciseMetrics: { exercise: string; mesocycle: string; metric_name: string; value: number; workout: string} [] = []
+
+  if (exerciseData) {
+    // for each exercise, calculate the metrics for that exercise
+    for (const item of exerciseData) {
+      const exerciseId = item.exercises.id
+      const feedback = currentWorkoutFeedback?.filter(
+        obj => {
+          return obj.exercise === exerciseId
+        }
+      )
+      if (!exerciseMetrics[exerciseId]) {
+        exerciseMetrics[exerciseId] = {
+          totalReps: 0,
+          averageReps: 0,
+          averageWeight: 0,
+          totalWeight: 0,
+          repStdDev: 0,
+          weightStdDev: 0,
+          repDiff: 0,
+          weightDiff: 0,
+          performanceScore: 0,
+          exerciseSets: [],
+          feedback: feedback,
+          mesocycle: item.workouts.mesocycle,
+          num_sets: 0,
+          weight_step: item.exercises.weight_step
+        }
+      }
+      exerciseMetrics[exerciseId].exerciseSets.push(item)
+      exerciseMetrics[exerciseId].totalReps += item.reps
+      exerciseMetrics[exerciseId].totalWeight += item.weight
+      exerciseMetrics[exerciseId].num_sets++
+      exerciseMetrics[exerciseId].repDiff += item.target_reps - item.reps
+      exerciseMetrics[exerciseId].weightDiff += item.target_weight - item.weight
+
+    }
+
+    for (const exercise in exerciseMetrics) {
+      const exerciseObject = exerciseMetrics[exercise]
+      const { totalReps, totalWeight, exerciseSets: repsAndWeights } = exerciseObject
+
+      exerciseObject.averageReps = totalReps / repsAndWeights.length
+      exerciseObject.averageWeight = totalWeight / repsAndWeights.length
+
+      // Calculate standard deviation for reps and weight
+      const repSquares = repsAndWeights.reduce((acc, cur) => acc + Math.pow(cur.reps - exerciseObject.averageReps, 2), 0)
+      const weightSquares = repsAndWeights.reduce((acc, cur) => acc + Math.pow(cur.weight - exerciseObject.averageWeight, 2), 0)
+
+      exerciseObject.repStdDev = Math.sqrt(repSquares / (repsAndWeights.length - 1))
+      exerciseObject.weightStdDev = Math.sqrt(weightSquares / (repsAndWeights.length - 1))
+
+      // Calculate performance score
+      const repDiff = exerciseObject.repDiff / repsAndWeights.length
+      let weightDiff = exerciseObject.weightDiff / repsAndWeights.length
+      if (exerciseObject.weight_step !== 0) {
+        weightDiff = weightDiff / exerciseObject.weight_step
+      }
+      let exercisePerformance = (repDiff + weightDiff) / 2
+
+      if (exercisePerformance < 0) {
+        exerciseObject.performanceScore = 0
+      }
+      else if (exercisePerformance == 0) {
+        const workload = exerciseObject.feedback.find((entry) => entry.question_type === 'mg_difficulty')
+        if (workload.value < 2) {
+          exerciseObject.performanceScore = 1
+        }
+        else {
+          exerciseObject.performanceScore = 2
+        }
+      }
+      else {
+        exerciseObject.performanceScore = 3
+      }
+    }
+    exerciseMetrics.forEach((exercise, key) => {
+      
+      userExerciseMetrics.push({
+        exercise: key,
+        mesocycle: exercise.mesocycle,
+        metric_name: 'average_reps',
+        value: exercise.averageReps,
+        workout: workoutId
+      })
+      userExerciseMetrics.push({
+        exercise: key,
+        mesocycle: exercise.mesocycle,
+        metric_name: 'average_weight',
+        value: exercise.averageWeight,
+        workout: workoutId
+      })
+      userExerciseMetrics.push({
+        exercise: key,
+        mesocycle: exercise.mesocycle,
+        metric_name: 'rep_std_dev',
+        value: exercise.repStdDev,
+        workout: workoutId
+      })
+      userExerciseMetrics.push({
+        exercise: key,
+        mesocycle: exercise.mesocycle,
+        metric_name: 'weight_std_dev',
+        value: exercise.weightStdDev,
+        workout: workoutId
+      })
+      userExerciseMetrics.push({
+        exercise: key,
+        mesocycle: exercise.mesocycle,
+        metric_name: 'total_reps',
+        value: exercise.totalReps,
+        workout: workoutId
+      })
+      userExerciseMetrics.push({
+        exercise: key,
+        mesocycle: exercise.mesocycle,
+        metric_name: 'total_weight',
+        value: exercise.totalWeight,
+        workout: workoutId
+      })
+      userExerciseMetrics.push({
+        exercise: key,
+        mesocycle: exercise.mesocycle,
+        metric_name: 'performance_score',
+        value: exercise.performanceScore,
+        workout: workoutId
+      })
+    })
+
+
+    const { error } = await supabase
+      .from('user_exercise_metrics')
+      .insert(userExerciseMetrics)
+
+    if (error) {
+      console.log(error)
+    }
+
+  }
+
+}
+
+async function calculateMuscleGroupMetrics(currentWorkoutId: string, workoutIds:{muscleGroup:string, workoutId:string}[]) {
+  const {data: currentWorkoutFeedback} = await supabase
+    .from('workout_feedback')
+    .select(`
+      question_type,
+      value,
+      exercise,
+      muscle_group,
+      workout
+    `)
+    .eq('workout', currentWorkoutId)
+    .in('question_type', ['ex_soreness', 'mg_pump', 'mg_difficulty'])
+
+  let previousWorkoutFeedback: {question_type: string, value: number, exercise: string, muscle_group:string, workout: string}[] = [];
+
+  for (const workout of workoutIds) {
+    const {data: feedback} = await supabase
+      .from('workout_feedback')
+      .select(`
+        question_type,
+        value,
+        exercise,
+        muscle_group,
+        workout
+      `)
+      .eq('workout', workout.workoutId)
+      .eq('muscle_group', workout.muscleGroup)
+      .in('question_type', ['ex_soreness', 'mg_pump', 'mg_difficulty'])
+
+    if (feedback) {
+      previousWorkoutFeedback.push(...feedback)
+    }
+  }
+
+
+
+
 
 
 }
 
 function progression() {
 
+  // Determine the progression algorithm to use based on the user's performance and the exercise selection.
+
 }
 
 function setProgressionAlgorithm() {
+
+  // Apply the set progression algorithm to the workout adding sets as needed
 
 }
 
 function repProgressionAlgorithm() {
 
+  // Apply the rep progression algorithm to the workout adding reps as needed
+
 }
 
 function loadProgressionAlgorithm() {
+  // Apply the load progression algorithm to the workout adding weight as needed
 
 }
