@@ -2,6 +2,7 @@
 
 import { supabase } from "$lib/supabaseClient.js";
 import { redirect } from "@sveltejs/kit";
+import { multiply, sum, matrix } from "mathjs";
 
 interface ExerciseMetric {
   totalReps: number;
@@ -328,7 +329,9 @@ async function calculateMetrics(workoutId: string) {
       muscleGroups.map((group) => group.exercises.muscle_group),
     )
     .eq("mesocycle_id", muscleGroups[0].workouts.mesocycle);
-
+  if (workoutList.length === 0) {
+    return;
+  }
   // reformat the names of the properties to match the expected names
   let workoutIds: { muscleGroup: string; workoutId: string }[] = [];
   workoutList.forEach((workout) => {
@@ -525,10 +528,10 @@ async function calculateExerciseMetrics(workoutId: string) {
       });
     });
     //const { error } = await supabase
-    //  .from('user_exercise_metrics')
-    //  .insert(userExerciseMetrics)
+    //  .from("user_exercise_metrics")
+    //  .insert(userExerciseMetrics);
     //if (error) {
-    //  console.log(error)
+    //  console.log(error);
     //}
   }
 }
@@ -559,7 +562,44 @@ async function calculateMuscleGroupMetrics(
     workout: string;
   }[] = [];
 
+  let exercises: {
+    id: string;
+    workout: string;
+    muscle_group: string;
+  }[] = [];
+
   for (const workout of workoutIds) {
+    const { data: exerciseData } = await supabase
+      .from("workout_set")
+      .select(
+        `
+        workouts!inner(
+          id,
+          mesocycle
+        ),
+        exercises!inner(
+          id,
+          muscle_group
+      )
+      `,
+      )
+      .eq("workout", workout.workoutId)
+      .eq("exercises.muscle_group", workout.muscleGroup);
+
+    if (exerciseData) {
+      exerciseData.forEach((exercise) => {
+        if (!exercises.find((obj) => obj.id === exercise.exercises.id)) {
+          exercises.push({
+            id: exercise.exercises.id,
+            workout: exercise.workouts.id,
+            muscle_group: workout.muscleGroup,
+          });
+        }
+      });
+    }
+
+    const relevantExercises = exercises.map((exercise) => exercise.id);
+
     const { data: feedback } = await supabase
       .from("workout_feedback")
       .select(
@@ -573,26 +613,19 @@ async function calculateMuscleGroupMetrics(
       )
       .eq("workout", workout.workoutId)
       .eq("muscle_group", workout.muscleGroup)
-      .in("question_type", ["mg_soreness", "mg_pump", "mg_difficulty"]);
+      .in("exercise", relevantExercises)
+      .in("question_type", ["mg_soreness", "mg_pump", "ex_mmc"]);
 
     if (feedback) {
       previousWorkoutFeedback.push(...feedback);
     }
   }
-  console.log(previousWorkoutFeedback);
 
-  const exercises: string[] = [
-    ...new Set(previousWorkoutFeedback.map((feedback) => feedback.exercise)),
-  ];
   const muscleGroups: string[] = [
     ...new Set(
       previousWorkoutFeedback.map((feedback) => feedback.muscle_group),
     ),
   ];
-  let exerciseMetrics: Map<
-    string,
-    { rawStimulusMagnitude: number; fatigueScore: number }
-  > = new Map();
   let muscleGroupMetrics: Map<
     string,
     {
@@ -609,48 +642,35 @@ async function calculateMuscleGroupMetrics(
     workout: string;
   }[] = [];
 
+  let exerciseMetrics: Map<
+    string,
+    { muscleGroup: string; rawStimulusMagnitude: number; fatigueScore: number }
+  > = await exerciseSFR(exercises, previousWorkoutFeedback);
+
   // calculate exercise Raw Stimulus Magnitude, Fatigue Score, and Stimulus to Fatigue Ratio -> requires previous workout feedback and previous workout metrics (specifically the performance score for the exercise following a given exercise)
-  exercises.forEach(async (exercise) => {
-    const exerciseFeedback = previousWorkoutFeedback.filter(
-      (feedback) => feedback.exercise === exercise,
-    );
-    // calculate the raw stimulus magnitude for the exercise
-    let rawStimulusMagnitude = 0;
-    exerciseFeedback.forEach((feedback) => {
-      if (
-        ["mg_pump", "mg_difficulty", "mg_soreness"].includes(
-          feedback.question_type,
-        )
-      ) {
-        rawStimulusMagnitude += feedback.value;
-      }
-    });
 
-    // calculate the fatigue score for the exercise
-    let fatigueScore = 0;
-    exerciseFeedback.forEach((feedback) => {
-      if (["ex_soreness", "mg_difficulty"].includes(feedback.question_type)) {
-        fatigueScore += feedback.value;
-      }
-    });
-
-    const { data: exercisePerformanceData } = await supabase
-      .from("user_exercise_metrics")
-      .select(`*`)
-      .eq("workout", exerciseFeedback[0].workout)
-      .eq("exercise", exercise)
-      .eq("metric_name", "performance_score")
-      .limit(1);
+  exerciseMetrics.forEach((exercise, key) => {
+    const {} = supabase.from("user_exercise_metrics").insert([
+      {
+        exercise: key,
+        workout: exerciseData.find((obj) => obj.exercises.id === key).workout
+          .id,
+        mesocycle: exerciseData.find((obj) => obj.exercises.id === key).workouts
+          .mesocycle,
+        metric_name: "raw_stimulus_magnitude",
+        value: exercise.rawStimulusMagnitude,
+      },
+      {
+        exercise: key,
+        workout: exerciseData.find((obj) => obj.exercises.id === key).workout
+          .id,
+        mesocycle: exerciseData.find((obj) => obj.exercises.id === key).workouts
+          .mesocycle,
+        metric_name: "fatigue_score",
+        value: exercise.fatigueScore,
+      },
+    ]);
   });
-
-  muscleGroups.forEach(async (muscleGroup) => {
-    const muscleGroupFeedback = previousWorkoutFeedback.filter(
-      (feedback) => feedback.muscle_group === muscleGroup,
-    );
-  });
-
-  // calculate muscle group Raw Stimulus Magnitude and Fatigue Score -> requires previous workout feedback and previous workout metrics (specifically the performance score for the exercise following a given exercise)
-  // calculate
 }
 
 async function progression(workoutId: string) {
@@ -695,12 +715,118 @@ async function rpMevEstimator(workoutId: string) {
 
 function setProgressionAlgorithm() {
   // Apply the set progression algorithm to the workout adding sets as needed
+  // Inputs: mg_soreness feedback for the muscle group, performance score for the exercise.
+  // Outputs: number of sets to add or remove from the workout
 }
 
 function repProgressionAlgorithm() {
   // Apply the rep progression algorithm to the workout adding reps as needed
+  // Inputs: mg_soreness feedback for the muscle group, performance score for the exercise.
+  // Outputs: number of reps to add or remove from the workout
 }
 
 function loadProgressionAlgorithm() {
   // Apply the load progression algorithm to the workout adding weight as needed
+  // Inputs: mg_soreness feedback for the muscle group, performance score for the exercise.
+  // Outputs: amount of weight to add or remove from the workout
+}
+
+async function exerciseSFR(exercises, previousWorkoutFeedback) {
+  let exerciseMetrics = new Map();
+
+  for (const exercise of exercises) {
+    const exerciseFeedback = previousWorkoutFeedback.filter(
+      (feedback) => feedback.exercise === exercise.id,
+    );
+
+    // calculate the raw stimulus magnitude for the exercise
+    let rawStimulusMagnitude = 0;
+    exerciseFeedback.forEach((feedback) => {
+      if (
+        ["mg_pump", "ex_mmc", "mg_soreness"].includes(feedback.question_type)
+      ) {
+        rawStimulusMagnitude += feedback.value;
+      }
+    });
+
+    // calculate the fatigue score for the exercise
+    let fatigueScore = 0;
+    exerciseFeedback.forEach((feedback) => {
+      if (["ex_soreness", "mg_difficulty"].includes(feedback.question_type)) {
+        fatigueScore += feedback.value;
+      }
+    });
+
+    // Get the performance score for the following exercise
+    const { data: exerciseData } = await supabase
+      .from("workout_set")
+      .select(`id, exercises!inner(id, muscle_group)`)
+      .eq("workout", exercise.workout)
+      .order("id", { ascending: true });
+
+    const exerciseOrder = {};
+    let index = 0;
+
+    for (const item of exerciseData) {
+      const exerciseId = item.exercises.id;
+      const muscleGroup = item.exercises.muscle_group;
+
+      if (!exerciseOrder[exerciseId]) {
+        exerciseOrder[exerciseId] = {
+          muscle_group: muscleGroup,
+          index: index,
+        };
+        index++;
+      }
+    }
+
+    let exerciseWeights: Array<Number> = Array(
+      Object.keys(exerciseOrder).length,
+    ).fill(0);
+    let exerciseIndex = exerciseOrder[exercise.id].index;
+
+    for (let i = 0; i < exerciseWeights.length; i++) {
+      if (
+        i > exerciseIndex &&
+        exercise.muscle_group != Object.keys(exerciseOrder)[i].muscle_group
+      ) {
+        exerciseWeights[i] = 1;
+      } else if (
+        i > exerciseIndex &&
+        exercise.muscle_group == Object.keys(exerciseOrder)[i].muscle_group
+      ) {
+        exerciseWeights[i] = 0.5;
+      }
+    }
+
+    // Get performance data for the workout
+    const { data: exercisePerformanceData } = await supabase
+      .from("user_exercise_metrics")
+      .select(`value`)
+      .eq("workout", exerciseFeedback[0].workout)
+      .eq("metric_name", "performance_score");
+
+    let performanceScore = 0;
+    if (exercisePerformanceData) {
+      let exercisePerformance: Array<number> = exercisePerformanceData.map(
+        ({ value }) => {
+          return value;
+        },
+      );
+
+      performanceScore = sum(
+        multiply(matrix(exercisePerformance), matrix(exerciseWeights)),
+      );
+    }
+
+    fatigueScore += performanceScore;
+
+    exerciseMetrics.set(exercise.id, {
+      muscleGroup: exercise.muscle_group,
+      rawStimulusMagnitude: rawStimulusMagnitude,
+      fatigueScore: fatigueScore,
+    });
+  }
+
+  return exerciseMetrics;
 }

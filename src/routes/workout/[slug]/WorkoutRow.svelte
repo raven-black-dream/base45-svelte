@@ -25,6 +25,7 @@
         }
         if (i == len) {
             questions.push("How sore did your joints get doing " + set.exercises.exercise_name + "?");
+            questions.push("How much of a burn did you feel in your " + set.exercises.muscle_group + "doing " + set.exercises.exercise_name + "?")
         }
 
         if (set.is_last){
@@ -67,6 +68,7 @@
                         const typeOjb = {
                             "after": "mg_soreness",
                             "joints": "ex_soreness",
+                            "burn": "ex_mmc",
                             "pump": "mg_pump",
                             "hard": "mg_difficulty"
                         }
@@ -76,6 +78,9 @@
                         }
                         else if (question.includes("joints")){
                             key = typeOjb["joints"];
+                        }
+                        else if (question.includes("burn")){
+                            key = typeOjb["burn"];
                         }
                         else if (question.includes("pump")){
                             key = typeOjb["pump"];
