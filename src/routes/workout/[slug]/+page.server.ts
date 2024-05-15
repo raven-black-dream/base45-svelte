@@ -527,12 +527,12 @@ async function calculateExerciseMetrics(workoutId: string) {
         workout: workoutId,
       });
     });
-    //const { error } = await supabase
-    //  .from("user_exercise_metrics")
-    //  .insert(userExerciseMetrics);
-    //if (error) {
-    //  console.log(error);
-    //}
+    const { error } = await supabase
+      .from("user_exercise_metrics")
+      .insert(userExerciseMetrics);
+    if (error) {
+      console.log(error);
+    }
   }
 }
 
