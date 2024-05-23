@@ -6,7 +6,7 @@ export const load = async ({ locals: { supabase, getSession }, params }) => {
   const session = await getSession();
 
   if (!session) {
-    throw redirect(303, "/");
+    redirect(303, "/");
   }
 
   const { data: programs } = await supabase
@@ -170,7 +170,7 @@ export const actions = {
 
     const session = await getSession();
     if (!session) {
-      throw redirect(303, "/");
+      redirect(303, "/");
     }
 
     let form = [];

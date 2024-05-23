@@ -6,7 +6,7 @@ export const load = async ({ locals: { supabase, getSession } }) => {
   const session = await getSession()
 
   if (!session) {
-    throw redirect(303, '/')
+    redirect(303, '/');
   }
 
   console.log("loading")
@@ -62,7 +62,7 @@ export const actions = {
     const session = await getSession()
     if (session) {
       await supabase.auth.signOut()
-      throw redirect(303, '/')
+      redirect(303, '/');
     }
   },
 }

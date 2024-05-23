@@ -25,7 +25,7 @@ export const load = async ({ locals: { supabase, getSession }, params }) => {
   const session = await getSession();
 
   if (!session) {
-    throw redirect(303, "/");
+    redirect(303, "/");
   }
 
   // Pull all of the information for the day's workout
@@ -199,7 +199,7 @@ export const actions = {
   complete: async ({ locals: { supabase, getSession }, params }) => {
     const session = await getSession();
     if (!session) {
-      throw redirect(303, "/");
+      redirect(303, "/");
     }
 
     // mark the workout complete and set the date of the workout to the date it was completed (today)
@@ -217,7 +217,7 @@ export const actions = {
   recordSet: async ({ locals: { supabase, getSession }, params, request }) => {
     const session = await getSession();
     if (!session) {
-      throw redirect(303, "/");
+      redirect(303, "/");
     }
     const data = await request.formData();
 
@@ -239,7 +239,7 @@ export const actions = {
   feedback: async ({ locals: { supabase, getSession }, params, request }) => {
     const session = await getSession();
     if (!session) {
-      throw redirect(303, "/");
+      redirect(303, "/");
     }
     const data = await request.formData();
 
