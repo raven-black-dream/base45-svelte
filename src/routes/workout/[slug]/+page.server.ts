@@ -649,31 +649,35 @@ async function calculateMuscleGroupMetrics(
 
   // calculate exercise Raw Stimulus Magnitude, Fatigue Score, and Stimulus to Fatigue Ratio -> requires previous workout feedback and previous workout metrics (specifically the performance score for the exercise following a given exercise)
 
-  exerciseMetrics.forEach((exercise, key) => {
-    const {} = supabase.from("user_exercise_metrics").insert([
+  for (const [key, exercise] of exerciseMetrics.entries()) {
+    const workoutId = exerciseData.find((obj) => obj.exercises.id === key)
+      .workout.id;
+    const mesocycle = exerciseData.find((obj) => obj.exercises.id === key)
+      .workouts.mesocycle;
+
+    const insertData = [
       {
         exercise: key,
-        workout: exerciseData.find((obj) => obj.exercises.id === key).workout
-          .id,
-        mesocycle: exerciseData.find((obj) => obj.exercises.id === key).workouts
-          .mesocycle,
+        workout: workoutId,
+        mesocycle,
         metric_name: "raw_stimulus_magnitude",
         value: exercise.rawStimulusMagnitude,
       },
       {
         exercise: key,
-        workout: exerciseData.find((obj) => obj.exercises.id === key).workout
-          .id,
-        mesocycle: exerciseData.find((obj) => obj.exercises.id === key).workouts
-          .mesocycle,
+        workout: workoutId,
+        mesocycle,
         metric_name: "fatigue_score",
         value: exercise.fatigueScore,
       },
-    ]);
-  });
+    ];
+
+    // Use await to wait for the insert operation
+    await supabase.from("user_exercise_metrics").insert(insertData);
+  }
 }
 
-async function progression(workoutId: string) {
+async function progression(workoutId: string, muscleGroup: string) {
   // Determine the progression algorithm to use based on the user's performance and the exercise selection.
   const { data: workoutData } = await supabase
     .from("workouts")
@@ -696,15 +700,22 @@ async function progression(workoutId: string) {
     Math.abs(workoutDate.getTime() - workout.mesocycle.start_date.getTime()) /
       (1000 * 60 * 60 * 24 * 7),
   );
+
+  const { data: metrics } = await supabase
+    .from("user_exercise_metrics")
+    .select()
+    .eq("workout", workoutId)
+    .eq("metric_name", "performance_score");
   if (currentWeek === 0) {
     // If the workout is in the first week of the mesocycle, use the RP MEV Estimator to determine the number of sets to add or remove from the next week's workout.
-    await rpMevEstimator(workoutId);
+    await rpMevEstimator(metrics);
   } else {
     // Otherwise deternine which combination of set, rep, and load progression algorithms to use.
+    await setProgressionAlgorithm(metrics);
   }
 }
 
-async function rpMevEstimator(workoutId: string) {
+async function rpMevEstimator(data) {
   // Estimate the MEV for the first week of the mesocycle. Use that to add or remove sets from the next week's workouts.
   // First Step: Get the muscle groups worked in the workout
   // Second Step: Get the workout ids for the most recent workouts that worked those muscle groups
@@ -713,19 +724,19 @@ async function rpMevEstimator(workoutId: string) {
   // Fifth Step: Apply heuristics to determine the number of sets to add or remove from the next week's workout
 }
 
-function setProgressionAlgorithm() {
+function setProgressionAlgorithm(data) {
   // Apply the set progression algorithm to the workout adding sets as needed
   // Inputs: mg_soreness feedback for the muscle group, performance score for the exercise.
   // Outputs: number of sets to add or remove from the workout
 }
 
-function repProgressionAlgorithm() {
+function repProgressionAlgorithm(data) {
   // Apply the rep progression algorithm to the workout adding reps as needed
   // Inputs: mg_soreness feedback for the muscle group, performance score for the exercise.
   // Outputs: number of reps to add or remove from the workout
 }
 
-function loadProgressionAlgorithm() {
+function loadProgressionAlgorithm(data) {
   // Apply the load progression algorithm to the workout adding weight as needed
   // Inputs: mg_soreness feedback for the muscle group, performance score for the exercise.
   // Outputs: amount of weight to add or remove from the workout
