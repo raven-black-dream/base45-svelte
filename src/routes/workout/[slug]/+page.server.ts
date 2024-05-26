@@ -212,6 +212,7 @@ export const actions = {
       .eq("id", params.slug);
 
     calculateMetrics(params.slug);
+    progression(params.slug);
   },
 
   recordSet: async ({ locals: { supabase, getSession }, params, request }) => {
@@ -546,7 +547,7 @@ async function calculateMuscleGroupMetrics(
       `
       question_type,
       value,
-      exercise,
+      exercise,      console.log("exerciseData is", exerciseData);
       muscle_group,
       workout
     `,
@@ -566,6 +567,7 @@ async function calculateMuscleGroupMetrics(
     id: string;
     workout: string;
     muscle_group: string;
+    mesocycle: string;
   }[] = [];
 
   for (const workout of workoutIds) {
@@ -593,6 +595,7 @@ async function calculateMuscleGroupMetrics(
             id: exercise.exercises.id,
             workout: exercise.workouts.id,
             muscle_group: workout.muscleGroup,
+            mesocycle: exercise.workouts.mesocycle,
           });
         }
       });
@@ -650,10 +653,8 @@ async function calculateMuscleGroupMetrics(
   // calculate exercise Raw Stimulus Magnitude, Fatigue Score, and Stimulus to Fatigue Ratio -> requires previous workout feedback and previous workout metrics (specifically the performance score for the exercise following a given exercise)
 
   for (const [key, exercise] of exerciseMetrics.entries()) {
-    const workoutId = exerciseData.find((obj) => obj.exercises.id === key)
-      .workout.id;
-    const mesocycle = exerciseData.find((obj) => obj.exercises.id === key)
-      .workouts.mesocycle;
+    const workoutId = exercises.find((obj) => obj.id === key).workout;
+    const mesocycle = exercises.find((obj) => obj.id === key).mesocycle;
 
     const insertData = [
       {
@@ -677,7 +678,7 @@ async function calculateMuscleGroupMetrics(
   }
 }
 
-async function progression(workoutId: string, muscleGroup: string) {
+async function progression(workoutId: string) {
   // Determine the progression algorithm to use based on the user's performance and the exercise selection.
   const { data: workoutData } = await supabase
     .from("workouts")
@@ -706,20 +707,36 @@ async function progression(workoutId: string, muscleGroup: string) {
     .select()
     .eq("workout", workoutId)
     .eq("metric_name", "performance_score");
+
+  console.log(metrics);
+
+  const { data: workoutState } = await supabase
+    .from("workouts")
+    .select("deload")
+    .eq("id", workoutId)
+    .single();
+
   if (currentWeek === 0) {
     // If the workout is in the first week of the mesocycle, use the RP MEV Estimator to determine the number of sets to add or remove from the next week's workout.
-    await rpMevEstimator(metrics);
+    // await rpMevEstimator(metrics);
   } else {
     // Otherwise deternine which combination of set, rep, and load progression algorithms to use.
-    await setProgressionAlgorithm(metrics);
+    // if (workoutState.deload) {
+    // Do not apply set progression algorithm (keep the same number of sets as the first workout of the mesocycle)
+    // Reps / 2
+    // repProgressionAlgorithm(metrics, true);
+    // If workout is late in the week, divide the weight by 2
+    // loadProgressionAlgorithm(metrics, true);
+    // }  else {
+    // Apply the set progression algorithm
+    //setProgressionAlgorithm(metrics);
+    //}
+    // await setProgressionAlgorithm(metrics);
   }
 }
 
 async function rpMevEstimator(data) {
   // Estimate the MEV for the first week of the mesocycle. Use that to add or remove sets from the next week's workouts.
-  // First Step: Get the muscle groups worked in the workout
-  // Second Step: Get the workout ids for the most recent workouts that worked those muscle groups
-  // Third Step: Get the workout feedback for those workouts
   // Fourth Step: Add the feedback values together for each muscle group
   // Fifth Step: Apply heuristics to determine the number of sets to add or remove from the next week's workout
 }
@@ -730,13 +747,13 @@ function setProgressionAlgorithm(data) {
   // Outputs: number of sets to add or remove from the workout
 }
 
-function repProgressionAlgorithm(data) {
+function repProgressionAlgorithm(data, deload = false) {
   // Apply the rep progression algorithm to the workout adding reps as needed
   // Inputs: mg_soreness feedback for the muscle group, performance score for the exercise.
   // Outputs: number of reps to add or remove from the workout
 }
 
-function loadProgressionAlgorithm(data) {
+function loadProgressionAlgorithm(data, deload = false) {
   // Apply the load progression algorithm to the workout adding weight as needed
   // Inputs: mg_soreness feedback for the muscle group, performance score for the exercise.
   // Outputs: amount of weight to add or remove from the workout
