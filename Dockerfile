@@ -1,28 +1,21 @@
-#Dockerfile
+FROM node:18 AS build
 
-# Use this image as the platform to build the app
-FROM node:22-alpine AS base45
-
-# A small line inside the image to show who made it
-LABEL Developers="Katrina Strickland & Evan Harley"
-
-# The WORKDIR instruction sets the working directory for everything that will happen next
 WORKDIR /app
 
-# Copy all local files into the image
+COPY package*.json .
+
 COPY . .
-
-# Clean install all node modules
-RUN npm ci
-
-# Build SvelteKit app
 RUN npm run build
+RUN npm prune --production
 
-# Delete source code files that were used to build the app that are no longer needed
-RUN rm -rf src/ static/ emailTemplates/ docker-compose.yml
+FROM node:18 AS base45
 
-# The USER instruction sets the user name to use as the default user for the remainder of the current stage
-USER node:node
+ENV NODE_ENV=production
 
-# This is the command that will be run inside the image when you tell Docker to start the container
-CMD ["node","build/index.ts"]
+WORKDIR /app
+COPY --from=build /app/build ./build
+COPY --from=build /app/package.json ./package.json
+COPY --from=build /app/node_modules ./node_modules
+COPY --from=build /app/prisma ./prisma
+RUN ulimit -c unlimited
+ENTRYPOINT ["node", "build"]

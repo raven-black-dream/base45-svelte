@@ -1,5 +1,3 @@
-version: "3"
-
 services:
   base45:
     container_name: base45
