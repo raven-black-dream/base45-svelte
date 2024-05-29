@@ -8,7 +8,7 @@ COPY . .
 RUN npm run build
 RUN npm prune --production
 
-FROM node:18 AS base45
+FROM node:22 AS base45
 
 ENV NODE_ENV=production
 
