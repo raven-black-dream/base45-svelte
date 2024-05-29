@@ -1,7 +1,7 @@
 #Dockerfile
 
 # Use this image as the platform to build the app
-FROM node:18-alpine AS external-website
+FROM node:22-alpine AS base45
 
 # A small line inside the image to show who made it
 LABEL Developers="Katrina Strickland & Evan Harley"
@@ -25,4 +25,4 @@ RUN rm -rf src/ static/ emailTemplates/ docker-compose.yml
 USER node:node
 
 # This is the command that will be run inside the image when you tell Docker to start the container
-CMD ["node","build/index.js"]
+CMD ["node","build/index.ts"]

@@ -206,8 +206,8 @@ export const actions = {
     const { error } = await supabase
       .from("workouts")
       .update({
-        //date: new Date(Date.now()),
-        //complete: true
+        date: new Date(Date.now()),
+        complete: true,
       })
       .eq("id", params.slug);
 
@@ -709,12 +709,6 @@ async function progression(workoutId: string) {
     .eq("metric_name", "performance_score");
 
   console.log(metrics);
-
-  const { data: workoutState } = await supabase
-    .from("workouts")
-    .select("deload")
-    .eq("id", workoutId)
-    .single();
 
   if (currentWeek === 0) {
     // If the workout is in the first week of the mesocycle, use the RP MEV Estimator to determine the number of sets to add or remove from the next week's workout.
