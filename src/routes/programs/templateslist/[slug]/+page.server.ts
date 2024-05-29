@@ -63,6 +63,8 @@ async function createWorkouts(
   }[] = [];
   let current = new Date(start_date.getTime());
 
+  console.log("Days of the week passed in", day_of_weeks);
+
   const timeDifference = Math.abs(end_date.getTime() - start_date.getTime());
 
   while (current.getTime() < end_date.getTime()) {
@@ -86,6 +88,7 @@ async function createWorkouts(
       });
     }
     current.setDate(current.getDate() + 1);
+    console.log(workouts);
   }
 
   const {} = await conn.from("workouts").insert(workouts);
