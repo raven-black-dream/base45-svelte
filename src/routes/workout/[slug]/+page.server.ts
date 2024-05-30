@@ -212,7 +212,7 @@ export const actions = {
       .eq("id", params.slug);
 
     calculateMetrics(params.slug);
-    progression(params.slug);
+    // progression(params.slug);
   },
 
   recordSet: async ({ locals: { supabase, getSession }, params, request }) => {
