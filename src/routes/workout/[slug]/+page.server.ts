@@ -212,7 +212,13 @@ export const actions = {
       .eq("id", params.slug);
 
     calculateMetrics(params.slug);
-    // progression(params.slug);
+
+    const checkProgression: [doProgression: boolean, muscleGroups: string[]] =
+      await shouldDoProgression(params.slug);
+    console.log(checkProgression);
+    if (checkProgression.doProgression) {
+      progression(params.slug, muscleGroups);
+    }
   },
 
   recordSet: async ({ locals: { supabase, getSession }, params, request }) => {
@@ -343,6 +349,34 @@ async function calculateMetrics(workoutId: string) {
   });
 
   await calculateMuscleGroupMetrics(workoutId, workoutIds);
+}
+
+async function getMuscleGroups(workoutId: string) {
+  const { data } = await supabase
+    .from("workout_set")
+    .select(
+      `
+    exercises!inner(
+      muscle_group
+    ),
+    workouts!inner(
+      mesocycle
+    )
+  `,
+    )
+    .eq("workout", workoutId);
+
+  if (!data) {
+    return [];
+  }
+
+  // Use Set to remove duplicates
+  const uniqueMuscleGroups = new Set(
+    data.map((group) => group.exercises.muscle_group),
+  );
+
+  // Convert the Set to an array
+  return Array.from(uniqueMuscleGroups);
 }
 
 async function calculateExerciseMetrics(workoutId: string) {
@@ -680,27 +714,7 @@ async function calculateMuscleGroupMetrics(
 
 async function progression(workoutId: string) {
   // Determine the progression algorithm to use based on the user's performance and the exercise selection.
-  const { data: workoutData } = await supabase
-    .from("workouts")
-    .select(
-      `
-    id,
-    mesocycle(
-      id,
-      start_date,
-    ),
-    date    
-    `,
-    )
-    .eq("id", workoutId);
-
-  // Determine which week of the mesocycle the workout is in.
-  const workout = workoutData[0];
-  const workoutDate = new Date(workout.date);
-  let currentWeek = Math.floor(
-    Math.abs(workoutDate.getTime() - workout.mesocycle.start_date.getTime()) /
-      (1000 * 60 * 60 * 24 * 7),
-  );
+  let currentWeek = await getWeekNumber(workoutId);
 
   const { data: metrics } = await supabase
     .from("user_exercise_metrics")
@@ -727,6 +741,30 @@ async function progression(workoutId: string) {
     //}
     // await setProgressionAlgorithm(metrics);
   }
+}
+
+async function getWeekNumber(workoutId: string) {
+  const { data: workoutData } = await supabase
+    .from("workouts")
+    .select(
+      `
+      date,
+      mesocycle(
+        start_date
+      )
+    `,
+    )
+    .eq("id", workoutId);
+
+  // Determine which week of the mesocycle the workout is in.
+  const workout = workoutData[0];
+  const workoutDate = new Date(workout.date);
+  const startDate = new Date(workout.mesocycle.start_date);
+  let currentWeek = Math.floor(
+    Math.abs(workoutDate.getTime() - startDate.getTime()) /
+      (1000 * 60 * 60 * 24 * 7),
+  );
+  return currentWeek;
 }
 
 async function rpMevEstimator(data) {
@@ -851,4 +889,98 @@ async function exerciseSFR(exercises, previousWorkoutFeedback) {
   }
 
   return exerciseMetrics;
+}
+
+async function shouldDoProgression(workoutId: string) {
+  const weekNumber: number = await getWeekNumber(workoutId);
+  const muscleGroups: string[] = await getMuscleGroups(workoutId);
+  let progressMuscleGroups: string[] = [];
+  let result: boolean = false;
+
+  for (const muscleGroup of muscleGroups) {
+    const deload: boolean = await checkDeload(workoutId, muscleGroup);
+    if (weekNumber == 0) {
+      let testResult: boolean = await checkNextWorkoutWeek(
+        workoutId,
+        muscleGroup,
+      );
+      if (testResult) {
+        progressMuscleGroups.push(muscleGroup);
+      }
+    } else if (!deload) {
+      progressMuscleGroups.push(muscleGroup);
+    }
+  }
+  if (progressMuscleGroups.length > 0) {
+    result = true;
+  } else {
+    result = false;
+  }
+  return [result, progressMuscleGroups];
+}
+
+async function checkDeload(workoutId: string, muscleGroup: string) {
+  const mesoId = await getMesoId(workoutId);
+  const nextWorkoutId: string = await getNextWorkoutId(mesoId, muscleGroup);
+
+  const { data: deload } = await supabase
+    .from("workouts")
+    .select(`deload`)
+    .eq("id", nextWorkoutId)
+    .single();
+
+  if (!deload) {
+    return true;
+  }
+
+  return deload.deload;
+}
+
+async function getMesoId(workoutId: string) {
+  const { data: mesoId } = await supabase
+    .from("workouts")
+    .select(`mesocycle`)
+    .eq("id", workoutId)
+    .single();
+
+  return mesoId.mesocycle;
+}
+
+async function checkNextWorkoutWeek(workoutId: string, muscleGroup: string) {
+  const mesoId = await getMesoId(workoutId);
+
+  const nextWorkoutId: string = await getNextWorkoutId(mesoId, muscleGroup);
+
+  if (nextWorkoutId) {
+    const weekNumber = await getWeekNumber(nextWorkoutId);
+    if (weekNumber > 0) {
+      return true;
+    }
+  }
+  return false;
+}
+async function getNextWorkoutId(mesoId: string, muscleGroup: string) {
+  const today = new Date().toISOString();
+  const { data: workoutData } = await supabase
+    .from("workouts")
+    .select(
+      `
+    id,
+    date,
+    mesocycle,
+    workout_set!inner(
+      exercises!inner(
+        muscle_group
+      )
+    )
+
+      `,
+    )
+    .gt("date", today)
+    .eq("mesocycle", mesoId)
+    .eq("workout_set.exercises.muscle_group", muscleGroup)
+    .order("date", { ascending: true })
+    .limit(1);
+
+  return workoutData[0].id;
 }
