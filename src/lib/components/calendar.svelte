@@ -41,8 +41,8 @@
 	export let days = [];
 	export let items = [];
   
-  $:console.log('items: %d', items);
-  $:console.log(items);
+  // $:console.log('items: %d', items);
+  // $:console.log(items);
 
   let dispatch = createEventDispatcher();
 	

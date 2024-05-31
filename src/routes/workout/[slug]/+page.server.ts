@@ -2,7 +2,7 @@
 
 import { supabase } from "$lib/supabaseClient.js";
 import { redirect } from "@sveltejs/kit";
-import { multiply, sum, matrix } from "mathjs";
+import { multiply, sum, matrix, e, max } from "mathjs";
 
 interface ExerciseMetric {
   totalReps: number;
@@ -179,7 +179,6 @@ export const load = async ({ locals: { supabase, getSession }, params }) => {
     if (!muscleGroupRecovery.has(muscleGroup)) {
       muscleGroupRecovery.set(muscleGroup, { completed: false, workout: null });
     }
-
     const recoveryEntry = recovery?.find(
       (entry) => entry.muscle_group === muscleGroup,
     );
@@ -206,18 +205,18 @@ export const actions = {
     const { error } = await supabase
       .from("workouts")
       .update({
-        date: new Date(Date.now()),
-        complete: true,
+        //  date: new Date(Date.now()),
+        //  complete: true,
       })
       .eq("id", params.slug);
 
-    calculateMetrics(params.slug);
+    // calculateMetrics(params.slug);
 
     const checkProgression: [doProgression: boolean, muscleGroups: string[]] =
       await shouldDoProgression(params.slug);
     console.log(checkProgression);
-    if (checkProgression.doProgression) {
-      progression(params.slug, muscleGroups);
+    if (checkProgression[0]) {
+      progression(params.slug, checkProgression[1]);
     }
   },
 
@@ -681,7 +680,12 @@ async function calculateMuscleGroupMetrics(
 
   let exerciseMetrics: Map<
     string,
-    { muscleGroup: string; rawStimulusMagnitude: number; fatigueScore: number }
+    {
+      muscleGroup: string;
+      rawStimulusMagnitude: number;
+      fatigueScore: number;
+      stimulusToFatigueRatio: number;
+    }
   > = await exerciseSFR(exercises, previousWorkoutFeedback);
 
   // calculate exercise Raw Stimulus Magnitude, Fatigue Score, and Stimulus to Fatigue Ratio -> requires previous workout feedback and previous workout metrics (specifically the performance score for the exercise following a given exercise)
@@ -705,6 +709,13 @@ async function calculateMuscleGroupMetrics(
         metric_name: "fatigue_score",
         value: exercise.fatigueScore,
       },
+      {
+        exercise: key,
+        workout: workoutId,
+        mesocycle,
+        metric_name: "stimulus_to_fatigue_ratio",
+        value: exercise.stimulusToFatigueRatio,
+      },
     ];
 
     // Use await to wait for the insert operation
@@ -712,34 +723,95 @@ async function calculateMuscleGroupMetrics(
   }
 }
 
-async function progression(workoutId: string) {
+async function progression(workoutId: string, muscleGroups: string[]) {
   // Determine the progression algorithm to use based on the user's performance and the exercise selection.
+
   let currentWeek = await getWeekNumber(workoutId);
+  let mesoId = await getMesoId(workoutId);
 
-  const { data: metrics } = await supabase
-    .from("user_exercise_metrics")
-    .select()
-    .eq("workout", workoutId)
-    .eq("metric_name", "performance_score");
+  for (const muscleGroup of muscleGroups) {
+    let nextWorkoutId = await getNextWorkoutId(mesoId, muscleGroup);
+    let previousWorkoutId = await getPreviousWorkoutId(workoutId, muscleGroup);
 
-  console.log(metrics);
+    if (currentWeek === 0) {
+      // If the workout is in the first week of the mesocycle, use the RP MEV Estimator to determine the number of sets to add or remove from the next week's workout.
+      const { data: rsm } = await supabase
+        .from("user_muscle_group_metrics")
+        .select(
+          `
+          muscle_group,
+          metric_name,
+          average
+        `,
+        )
+        .eq("muscle_group", muscleGroup)
+        .eq("metric_name", "raw_stimulus_magnitude")
+        .eq("mesocycle", mesoId);
 
-  if (currentWeek === 0) {
-    // If the workout is in the first week of the mesocycle, use the RP MEV Estimator to determine the number of sets to add or remove from the next week's workout.
-    // await rpMevEstimator(metrics);
-  } else {
-    // Otherwise deternine which combination of set, rep, and load progression algorithms to use.
-    // if (workoutState.deload) {
-    // Do not apply set progression algorithm (keep the same number of sets as the first workout of the mesocycle)
-    // Reps / 2
-    // repProgressionAlgorithm(metrics, true);
-    // If workout is late in the week, divide the weight by 2
-    // loadProgressionAlgorithm(metrics, true);
-    // }  else {
-    // Apply the set progression algorithm
-    //setProgressionAlgorithm(metrics);
-    //}
-    // await setProgressionAlgorithm(metrics);
+      let sets = await rpMevEstimator(rsm);
+
+      // Get the exercises for the muscleGroup next workout
+      const { data: exerciseData } = await supabase
+        .from("workout_set")
+        .select(
+          `
+          id,
+          workout,
+          exercises!inner(
+            id,
+            muscle_group
+          )
+        `,
+        )
+        .eq("workout", nextWorkoutId)
+        .eq("exercises.muscle_group", muscleGroup)
+        .order("id", { ascending: true });
+
+      // Get the number of sets for the exercises of the muscle group from the results
+      let exerciseSets = new Map();
+      for (const exercise of exerciseData) {
+        if (!exerciseSets.has(exercise.exercises.id)) {
+          exerciseSets.set(exercise.exercises.id, 1);
+        } else {
+          exerciseSets.set(
+            exercise.exercises.id,
+            exerciseSets.get(exercise.exercises.id) + 1,
+          );
+        }
+      }
+      if (exerciseSets.size == 1) {
+        const [key, value] = exerciseSets.entries().next().value;
+        await modifySetNumber(nextWorkoutId, key, sets);
+      } else {
+        for (const [key, value] of exerciseSets) {
+          if (Math.abs(sets) < 2) {
+            await modifySetNumber(nextWorkoutId, key, sets);
+            break;
+          } else {
+            await modifySetNumber(nextWorkoutId, key, 1);
+            sets += sets > 0 ? -1 : 1;
+          }
+        }
+      }
+    } else {
+      const { data: metrics } = await supabase
+        .from("user_exercise_metrics")
+        .select()
+        .eq("workout", workoutId)
+        .eq("metric_name", "performance_score");
+      // Otherwise deternine which combination of set, rep, and load progression algorithms to use.
+      // if (workoutState.deload) {
+      // Do not apply set progression algorithm (keep the same number of sets as the first workout of the mesocycle)
+      // Reps / 2
+      // repProgressionAlgorithm(metrics, true);
+      // If workout is late in the week, divide the weight by 2
+      // loadProgressionAlgorithm(metrics, true);
+      // }  else {
+      // Apply the set progression algorithm
+      //setProgressionAlgorithm(metrics);
+      //}
+      // await setProgressionAlgorithm(metrics);
+    }
   }
 }
 
@@ -754,10 +826,11 @@ async function getWeekNumber(workoutId: string) {
       )
     `,
     )
-    .eq("id", workoutId);
+    .eq("id", workoutId)
+    .single();
 
   // Determine which week of the mesocycle the workout is in.
-  const workout = workoutData[0];
+  const workout = workoutData;
   const workoutDate = new Date(workout.date);
   const startDate = new Date(workout.mesocycle.start_date);
   let currentWeek = Math.floor(
@@ -767,10 +840,34 @@ async function getWeekNumber(workoutId: string) {
   return currentWeek;
 }
 
-async function rpMevEstimator(data) {
-  // Estimate the MEV for the first week of the mesocycle. Use that to add or remove sets from the next week's workouts.
-  // Fourth Step: Add the feedback values together for each muscle group
-  // Fifth Step: Apply heuristics to determine the number of sets to add or remove from the next week's workout
+async function rpMevEstimator(
+  data: { muscle_group: string; metric_name: string; average: number }[] | null,
+) {
+  if (!data) {
+    return 0;
+  }
+  // Estimate the MEV for the first week of the mes// Fourth Step: Add the feedback values together for each muscle group
+  // Get the average raw stimulus magnitude for the muscle group
+  let rsm = data.reduce((acc, cur) => {
+    acc += cur.average;
+    return acc;
+  }, 0);
+  rsm = rsm / data.length;
+  let setsToAdd = 0;
+
+  if (rsm <= 2) {
+    setsToAdd = 2;
+  } else if (rsm < 4) {
+    setsToAdd = 1;
+  } else if (rsm >= 7 && rsm < 9) {
+    setsToAdd = -1;
+  } else if (rsm == 9) {
+    setsToAdd = -2;
+  } else {
+    setsToAdd = 0;
+  }
+
+  return setsToAdd;
 }
 
 function setProgressionAlgorithm(data) {
@@ -880,11 +977,13 @@ async function exerciseSFR(exercises, previousWorkoutFeedback) {
     }
 
     fatigueScore += performanceScore;
+    const stimulusToFatigueRatio = rawStimulusMagnitude / fatigueScore;
 
     exerciseMetrics.set(exercise.id, {
       muscleGroup: exercise.muscle_group,
       rawStimulusMagnitude: rawStimulusMagnitude,
       fatigueScore: fatigueScore,
+      stimulusToFatigueRatio: stimulusToFatigueRatio,
     });
   }
 
@@ -979,8 +1078,86 @@ async function getNextWorkoutId(mesoId: string, muscleGroup: string) {
     .gt("date", today)
     .eq("mesocycle", mesoId)
     .eq("workout_set.exercises.muscle_group", muscleGroup)
+    .eq("complete", false)
     .order("date", { ascending: true })
     .limit(1);
 
   return workoutData[0].id;
+}
+
+async function getPreviousWorkoutId(workoutId: string, muscleGroup: string) {
+  const today = new Date().toISOString();
+  const mesoId = await getMesoId(workoutId);
+
+  const { data: workoutData } = await supabase
+    .from("workouts")
+    .select(
+      `
+      id,
+      date,
+      mesocycle,
+      workout_set!inner(
+        exercises!inner(
+          muscle_group
+        )
+      )
+    `,
+    )
+    .lt("date", today)
+    .eq("mesocycle", mesoId)
+    .eq("workout_set.exercises.muscle_group", muscleGroup)
+    .eq("complete", true)
+    .order("date", { ascending: false })
+    .limit(1);
+
+  return workoutData[0].id;
+}
+
+async function modifySetNumber(
+  workoutId: string,
+  exercise: string,
+  numSets: number,
+) {
+  // Modify the number of sets for the workout
+  const { data: workoutData } = await supabase
+    .from("workout_set")
+    .select(
+      `
+      id,
+      workout,
+      exercise,
+      set_num
+    `,
+    )
+    .eq("workout", workoutId)
+    .eq("exercise", exercise)
+    .order("set_num", { ascending: true });
+  let maxSet = workoutData[workoutData.length - 1].set_num;
+
+  console.log("maxSet is", maxSet);
+  if (numSets > 0) {
+    // Add sets to the workout
+    let newSets = [];
+    for (let i = 0; i < numSets; i++) {
+      newSets.push({
+        workout: workoutId,
+        exercise: exercise,
+        set_num: maxSet + i + 1,
+      });
+      console.log("newSets is", newSets);
+      const { error } = await supabase.from("workout_set").insert(newSets);
+    }
+  } else {
+    // Remove sets from the workout
+    for (let i = 0; i > numSets; i--) {
+      const {} = await supabase
+        .from("workout_set")
+        .delete()
+        .eq("workout", workoutId)
+        .eq("exercise", exercise)
+        .eq("set_num", maxSet);
+
+      maxSet--;
+    }
+  }
 }
