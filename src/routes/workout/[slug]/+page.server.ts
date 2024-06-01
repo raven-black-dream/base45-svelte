@@ -870,19 +870,35 @@ async function rpMevEstimator(
   return setsToAdd;
 }
 
-function setProgressionAlgorithm(data) {
+async function setProgressionAlgorithm(
+  soreness: number,
+  performance_score: number,
+  muscleGroup: string,
+  workoutId: string,
+) {
   // Apply the set progression algorithm to the workout adding sets as needed
   // Inputs: mg_soreness feedback for the muscle group, performance score for the exercise.
   // Outputs: number of sets to add or remove from the workout
+  if (performance_score > 2) {
+    return -1;
+  } else if (performance_score == 2 || soreness >= 2) {
+    return 0;
+  } else {
+    return 2 - (soreness + performance_score);
+  }
 }
 
-function repProgressionAlgorithm(data, deload = false) {
-  // Apply the rep progression algorithm to the workout adding reps as needed
-  // Inputs: mg_soreness feedback for the muscle group, performance score for the exercise.
-  // Outputs: number of reps to add or remove from the workout
-}
+function repProgressionAlgorithm(
+  soreness: number,
+  performance_score: number,
+  deload: number = 0,
+) {}
 
-function loadProgressionAlgorithm(data, deload = false) {
+function loadProgressionAlgorithm(
+  soreness: number,
+  performance_score: number,
+  deload: number = 0,
+) {
   // Apply the load progression algorithm to the workout adding weight as needed
   // Inputs: mg_soreness feedback for the muscle group, performance score for the exercise.
   // Outputs: amount of weight to add or remove from the workout
@@ -1085,14 +1101,19 @@ async function getNextWorkoutId(mesoId: string, muscleGroup: string) {
   return workoutData[0].id;
 }
 
-async function getPreviousWorkoutId(workoutId: string, muscleGroup: string) {
+async function getPreviousWorkoutId(
+  workoutId: string,
+  muscleGroup: string,
+  mesoDay: string = "",
+) {
   const today = new Date().toISOString();
   const mesoId = await getMesoId(workoutId);
 
-  const { data: workoutData } = await supabase
-    .from("workouts")
-    .select(
-      `
+  if (mesoDay === "") {
+    const { data: workoutData } = await supabase
+      .from("workouts")
+      .select(
+        `
       id,
       date,
       mesocycle,
@@ -1102,13 +1123,36 @@ async function getPreviousWorkoutId(workoutId: string, muscleGroup: string) {
         )
       )
     `,
-    )
-    .lt("date", today)
-    .eq("mesocycle", mesoId)
-    .eq("workout_set.exercises.muscle_group", muscleGroup)
-    .eq("complete", true)
-    .order("date", { ascending: false })
-    .limit(1);
+      )
+      .lt("date", today)
+      .eq("mesocycle", mesoId)
+      .eq("workout_set.exercises.muscle_group", muscleGroup)
+      .eq("complete", true)
+      .order("date", { ascending: false })
+      .limit(1);
+  } else {
+    const { data: workoutData } = await supabase
+      .from("workouts")
+      .select(
+        `
+      id,
+      date,
+      mesocycle,
+      workout_set!inner(
+        exercises!inner(
+          muscle_group
+        )
+      )
+    `,
+      )
+      .lt("date", today)
+      .eq("mesocycle", mesoId)
+      .eq("workout_set.exercises.muscle_group", muscleGroup)
+      .eq("complete", true)
+      .eq("meso_day", mesoDay)
+      .order("date", { ascending: false })
+      .limit(1);
+  }
 
   return workoutData[0].id;
 }
@@ -1144,7 +1188,6 @@ async function modifySetNumber(
         exercise: exercise,
         set_num: maxSet + i + 1,
       });
-      console.log("newSets is", newSets);
       const { error } = await supabase.from("workout_set").insert(newSets);
     }
   } else {
