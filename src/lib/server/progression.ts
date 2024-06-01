@@ -1,4 +1,5 @@
 import { supabase } from "$lib/supabaseClient";
+import { checkWorkoutData } from "./workout";
 import {
   getWeekNumber,
   getMuscleGroups,
@@ -90,17 +91,30 @@ export async function shouldDoProgression(
         workoutId,
         muscleGroup,
       );
-      if (testResult) {
-        progressMuscleGroups.push(muscleGroup);
+      let dataIsComplete: boolean = await checkWorkoutData(
+        workoutId,
+        muscleGroup,
+        weekNumber,
+      );
+      console.log(dataIsComplete);
+      if (testResult && dataIsComplete) {
+        {
+          progressMuscleGroups.push(muscleGroup);
+        }
       }
     } else if (!deload) {
+      const dataIsComplete: boolean = await checkWorkoutData(
+        workoutId,
+        muscleGroup,
+        weekNumber,
+      );
       progressMuscleGroups.push(muscleGroup);
     }
-  }
-  if (progressMuscleGroups.length > 0) {
-    result = true;
-  } else {
-    result = false;
+    if (progressMuscleGroups.length > 0) {
+      result = true;
+    } else {
+      result = false;
+    }
   }
   return [result, progressMuscleGroups];
 }
@@ -301,4 +315,42 @@ export async function modifyLoad(
     }
   }
   const { error } = await supabase.from("workout_set").update(newLoads);
+}
+export async function getSorenessAndPerformance(
+  muscleGroup: string,
+  workoutId: string,
+  previousWorkoutId: string,
+) {
+  const { data: performance } = await supabase
+    .from("user_muscle_group_metrics")
+    .select(
+      `
+            workout,
+            muscle_group,
+            metric_name,
+            average
+            `,
+    )
+    .eq("workout", workoutId)
+    .eq("muscle_group", muscleGroup)
+    .eq("metric_name", "performance_score")
+    .limit(1)
+    .single();
+
+  const { data: soreness } = await supabase
+    .from("workout_feedback")
+    .select(
+      `     workout,
+            muscle_group,
+            question_type,
+            value
+          `,
+    )
+    .eq("workout", previousWorkoutId)
+    .eq("muscle_group", muscleGroup)
+    .eq("question_type", "mg_soreness")
+    .limit(1)
+    .single();
+
+  return { performance, soreness };
 }

@@ -8,8 +8,8 @@ import {
   modifyLoad,
   modifyRepNumber,
   modifySetNumber,
-  shouldDoProgression,
 } from "$lib/server/progression";
+import { shouldDoProgression } from "$lib/server/progression";
 import { getNextWorkoutId } from "$lib/server/workout";
 import { getPreviousWorkoutId } from "$lib/server/workout";
 import { getWeekNumber } from "$lib/server/workout";
@@ -18,6 +18,7 @@ import { calculateExerciseMetrics } from "$lib/server/metrics";
 import { setProgressionAlgorithm } from "$lib/utils/progressionUtils";
 import { repProgressionAlgorithm } from "$lib/utils/progressionUtils";
 import { loadProgressionAlgorithm } from "$lib/utils/progressionUtils";
+import { getSorenessAndPerformance } from "$lib/server/progression";
 
 export const load = async ({ locals: { supabase, getSession }, params }) => {
   const session = await getSession();
@@ -203,12 +204,12 @@ export const actions = {
     const { error } = await supabase
       .from("workouts")
       .update({
-        //  date: new Date(Date.now()),
-        //  complete: true,
+        date: new Date(Date.now()),
+        complete: true,
       })
       .eq("id", params.slug);
 
-    // calculateMetrics(params.slug);
+    calculateMetrics(params.slug);
 
     const checkProgression: [doProgression: boolean, muscleGroups: string[]] =
       await shouldDoProgression(params.slug);
@@ -455,45 +456,6 @@ async function getExerciseSets(nextWorkoutId: any, muscleGroup: string) {
   return exerciseSets;
 }
 
-async function getSorenessaAndPerformance(
-  muscleGroup: string,
-  workoutId: string,
-  previousWorkoutId: string,
-) {
-  const { data: performance } = await supabase
-    .from("user_muscle_group_metrics")
-    .select(
-      `
-            workout,
-            muscle_group,
-            metric_name,
-            average
-            `,
-    )
-    .eq("workout", workoutId)
-    .eq("muscle_group", muscleGroup)
-    .eq("metric_name", "performance_score")
-    .limit(1)
-    .single();
-
-  const { data: soreness } = await supabase
-    .from("workout_feedback")
-    .select(
-      `     workout,
-            muscle_group,
-            question_type,
-            value
-          `,
-    )
-    .eq("workout", previousWorkoutId)
-    .eq("muscle_group", muscleGroup)
-    .eq("question_type", "mg_soreness")
-    .limit(1)
-    .single();
-
-  return { performance, soreness };
-}
-
 async function loadAndRepProgression(
   exerciseSets: Map<string, number>,
   workoutId: string,
@@ -504,7 +466,7 @@ async function loadAndRepProgression(
   let repsToAdd: number = 0;
   let loadToAdd: number = 0;
 
-  const { performance, soreness } = await getSorenessaAndPerformance(
+  const { performance, soreness } = await getSorenessAndPerformance(
     muscleGroup,
     workoutId,
     previousWorkoutId,

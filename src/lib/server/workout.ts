@@ -1,5 +1,5 @@
 import { supabase } from "$lib/supabaseClient";
-import { re } from "mathjs";
+import { getSorenessAndPerformance } from "./progression";
 
 /**
  *
@@ -218,4 +218,48 @@ export async function getMuscleGroups(workoutId: string) {
 
   // Convert the Set to an array
   return Array.from(uniqueMuscleGroups);
+}
+
+/**
+ *
+ * @param workoutId The workout id for the workout to check
+ * @returns Boolean value indicating whether the workout data is complete
+ *
+ * Check if the workout data required for the progression algorithm is complete.
+ */
+
+export async function checkWorkoutData(
+  workoutId: string,
+  muscleGroup: string,
+  weekNumber: number,
+): Promise<boolean> {
+  const mesoId = await getMesoId(workoutId);
+  const previousWorkoutId = await getPreviousWorkoutId(workoutId, muscleGroup);
+
+  const { data: rsm } = await supabase
+    .from("user_muscle_group_metrics")
+    .select(
+      `
+          muscle_group,
+          metric_name,
+          average
+        `,
+    )
+    .eq("muscle_group", muscleGroup)
+    .eq("metric_name", "raw_stimulus_magnitude")
+    .eq("mesocycle", mesoId);
+
+  if (!rsm && weekNumber == 0) {
+    return false;
+  }
+  const { soreness, performance } = await getSorenessAndPerformance(
+    muscleGroup,
+    workoutId,
+    previousWorkoutId,
+  );
+  if (soreness === undefined || performance === undefined) {
+    return false;
+  }
+
+  return true;
 }
