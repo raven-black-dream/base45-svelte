@@ -19,7 +19,7 @@ export function rpMevEstimator(
     return acc;
   }, 0);
   rsm = rsm / data.length;
-  let setsToAdd = 0;
+  let setsToAdd: number;
 
   if (rsm <= 2) {
     setsToAdd = 2;
@@ -40,7 +40,6 @@ export function rpMevEstimator(
  *
  * @param soreness Post-workout soreness for the muscle group as entered by the user (0-3)
  * @param performance_score Performance score for the exercise based on how well the user performed in the workout(0-3)
- * @param muscleGroup Name of the muscle group
  * @returns Number of sets to add or remove from the workout
  *
  * Apply the set progression algorithm to the workout adding sets as needed

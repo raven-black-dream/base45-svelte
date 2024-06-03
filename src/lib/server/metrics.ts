@@ -388,7 +388,7 @@ export async function calculateExerciseMetrics(workoutId: string) {
       exerciseMetrics.get(exerciseId).weightDiff +=
         item.target_weight - item.weight;
     }
-    for (const [key, exerciseObject] of exerciseMetrics) {
+    for (const [, exerciseObject] of exerciseMetrics) {
       const {
         totalReps,
         totalWeight,

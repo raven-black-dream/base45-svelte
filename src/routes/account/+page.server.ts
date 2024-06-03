@@ -2,6 +2,7 @@
 
 import { fail, redirect } from '@sveltejs/kit'
 
+// @ts-ignore
 export const load = async ({ locals: { supabase, getSession } }) => {
   const session = await getSession()
 
@@ -20,6 +21,7 @@ export const load = async ({ locals: { supabase, getSession } }) => {
   return { session, profile }
 }
 
+// @ts-ignore
 export const actions = {
   update: async ({ request, locals: { supabase, getSession } }) => {
     const formData = await request.formData()

@@ -66,8 +66,7 @@ export async function modifySetNumber(
 /**
  *
  * @param workoutId The workout id for the workout to modify
- * @param exercise The exercise id for the exercise to modify
- * @param numReps The number of reps to add or subtract from the exercise in the workout
+ * @returns If the workout should perform the progression algorithm and the list of muscle groups that applies to.
  *
  * Determines whether or not to run the progression algorithm based on the following logic:
  * 1. If the workout is int the first week of the mesocycle, run the progression algorithm only when the next workout for
@@ -84,17 +83,18 @@ export async function shouldDoProgression(
   let progressMuscleGroups: string[] = [];
   let result: boolean = false;
 
+  // TODO Refactor so that is leverages a Map<string, boolean>
   for (const muscleGroup of muscleGroups) {
     const deload: boolean = await checkDeload(workoutId, muscleGroup);
     if (weekNumber == 0) {
       let testResult: boolean = await checkNextWorkoutWeek(
-        workoutId,
-        muscleGroup,
+          workoutId,
+          muscleGroup,
       );
       let dataIsComplete: boolean = await checkWorkoutData(
-        workoutId,
-        muscleGroup,
-        weekNumber,
+          workoutId,
+          muscleGroup,
+          weekNumber,
       );
       console.log(dataIsComplete);
       if (testResult && dataIsComplete) {
@@ -104,16 +104,16 @@ export async function shouldDoProgression(
       }
     } else if (!deload) {
       const dataIsComplete: boolean = await checkWorkoutData(
-        workoutId,
-        muscleGroup,
-        weekNumber,
+          workoutId,
+          muscleGroup,
+          weekNumber,
       );
-      progressMuscleGroups.push(muscleGroup);
-    }
-    if (progressMuscleGroups.length > 0) {
-      result = true;
-    } else {
-      result = false;
+      if (dataIsComplete) {
+        result = false;
+      } else {
+        progressMuscleGroups.push(muscleGroup);
+      }
+      result = progressMuscleGroups.length > 0;
     }
   }
   return [result, progressMuscleGroups];
@@ -255,18 +255,21 @@ export async function modifyRepNumber(
     }
   }
   const { error } = await supabase.from("workout_set").update(newReps);
+  if (error) {
+    console.log(error);
+  }
 }
 
 /**
  *
  * @param workoutId The workout id for the workout to modify
+ * @param previousWorkoutId This should be the id for the previous time this particular workout day was done.
  * @param exercise The exercise id for the exercise to modify
  * @param loadModifier The number of weightSteps to add or subtracr from the exercise in the workout
  *
  * Modifies the load for all sets of an exercise in a workout by the number of weightSteps held in the Database for the exercise
  *
  */
-
 export async function modifyLoad(
   workoutId: string,
   previousWorkoutId: string,
@@ -315,6 +318,9 @@ export async function modifyLoad(
     }
   }
   const { error } = await supabase.from("workout_set").update(newLoads);
+  if (error) {
+    console.log(error);
+  }
 }
 export async function getSorenessAndPerformance(
   muscleGroup: string,
