@@ -147,9 +147,16 @@
         <input type="hidden" name="is_first" value={set.is_first} />
         <input type="hidden" name="is_last" value={set.is_last} />
         <input type="hidden" name="is_last_set" value={i === len}>
-        <button class="btn variant-ghost-primary" type="submit" on:click={askForFeedback} disabled={set.completed}>
-            Log Set
-        </button>                    
+        {#if !set.completed}
+            <button class="btn variant-ghost-primary" type="submit" on:click={askForFeedback} >
+
+                Log Set
+            </button>                    
+        {:else }
+            <button class="btn variant-ghost-secondary" type="submit">
+                Set Logged
+            </button>
+        {/if}
     </div>
 </form>                
 
