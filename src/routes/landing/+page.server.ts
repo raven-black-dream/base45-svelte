@@ -26,6 +26,9 @@ export const load = async ({ locals: { supabase, getSession } }) => {
     .eq('current', true)
     .limit(1)
     .single()
+    if(error){
+        console.log(error)
+        }
 
   // turn a mesocycle into a list of calendar calendar_items
   // ({ title: string; className: string; date: Date; len: number; 

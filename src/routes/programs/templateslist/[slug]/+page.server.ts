@@ -104,7 +104,7 @@ async function createWorkouts(
 async function createSets(conn: any, workoutData: any) {
   // create a set record for each exercise in the workout record
 
-  workoutData.forEach(async (workout: { id: string; meso_day: string }) => {
+  for (const workout of workoutData) {
     let sets: {
       workout: string;
       exercise: string;
@@ -164,7 +164,7 @@ async function createSets(conn: any, workoutData: any) {
       },
     );
     const {} = await conn.from("workout_set").insert(sets);
-  });
+  }
 }
 
 export const actions = {
@@ -213,6 +213,10 @@ export const actions = {
       .select("id")
       .limit(1)
       .single();
+
+    if (error) {
+      console.log(error)
+    }
 
     // extract the rest of the form into a more useable state
     // from: {day.id}_{template_muscle_group.id}, exercise.id
@@ -279,16 +283,21 @@ export const actions = {
         .limit(1)
         .single();
 
-      day_entries.forEach(
-        async (entry: { exercise: any; muscle: any; order: any }) => {
-          const { error } = await supabase.from("meso_exercise").insert({
-            exercise: entry.exercise,
-            num_sets: sets_map.get(entry.muscle) ?? 0,
-            meso_day: meso_day_id?.id,
-            sort_order: entry.order,
-          });
-        },
-      );
+      if (error){
+        console.log(error)
+      }
+
+      for (const entry of day_entries) {
+        const { error } = await supabase.from("meso_exercise").insert({
+          exercise: entry.exercise,
+          num_sets: sets_map.get(entry.muscle) ?? 0,
+          meso_day: meso_day_id?.id,
+          sort_order: entry.order,
+        });
+        if(error){
+          console.log(error)
+        }
+      }
 
       await createWorkouts(
         supabase,

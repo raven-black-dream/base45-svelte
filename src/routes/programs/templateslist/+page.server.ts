@@ -2,6 +2,7 @@
 
 import { redirect } from '@sveltejs/kit'
 
+// @ts-ignore
 export const load = async ({ locals: { supabase, getSession } }) => {
   const session = await getSession()
 

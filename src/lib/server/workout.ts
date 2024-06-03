@@ -44,7 +44,8 @@ export async function getMesoId(workoutId: string) {
 
 /**
  *
- * @param workoutId The workout id to retrieve the next workout id for
+ * @param mesoId The mesocycle id to retrieve the next workout id for
+ * @param muscleGroup the muscle group to get the next workout for.
  * @returns The workout id for the next workout
  */
 export async function getNextWorkoutId(mesoId: string, muscleGroup: string) {
@@ -132,6 +133,25 @@ export async function getPreviousWorkoutId(
       .limit(1);
     return workoutData[0].id;
   }
+}
+
+export async function getMesoDay(workoutId: string) {
+  const { data: mesoDay } = await supabase
+    .from("workouts")
+    .select(
+      `
+    meso_day
+    `,
+    )
+    .eq("id", workoutId)
+    .limit(1)
+    .single();
+
+  if (!mesoDay) {
+    return "";
+  }
+
+  return mesoDay.meso_day;
 }
 
 /**
@@ -223,6 +243,9 @@ export async function getMuscleGroups(workoutId: string) {
 /**
  *
  * @param workoutId The workout id for the workout to check
+ * @param muscleGroup The muscle group to check for workout data for
+ * @param weekNumber The week number here is used to determine which set of rules should apply to whether the data
+ * exists or not.
  * @returns Boolean value indicating whether the workout data is complete
  *
  * Check if the workout data required for the progression algorithm is complete.
