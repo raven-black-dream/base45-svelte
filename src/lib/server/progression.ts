@@ -77,14 +77,15 @@ export async function modifySetNumber(
  */
 export async function shouldDoProgression(
   workoutId: string,
-): Promise<[boolean, string[]]> {
+): Promise<Map<string, boolean>> {
   const weekNumber: number = await getWeekNumber(workoutId);
   const muscleGroups: string[] = await getMuscleGroups(workoutId);
-  let progressMuscleGroups: string[] = [];
+  let progressMuscleGroups: Map<string, boolean> = new Map();
   let result: boolean = false;
 
   // TODO Refactor so that is leverages a Map<string, boolean>
   for (const muscleGroup of muscleGroups) {
+    progressMuscleGroups.set(muscleGroup, false);
     const deload: boolean = await checkDeload(workoutId, muscleGroup);
     if (weekNumber == 0) {
       let testResult: boolean = await checkNextWorkoutWeek(
@@ -99,7 +100,7 @@ export async function shouldDoProgression(
       console.log(dataIsComplete);
       if (testResult && dataIsComplete) {
         {
-          progressMuscleGroups.push(muscleGroup);
+          progressMuscleGroups.set(muscleGroup, true);
         }
       }
     } else if (!deload) {
@@ -108,15 +109,14 @@ export async function shouldDoProgression(
           muscleGroup,
           weekNumber,
       );
-      if (dataIsComplete) {
+      if (!dataIsComplete) {
         result = false;
       } else {
-        progressMuscleGroups.push(muscleGroup);
+        progressMuscleGroups.set(muscleGroup, true);
       }
-      result = progressMuscleGroups.length > 0;
     }
   }
-  return [result, progressMuscleGroups];
+  return progressMuscleGroups;
 }
 
 /**
