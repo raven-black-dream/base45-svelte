@@ -605,7 +605,7 @@ async function nonProgression(workoutId: string, muscleGroup: string) {
     return;
   }
   const nextWorkoutId = await getNextWorkoutId(mesoId, muscleGroup);
-  const mesoDay = await getMesoId(workoutId);
+  const mesoDay = await getMesoDay(nextWorkoutId);
   const previousWorkoutMesoId = await getPreviousWorkoutId(
     workoutId,
     muscleGroup,
