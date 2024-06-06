@@ -114,6 +114,7 @@ export async function getPreviousWorkoutId(
 
     return workoutData[0].id;
   } else {
+    console.log();
     const { data: workoutData } = await supabase
       .from("workouts")
       .select(

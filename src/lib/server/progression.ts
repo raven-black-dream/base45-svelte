@@ -45,8 +45,8 @@ export async function modifySetNumber(
         exercise: exercise,
         set_num: maxSet + i + 1,
       });
-      console.log("Write New Sets to DB");
-      // const { error } = await supabase.from("workout_set").insert(newSets);
+      console.log("Write New Sets to DB", newSets);
+      const { error } = await supabase.from("workout_set").insert(newSets);
     }
   } else {
     // Remove sets from the workout
@@ -57,7 +57,7 @@ export async function modifySetNumber(
         .eq("workout", workoutId)
         .eq("exercise", exercise)
         .eq("set_num", maxSet);
-
+      console.log("Delete Set from DB");
       maxSet--;
     }
   }
@@ -77,46 +77,45 @@ export async function modifySetNumber(
  */
 export async function shouldDoProgression(
   workoutId: string,
-): Promise<[boolean, string[]]> {
+): Promise<Map<string, boolean>> {
   const weekNumber: number = await getWeekNumber(workoutId);
   const muscleGroups: string[] = await getMuscleGroups(workoutId);
-  let progressMuscleGroups: string[] = [];
+  let progressMuscleGroups: Map<string, boolean> = new Map();
   let result: boolean = false;
 
-  // TODO Refactor so that is leverages a Map<string, boolean>
   for (const muscleGroup of muscleGroups) {
+    progressMuscleGroups.set(muscleGroup, false);
     const deload: boolean = await checkDeload(workoutId, muscleGroup);
     if (weekNumber == 0) {
       let testResult: boolean = await checkNextWorkoutWeek(
-          workoutId,
-          muscleGroup,
+        workoutId,
+        muscleGroup,
       );
       let dataIsComplete: boolean = await checkWorkoutData(
-          workoutId,
-          muscleGroup,
-          weekNumber,
+        workoutId,
+        muscleGroup,
+        weekNumber,
       );
       console.log(dataIsComplete);
       if (testResult && dataIsComplete) {
         {
-          progressMuscleGroups.push(muscleGroup);
+          progressMuscleGroups.set(muscleGroup, true);
         }
       }
     } else if (!deload) {
       const dataIsComplete: boolean = await checkWorkoutData(
-          workoutId,
-          muscleGroup,
-          weekNumber,
+        workoutId,
+        muscleGroup,
+        weekNumber,
       );
-      if (dataIsComplete) {
+      if (!dataIsComplete) {
         result = false;
       } else {
-        progressMuscleGroups.push(muscleGroup);
+        progressMuscleGroups.set(muscleGroup, true);
       }
-      result = progressMuscleGroups.length > 0;
     }
   }
-  return [result, progressMuscleGroups];
+  return progressMuscleGroups;
 }
 
 /**
@@ -254,6 +253,7 @@ export async function modifyRepNumber(
       });
     }
   }
+  console.log("Adding the following reps to the database: ", newReps);
   const { error } = await supabase.from("workout_set").update(newReps);
   if (error) {
     console.log(error);
@@ -317,6 +317,7 @@ export async function modifyLoad(
       });
     }
   }
+  console.log("Adding the following loads to the database: ", newLoads);
   const { error } = await supabase.from("workout_set").update(newLoads);
   if (error) {
     console.log(error);
@@ -342,6 +343,8 @@ export async function getSorenessAndPerformance(
     .eq("metric_name", "performance_score")
     .limit(1)
     .single();
+
+  console.log(performance);
 
   const { data: soreness } = await supabase
     .from("workout_feedback")
