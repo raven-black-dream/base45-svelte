@@ -3,7 +3,7 @@
 import { supabase } from "$lib/supabaseClient.js";
 import { redirect } from "@sveltejs/kit";
 import { rpMevEstimator } from "$lib/utils/progressionUtils";
-import { getMesoId, getMuscleGroups } from "$lib/server/workout";
+import { checkDeload, getMesoId, getMuscleGroups } from "$lib/server/workout";
 import {
   modifyLoad,
   modifyRepNumber,
@@ -12,7 +12,7 @@ import {
 import { shouldDoProgression } from "$lib/server/progression";
 import { getNextWorkoutId } from "$lib/server/workout";
 import { getPreviousWorkoutId } from "$lib/server/workout";
-import { getMesoDay } from "$lib/server/workout";
+import { getMesoDay, getDayOfWeek, getWeekMidpoint } from "$lib/server/workout";
 import { getWeekNumber } from "$lib/server/workout";
 import { calculateMuscleGroupMetrics } from "$lib/server/metrics";
 import { calculateExerciseMetrics } from "$lib/server/metrics";
@@ -601,12 +601,15 @@ async function loadAndRepProgression(
 
 async function nonProgression(workoutId: string, muscleGroup: string) {
   let mesoId = await getMesoId(workoutId);
+  const isDeload = await checkDeload(workoutId, muscleGroup);
   const weekNumber: number = await getWeekNumber(workoutId);
   if (weekNumber == 0) {
     return;
   }
   const nextWorkoutId = await getNextWorkoutId(mesoId, muscleGroup);
   const mesoDay = await getMesoDay(nextWorkoutId);
+  const dayOfWeek = await getDayOfWeek(mesoDay);
+  const midpoint = await getWeekMidpoint(mesoId, muscleGroup);
   const previousWorkoutMesoId = await getPreviousWorkoutId(
     workoutId,
     muscleGroup,
@@ -617,9 +620,22 @@ async function nonProgression(workoutId: string, muscleGroup: string) {
     workoutId,
     muscleGroup,
   );
-
-  for (const [key] of exerciseSets) {
-    await modifyRepNumber(nextWorkoutId, previousWorkoutMesoId, key, 0);
-    await modifyLoad(nextWorkoutId, previousWorkoutMesoId, key, 0);
+  if (!isDeload) {
+    for (const [key] of exerciseSets) {
+      await modifyRepNumber(nextWorkoutId, previousWorkoutMesoId, key, 0);
+      await modifyLoad(nextWorkoutId, previousWorkoutMesoId, key, 0);
+    }
+  } else {
+    for (const [key] of exerciseSets) {
+      if (dayOfWeek < midpoint) {
+        await modifySetNumber(nextWorkoutId, key, -2);
+        await modifyRepNumber(nextWorkoutId, previousWorkoutMesoId, key, 0.5);
+        await modifyLoad(nextWorkoutId, previousWorkoutMesoId, key, 0.9);
+      } else {
+        await modifySetNumber(nextWorkoutId, key, -2);
+        await modifyRepNumber(nextWorkoutId, previousWorkoutMesoId, key, 0.5);
+        await modifyLoad(nextWorkoutId, previousWorkoutMesoId, key, 0.5);
+      }
+    }
   }
 }

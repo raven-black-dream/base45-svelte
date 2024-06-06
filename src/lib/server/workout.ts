@@ -287,3 +287,36 @@ export async function checkWorkoutData(
 
   return true;
 }
+
+export async function getWeekMidpoint(mesoId: string, muscleGroup: string) {
+  const { data: mesoData } = await supabase
+    .from("meso_day")
+    .select(`*`)
+    .eq("mesocycle", mesoId);
+
+  if (!mesoData) {
+    return;
+  }
+
+  const countOfDays = mesoData.length;
+  const firstDay = mesoData.reduce((a, b) => {
+    if (a.day_of_week == 0) {
+      a.day_of_week = 7;
+    }
+    if (b.day_of_week == 0) {
+      b.day_of_week = 7;
+    }
+    return a.day_of_week < b.day_of_week ? a : b;
+  });
+  return firstDay + Math.ceil(countOfDays / 2);
+}
+
+export async function getDayOfWeek(mesoDayId: string) {
+  const { data: mesoDay } = await supabase
+    .from("meso_day")
+    .select(`day_of_week`)
+    .eq("id", mesoDayId)
+    .single();
+
+  return mesoDay.day_of_week;
+}
