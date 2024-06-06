@@ -20,6 +20,7 @@ import { setProgressionAlgorithm } from "$lib/utils/progressionUtils";
 import { repProgressionAlgorithm } from "$lib/utils/progressionUtils";
 import { loadProgressionAlgorithm } from "$lib/utils/progressionUtils";
 import { getSorenessAndPerformance } from "$lib/server/progression";
+import { goto } from "$app/navigation";
 
 interface MesoExercise {
   sort_order: number;
