@@ -83,7 +83,6 @@ export async function shouldDoProgression(
   let progressMuscleGroups: Map<string, boolean> = new Map();
   let result: boolean = false;
 
-  // TODO Refactor so that is leverages a Map<string, boolean>
   for (const muscleGroup of muscleGroups) {
     progressMuscleGroups.set(muscleGroup, false);
     const deload: boolean = await checkDeload(workoutId, muscleGroup);

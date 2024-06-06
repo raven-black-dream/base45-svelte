@@ -261,8 +261,6 @@ export const actions = {
     }
     const data = await request.formData();
 
-    // TODO: Query Database for the last time this muscle group was worked and get the null question response from that.
-    // Otherwise, get the last null question response.
     const set = {
       workout: params.slug,
       reps: Number(data.get("actualreps")),
@@ -432,8 +430,33 @@ async function progression(workoutId: string, muscleGroup: string) {
       nextWorkoutId,
     );
   } else {
-    /*
+    // Get the Soreness and Performance Scores
+    const { data: sorenessData } = await supabase
+        .from("workout_feedback")
+        .select()
+        .eq("workout", previousWorkoutId)
+        .eq("muscle_group", muscleGroup)
+        .eq('question_type', "mg_soreness")
+        .limit(1)
+        .single();
+
+    const {data: performanceData} = await supabase
+        .from("user_muscle_group_metrics")
+        .select()
+        .eq("muscle_group", muscleGroup)
+        .eq("workout", workoutId)
+        .eq("metric_name", "performance_score")
+        .limit(1)
+        .single();
+
+
+    const soreness: number = sorenessData.value;
+    const performance: number = performanceData.value;
+    let sets = setProgressionAlgorithm(soreness, performance);
     const exerciseSets = await getExerciseSets(workoutId, muscleGroup);
+
+    await setProgression(exerciseSets, nextWorkoutId, sets);
+
     for (const exercise of exerciseSets) {
     }
     await loadAndRepProgression(
@@ -443,7 +466,6 @@ async function progression(workoutId: string, muscleGroup: string) {
       previousWorkoutId,
       nextWorkoutId,
     );
-    */
   }
 }
 async function setProgression(
@@ -452,13 +474,13 @@ async function setProgression(
   sets: number,
 ) {
 
-  // TODO: Incorporate the value in exercise sets. Set a maximum number of sets in a workout
   if (exerciseSets.size == 1) {
     const [key] = exerciseSets.entries().next().value;
     await modifySetNumber(nextWorkoutId, key, sets);
   } else {
     for (const [key, value] of exerciseSets) {
-      if (Math.abs(sets) < 2) {
+
+      if (Math.abs(sets) < 2 && value < 5) {
         await modifySetNumber(nextWorkoutId, key, sets);
         break;
       } else {
