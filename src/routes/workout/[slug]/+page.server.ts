@@ -427,27 +427,12 @@ async function progression(workoutId: string, muscleGroup: string) {
     );
   } else {
     // Get the Soreness and Performance Scores
-    const { data: sorenessData } = await supabase
-      .from("workout_feedback")
-      .select()
-      .eq("workout", previousWorkoutId)
-      .eq("muscle_group", muscleGroup)
-      .eq("question_type", "mg_soreness")
-      .limit(1)
-      .single();
-
-    const { data: performanceData } = await supabase
-      .from("user_muscle_group_metrics")
-      .select()
-      .eq("muscle_group", muscleGroup)
-      .eq("workout", workoutId)
-      .eq("metric_name", "performance_score")
-      .limit(1)
-      .single();
-
-    const soreness: number = sorenessData.value;
-    const performance: number = performanceData.value;
-    let sets = setProgressionAlgorithm(soreness, performance);
+    const { performance, soreness } = await getSorenessAndPerformance(
+      muscleGroup,
+      workoutId,
+      previousWorkoutId,
+    );
+    let sets = setProgressionAlgorithm(soreness?.value, performance?.average);
     const exerciseSets = await getExerciseSets(workoutId, muscleGroup);
 
     await setProgression(exerciseSets, nextWorkoutId, sets);
