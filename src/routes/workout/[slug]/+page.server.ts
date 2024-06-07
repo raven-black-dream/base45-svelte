@@ -199,7 +199,7 @@ export const load = async ({ locals: { supabase, getSession }, params }) => {
     if (!muscleGroupRecovery.has(muscleGroup)) {
       muscleGroupRecovery.set(muscleGroup, { completed: false, workout: null });
     }
-    console.log(recovery);
+    console.log(workoutList, recovery);
     const recoveryEntry = recovery?.find(
       (entry) => entry.muscle_group === muscleGroup,
     );
