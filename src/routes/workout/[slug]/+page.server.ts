@@ -167,7 +167,6 @@ export const load = async ({ locals: { supabase, getSession }, params }) => {
   // fetch the muscle soreness feedback question, and add it to the recovery questions array
   if (workoutList) {
     for (const workout of workoutList) {
-      console.log(workout.most_recent_workout_id);
       const { data: feedback } = await supabase
         .from("workout_feedback")
         .select(
@@ -200,7 +199,6 @@ export const load = async ({ locals: { supabase, getSession }, params }) => {
     if (!muscleGroupRecovery.has(muscleGroup)) {
       muscleGroupRecovery.set(muscleGroup, { completed: false, workout: null });
     }
-    console.log(workoutList, recovery);
     const recoveryEntry = recovery?.find(
       (entry) => entry.muscle_group === muscleGroup,
     );
