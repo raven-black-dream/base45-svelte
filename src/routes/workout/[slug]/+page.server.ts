@@ -20,7 +20,6 @@ import { setProgressionAlgorithm } from "$lib/utils/progressionUtils";
 import { repProgressionAlgorithm } from "$lib/utils/progressionUtils";
 import { loadProgressionAlgorithm } from "$lib/utils/progressionUtils";
 import { getSorenessAndPerformance } from "$lib/server/progression";
-import { goto } from "$app/navigation";
 
 interface MesoExercise {
   sort_order: number;
@@ -247,7 +246,7 @@ export const actions = {
         await nonProgression(params.slug, key);
       }
     }
-    goto("/landing");
+    redirect(200, "/landing");
   },
 
   recordSet: async ({ locals: { supabase, getSession }, params, request }) => {
