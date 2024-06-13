@@ -154,7 +154,7 @@
             </button>                    
         {:else }
             <button class="btn variant-ghost-secondary" type="submit">
-                Set Logged
+                Edit Set
             </button>
         {/if}
     </div>
