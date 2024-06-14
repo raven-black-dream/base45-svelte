@@ -233,7 +233,7 @@ export const actions = {
       console.log(error);
     }
 
-    // await calculateMetrics(params.slug);
+    await calculateMetrics(params.slug);
 
     const checkProgression: Map<string, boolean> = await shouldDoProgression(
       params.slug,
@@ -246,7 +246,7 @@ export const actions = {
         await nonProgression(params.slug, key);
       }
     }
-    redirect(200, "/landing");
+    redirect(303, "/landing");
   },
 
   recordSet: async ({ locals: { supabase, getSession }, params, request }) => {
