@@ -359,9 +359,14 @@ export async function calculateExerciseMetrics(workoutId: string) {
     // for each exercise, calculate the metrics for that exercise
     for (const item of exerciseData) {
       const exerciseId = item.exercises.id;
-      const feedback = currentWorkoutFeedback?.filter((obj) => {
-        return obj.exercise === exerciseId;
+      const feedback = currentWorkoutFeedback?.find((obj) => {
+        if (obj.exercise === exerciseId) {
+          return true;
+
+          return item.exercises.muscle_group === obj.muscle_group;
+        }
       });
+
       if (!exerciseMetrics.has(exerciseId)) {
         exerciseMetrics.set(exerciseId, {
           totalReps: 0,
