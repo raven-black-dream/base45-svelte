@@ -132,6 +132,8 @@ export async function getPreviousWorkoutId(
       .eq("meso_day", mesoDay)
       .order("date", { ascending: false })
       .limit(1);
+
+    console.log(workoutData);
     return workoutData[0].id;
   }
 }
