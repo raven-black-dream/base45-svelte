@@ -254,10 +254,7 @@ export async function modifyRepNumber(
     }
   }
   console.log("Adding the following reps to the database: ", newReps);
-  const { error } = await supabase
-    .from("workout_set")
-    .update(newReps)
-    .in("id", workoutSetIds);
+  const { error } = await supabase.from("workout_set").upsert(newReps);
 
   if (error) {
     console.log(error);
@@ -307,25 +304,24 @@ export async function modifyLoad(
   );
   let newLoads = [];
   if (loadModifier > 0 && loadModifier < 1) {
+    const load = previousLoadData[i] * loadModifier;
     for (let i = 0; i < workoutSetIds.length; i++) {
       newLoads.push({
         id: workoutSetIds[i],
-        target_weight: previousLoadData[i] * loadModifier,
+        target_weight: load,
       });
     }
   } else {
+    const load = previousLoadData[0] + loadModifier * weightStep;
     for (let i = 0; i < workoutSetIds.length; i++) {
       newLoads.push({
         id: workoutSetIds[i],
-        target_weight: previousLoadData[i] + loadModifier * weightStep,
+        target_weight: load,
       });
     }
   }
   console.log("Adding the following loads to the database: ", newLoads);
-  const { error } = await supabase
-    .from("workout_set")
-    .update(newLoads)
-    .in("id", workoutSetIds);
+  const { error } = await supabase.from("workout_set").upsert(newLoads);
   if (error) {
     console.log(error);
   }
