@@ -570,6 +570,7 @@ async function loadAndRepProgression(
           key,
           repsToAdd,
         );
+        await modifyLoad(nextWorkoutId, previousWorkoutId, key, 0);
       }
       if (loadToAdd != 0) {
         await modifyLoad(
@@ -578,6 +579,7 @@ async function loadAndRepProgression(
           key,
           loadToAdd,
         );
+        await modifyRepNumber(nextWorkoutId, previousWorkoutId, key, 0);
       }
     }
   }
