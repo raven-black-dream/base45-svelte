@@ -614,11 +614,9 @@ async function nonProgression(workoutId: string, muscleGroup: string) {
   } else {
     for (const [key] of exerciseSets) {
       if (dayOfWeek < midpoint) {
-        await modifySetNumber(nextWorkoutId, key, -2);
         await modifyRepNumber(nextWorkoutId, previousWorkoutMesoId, key, 0.5);
         await modifyLoad(nextWorkoutId, previousWorkoutMesoId, key, 0.9);
       } else {
-        await modifySetNumber(nextWorkoutId, key, -2);
         await modifyRepNumber(nextWorkoutId, previousWorkoutMesoId, key, 0.5);
         await modifyLoad(nextWorkoutId, previousWorkoutMesoId, key, 0.5);
       }
