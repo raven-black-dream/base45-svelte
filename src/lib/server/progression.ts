@@ -254,7 +254,11 @@ export async function modifyRepNumber(
     }
   }
   console.log("Adding the following reps to the database: ", newReps);
-  const { error } = await supabase.from("workout_set").update(newReps);
+  const { error } = await supabase
+    .from("workout_set")
+    .update(newReps)
+    .in("id", workoutSetIds);
+
   if (error) {
     console.log(error);
   }
@@ -318,7 +322,10 @@ export async function modifyLoad(
     }
   }
   console.log("Adding the following loads to the database: ", newLoads);
-  const { error } = await supabase.from("workout_set").update(newLoads);
+  const { error } = await supabase
+    .from("workout_set")
+    .update(newLoads)
+    .in("id", workoutSetIds);
   if (error) {
     console.log(error);
   }
