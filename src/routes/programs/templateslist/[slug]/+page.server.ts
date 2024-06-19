@@ -215,7 +215,7 @@ export const actions = {
       .single();
 
     if (error) {
-      console.log(error)
+      console.log(error);
     }
 
     // extract the rest of the form into a more useable state
@@ -283,8 +283,8 @@ export const actions = {
         .limit(1)
         .single();
 
-      if (error){
-        console.log(error)
+      if (error) {
+        console.log(error);
       }
 
       for (const entry of day_entries) {
@@ -294,8 +294,8 @@ export const actions = {
           meso_day: meso_day_id?.id,
           sort_order: entry.order,
         });
-        if(error){
-          console.log(error)
+        if (error) {
+          console.log(error);
         }
       }
 
@@ -311,5 +311,6 @@ export const actions = {
         template_day?.template_day_name,
       );
     });
+    redirect(307, "landing");
   },
 };
