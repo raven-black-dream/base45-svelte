@@ -322,3 +322,14 @@ export async function getDayOfWeek(mesoDayId: string) {
 
   return mesoDay.day_of_week;
 }
+
+export async function getMaxSetId() {
+  const { data: maxSetId } = await supabase
+    .from("workout_set")
+    .select(`id`)
+    .order("id", { ascending: false })
+    .limit(1)
+    .single();
+
+  return maxSetId.id;
+}

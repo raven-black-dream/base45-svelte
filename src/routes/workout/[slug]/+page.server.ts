@@ -432,7 +432,7 @@ async function progression(workoutId: string, muscleGroup: string) {
       previousWorkoutId,
     );
     let sets = setProgressionAlgorithm(soreness?.value, performance?.average);
-    const exerciseSets = await getExerciseSets(workoutId, muscleGroup);
+    const exerciseSets = await getExerciseSets(nextWorkoutId, muscleGroup);
 
     await setProgression(exerciseSets, nextWorkoutId, sets);
 
