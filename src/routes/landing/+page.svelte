@@ -4,7 +4,7 @@
 <!-- TODO: events aren't changing when the month changes -->
 
 <script lang="ts">
-import { ProgressBar } from "@skeletonlabs/skeleton";
+import { ProgressRadial } from "@skeletonlabs/skeleton";
 import WeeklyGrid from "$lib/components/WeeklyGrid.svelte";
 import WorkoutCard from "$lib/components/WorkoutCard.svelte";
 
@@ -39,8 +39,8 @@ $: weeklyProgress = data.numComplete/data.numberOfDays * 100;
 
 	<div class="card variant-glass-primary mt-6 p-2">
     <header class='card-header'>Weekly Progress</header>
-    <section class='p-4'>
-      <ProgressBar value={weeklyProgress} max={100} meter="bg-primary-500" track="bg-primary-500/30"/>
+    <section class='p-4 flex justify-center'>
+      <ProgressRadial value={weeklyProgress} stroke={100} meter="stroke-primary-500" track="stroke-primary-500/30" strokeLinecap="round">{weeklyProgress}%</ProgressRadial>
     </section>
 	</div>
 

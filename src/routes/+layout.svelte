@@ -1,9 +1,9 @@
 <script lang="ts">
 	import '../app.postcss';
-	import { AppShell, AppBar, Modal } from '@skeletonlabs/skeleton';
+	import { AppShell, AppBar, Modal, Drawer, type DrawerSettings } from '@skeletonlabs/skeleton';
 	import { invalidate } from '$app/navigation'
 	import { onMount } from 'svelte'
-	import { initializeStores } from '@skeletonlabs/skeleton';
+	import { initializeStores, getDrawerStore } from '@skeletonlabs/skeleton';
 
 	export let data
 
@@ -20,28 +20,54 @@
 		return () => data.subscription.unsubscribe()
 	})
 
+	const drawerSettings: DrawerSettings = {
+		id: 'main',
+		width: 'w-[280px] md:w-[480px]',
+		padding: 'p-4',
+		position: 'left',
+	}
+
+	function openDrawer() {
+		drawerStore.open(drawerSettings)
+	};
+	function closeDrawer() {
+		drawerStore.close()
+	};
+
 	initializeStores();
+	const drawerStore = getDrawerStore();
+
 </script>
 
 <!-- App Shell -->
 <Modal />
+<Drawer>
+	<nav class="list-nav">
+		<ul>
+			<li>
+				<a class="btn btn-sm variant-ghost-primary" href="/landing" on:click={closeDrawer}>Home</a>
+			</li>
+			<li>
+				<a class="btn btn-sm variant-ghost-primary" href="/programs/templateslist" on:click={closeDrawer}>Programs</a>
+			</li>
+			<li>
+				<a class="btn btn-sm variant-ghost-primary" href="/account" on:click={closeDrawer}>Account</a>
+			</li>
+		</ul>
+
+	</nav>
+	
+
+</Drawer>
 <AppShell>
 	<svelte:fragment slot="header">
 		<!-- App Bar -->
 		<AppBar>
 			<svelte:fragment slot="lead">
-				<strong class="text-xl uppercase">Base45</strong>
+				<button class="text-xl font-extrabold uppercase" on:click={openDrawer}>Base45</button>
 			</svelte:fragment>
 			<svelte:fragment slot="trail">
-				<a class="btn btn-sm variant-ghost-primary" href="/landing">
-					Home
-				</a>
-				<a class="btn btn-sm variant-ghost-primary" href="/programs/templateslist">
-					Programs
-				</a>
-				<a class="btn btn-sm variant-ghost-primary" href="/account">
-					Account
-				</a>
+				
 			</svelte:fragment>
 		</AppBar>
 	</svelte:fragment>
