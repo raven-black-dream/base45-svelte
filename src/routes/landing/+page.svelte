@@ -31,6 +31,7 @@ $: weeklyProgress = data.numComplete/data.numberOfDays * 100;
 
   <div class="card variant-glass-primary items-center">
     <header class="card-header">Mesocycle Progress</header>
+    <p class='text-xs text-center text-secondary-500'>Click Previous Workout Name to view the workout</p>
 		<section class='p-4'>
     <WeeklyGrid workouts={data.workouts} numCols={data.numberOfDays} />
 		</section>
