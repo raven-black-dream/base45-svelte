@@ -1,10 +1,12 @@
 import { supabase } from "$lib/supabaseClient";
+import { get } from "http";
 import { checkWorkoutData } from "./workout";
 import {
   getWeekNumber,
   getMuscleGroups,
   checkDeload,
   checkNextWorkoutWeek,
+  getMaxSetId,
 } from "./workout";
 
 /**
@@ -28,25 +30,41 @@ export async function modifySetNumber(
       id,
       workout,
       exercise,
-      set_num
+      set_num,
+      is_first,
+      is_last
     `,
     )
     .eq("workout", workoutId)
     .eq("exercise", exercise)
     .order("set_num", { ascending: true });
   let maxSet = workoutData[workoutData.length - 1].set_num;
+  let maxSetId = await getMaxSetId();
 
   if (numSets > 0) {
     // Add sets to the workout
     let newSets = [];
+    workoutData.forEach((set) => {
+      newSets.push({
+        id: set.id,
+        workout: workoutId,
+        exercise: exercise,
+        set_num: set.set_num,
+        is_first: set.is_first,
+        is_last: false,
+      });
+    });
     for (let i = 0; i < numSets; i++) {
       newSets.push({
+        id: maxSetId + i + 1,
         workout: workoutId,
         exercise: exercise,
         set_num: maxSet + i + 1,
+        is_first: false,
+        is_last: i == numSets - 1 ? true : false,
       });
       console.log("Write New Sets to DB", newSets);
-      const { error } = await supabase.from("workout_set").insert(newSets);
+      const { error } = await supabase.from("workout_set").upsert(newSets);
     }
   } else {
     // Remove sets from the workout
