@@ -19,13 +19,13 @@
 
         if (set.is_first) {
             if (recovery.completed === true){
-                questions.push("How sore did your " + set.exercises.muscle_group +  " get after your last workout?")
+                questions.push("When did your " + set.exercises.muscle_group +  " recover after your last workout? (0: didn't get sore - 4: still sore)")
             }
             
         }
         if (i == len) {
             questions.push("How sore did your joints get doing " + set.exercises.exercise_name + "?");
-            questions.push("How much of a burn did you feel in your " + set.exercises.muscle_group + "doing " + set.exercises.exercise_name + "?")
+            questions.push("How much of a burn did you feel in your " + set.exercises.muscle_group + " doing " + set.exercises.exercise_name + "?")
         }
 
         if (set.is_last){
