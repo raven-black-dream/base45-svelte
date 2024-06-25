@@ -1,5 +1,4 @@
 import { supabase } from "$lib/supabaseClient";
-import { get } from "http";
 import { checkWorkoutData } from "./workout";
 import {
   getWeekNumber,
@@ -141,19 +140,29 @@ export async function shouldDoProgression(
  * @param workoutId The workout id for the workout from which to get the rep values
  * @param exercise The exercise to get the rep values for
  */
-export async function getRepValue(
+export async function getWorkoutSets(
   workoutId: string,
   exercise: string,
-): Promise<number[]> {
-  const { data: workoutData } = await supabase
+): Promise<
+  {
+    id: string;
+    workout: string;
+    exercise: string;
+    set_num: number;
+    reps: number;
+    weight: number;
+  }[]
+> {
+  const { data: workoutData }: = await supabase
     .from("workout_set")
     .select(
       `
-      id,
-      workout,
-      exercise,
-      set_num,
-      reps
+        id,
+        workout,
+        exercise,
+        set_num,
+        reps,
+        weight,
     `,
     )
     .eq("workout", workoutId)
@@ -164,36 +173,7 @@ export async function getRepValue(
     return [];
   }
 
-  let repValues = workoutData.map((set) => set.reps);
-  return repValues;
-}
-
-/**  */
-export async function getLoadValue(
-  workoutId: string,
-  exercise: string,
-): Promise<number[]> {
-  const { data: workoutData } = await supabase
-    .from("workout_set")
-    .select(
-      `
-      id,
-      workout,
-      exercise,
-      set_num,
-      weight
-    `,
-    )
-    .eq("workout", workoutId)
-    .eq("exercise", exercise)
-    .order("set_num", { ascending: true });
-
-  if (!workoutData) {
-    return [];
-  }
-
-  let loadValues = workoutData.map((set) => set.weight);
-  return loadValues;
+  return workoutData;
 }
 
 /**
@@ -251,23 +231,25 @@ export async function modifyRepNumber(
     return;
   }
   const workoutSetIds = workoutData.map((set) => set.id);
-  const previousWorkoutData: number[] = await getRepValue(
-    previousWorkoutId,
-    exercise,
-  );
+  const previousWorkoutData = await getWorkoutSets(previousWorkoutId, exercise);
   let newReps = [];
   if (numReps > 0 && numReps < 1) {
     for (let i = 0; i < workoutSetIds.length; i++) {
       newReps.push({
         id: workoutSetIds[i],
-        target_reps: previousWorkoutData[i] * numReps,
+        target_reps:
+          i < previousWorkoutData.length
+            ? previousWorkoutData[i].reps * numReps
+            : null,
       });
     }
   } else {
     for (let i = 0; i < workoutSetIds.length; i++) {
       newReps.push({
         id: workoutSetIds[i],
-        target_reps: previousWorkoutData[i] + numReps,
+        target_reps: i < previousWorkoutData.length 
+        ? previousWorkoutData[i].reps + numReps 
+        : null,
       });
     }
   }
@@ -316,13 +298,13 @@ export async function modifyLoad(
 
   const workoutSetIds = workoutData.map((set) => set.id);
   const weightStep: number = await getWeightStep(exercise);
-  const previousLoadData: number[] = await getLoadValue(
+  const previousLoadData = await getWorkoutSets(
     previousWorkoutId,
     exercise,
   );
   let newLoads = [];
   if (loadModifier > 0 && loadModifier < 1) {
-    const load = previousLoadData[i] * loadModifier;
+    const load = previousLoadData[i].weight * loadModifier;
     for (let i = 0; i < workoutSetIds.length; i++) {
       newLoads.push({
         id: workoutSetIds[i],
@@ -330,7 +312,7 @@ export async function modifyLoad(
       });
     }
   } else {
-    const load = previousLoadData[0] + loadModifier * weightStep;
+    const load = previousLoadData[0].weight + loadModifier * weightStep;
     for (let i = 0; i < workoutSetIds.length; i++) {
       newLoads.push({
         id: workoutSetIds[i],

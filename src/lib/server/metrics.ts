@@ -151,7 +151,7 @@ export async function exerciseSFR(
     }
 
     fatigueScore += performanceScore;
-    const stimulusToFatigueRatio = rawStimulusMagnitude / fatigueScore;
+    const stimulusToFatigueRatio = rawStimulusMagnitude + 1 / fatigueScore + 1;
 
     exerciseMetrics.set(exercise.id, {
       muscleGroup: exercise.muscle_group,
