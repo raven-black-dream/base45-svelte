@@ -94,7 +94,7 @@ function getCurrentWeek() {
   const firstDay = new Date(current.setDate(first)).toLocaleString("en-US", {
     timeZone: "America/Vancouver",
   });
-  const last = first + 7;
+  const last = first + 8;
   const lastDay = new Date(current.setDate(last)).toLocaleDateString("en-US", {
     timeZone: "America/Vancouver",
   });

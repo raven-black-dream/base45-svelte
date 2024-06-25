@@ -336,6 +336,21 @@ export const actions = {
       if (error) {
         console.log(error);
       }
+      if (feedback[0].question_type == "mg_soreness") {
+        const { error: currentSorenessError } = await supabase
+          .from("workout_feedback")
+          .insert({
+            feedback_type: "workout_feedback",
+            question_type: "mg_soreness",
+            value: null,
+            workout: currentWorkout,
+            exercise: exercise,
+            muscle_group: muscleGroup,
+          });
+        if (currentSorenessError) {
+          console.log(currentSorenessError);
+        }
+      }
     }
   },
 };
