@@ -51,7 +51,7 @@
 				<a class="btn btn-sm variant-ghost-primary" href="/programs/templateslist" on:click={closeDrawer}>Programs</a>
 			</li>
 			<li>
-				<a class="btn btn-sm variant-ghost-primary" href="/account" on:click={closeDrawer}>Account</a>
+				<a class="btn btn-sm variant-ghost-primary" href="/account/edit" on:click={closeDrawer}>Account</a>
 			</li>
 		</ul>
 
@@ -67,7 +67,6 @@
 				<button class="text-xl font-extrabold uppercase" on:click={openDrawer}>Base45</button>
 			</svelte:fragment>
 			<svelte:fragment slot="trail">
-				
 			</svelte:fragment>
 		</AppBar>
 	</svelte:fragment>
