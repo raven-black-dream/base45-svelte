@@ -12,7 +12,10 @@
 {#if data.existing_sets}
     <ul>
         {#each data.existing_sets.keys() as exercise_name}
-            <li class="p-4">{exercise_name}</li>
+            <li class="p-4 text-xl font-extrabold">{exercise_name}</li>
+            <li class='p-4'>
+                <span>Target RIR: </span> <span class='text-primary-500 font-extrabold'>{data.target_rir}</span>
+            </li>
             <div class="p-4 grid grid-cols-2">
                 <span>Reps</span>
                 <span>Weight</span>

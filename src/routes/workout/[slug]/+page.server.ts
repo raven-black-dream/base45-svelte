@@ -208,9 +208,9 @@ export const load = async ({ locals: { supabase, getSession }, params }) => {
       });
     }
   }
-
+  const target_rir = selected_day?.target_rir;
   // console.log(muscleGroupRecovery)
-  return { session, meso_day, existing_sets, muscleGroupRecovery };
+  return { session, meso_day, existing_sets, muscleGroupRecovery, target_rir };
 };
 
 export const actions = {

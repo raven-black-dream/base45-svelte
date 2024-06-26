@@ -45,3 +45,23 @@ export const load = (async ({ locals: { supabase, getSession } }) => {
 
   return { session, profile, plot, workoutHistory };
 }) satisfies PageServerLoad;
+
+export const actions = {
+  async addWeight({ locals: { supabase, getSession }, params, request }) {
+    const session = await getSession();
+
+    if (!session) {
+      redirect(303, "/");
+    }
+
+    const data = await request.formData();
+    const date = new Date(data.get("date"));
+    const weightValue = {
+      value: Number(data.get("value")),
+      unit: data.get("unit"),
+      date: date,
+      user: session.user.id,
+    };
+    const {} = await supabase.from("user_weight_history").insert(weightValue);
+  },
+};
