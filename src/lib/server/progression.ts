@@ -153,7 +153,7 @@ export async function getWorkoutSets(
     weight: number;
   }[]
 > {
-  const { data: workoutData }: = await supabase
+  const { data: workoutData } = await supabase
     .from("workout_set")
     .select(
       `
@@ -247,9 +247,10 @@ export async function modifyRepNumber(
     for (let i = 0; i < workoutSetIds.length; i++) {
       newReps.push({
         id: workoutSetIds[i],
-        target_reps: i < previousWorkoutData.length 
-        ? previousWorkoutData[i].reps + numReps 
-        : null,
+        target_reps:
+          i < previousWorkoutData.length
+            ? previousWorkoutData[i].reps + numReps
+            : null,
       });
     }
   }
@@ -298,10 +299,7 @@ export async function modifyLoad(
 
   const workoutSetIds = workoutData.map((set) => set.id);
   const weightStep: number = await getWeightStep(exercise);
-  const previousLoadData = await getWorkoutSets(
-    previousWorkoutId,
-    exercise,
-  );
+  const previousLoadData = await getWorkoutSets(previousWorkoutId, exercise);
   let newLoads = [];
   if (loadModifier > 0 && loadModifier < 1) {
     const load = previousLoadData[i].weight * loadModifier;

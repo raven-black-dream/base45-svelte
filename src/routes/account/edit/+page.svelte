@@ -34,47 +34,40 @@
 	}
 </script>
 
-<div class="form-widget">
-	<form
-		class="form-widget"
-		method="post"
-		action="?/update"
-		use:enhance={handleSubmit}
-		bind:this={profileForm}
-	>
-		<div class="p-2">
-			<label for="email">Email</label>
-			<input class="input" id="email" type="text" value={session.user.email} disabled />
-		</div>
+<div class='card p-4 variant-glass-primary'>
+	<header class="card-header">
+		<p class="card-title p-2 text-lg font-extrabold">Edit Profile</p>
+	<div class="p-2 variant-glass-surface form-widget">
+		<form
+			class="form-widget"
+			method="post"
+			action="?/update"
+			use:enhance={handleSubmit}
+			bind:this={profileForm}
+		>
+			<div class="p-2">
+				<label for="email">Email</label>
+				<input class="input" id="email" type="text" value={session.user.email} disabled />
+			</div>
 
-		<div class="p-2">
-			<label for="displayName">Display Name</label>
-			<input class="input" id="displayName" name="displayName" type="text" value={form?.displayName ?? displayName} />
-		</div>
+			<div class="p-2">
+				<label for="displayName">Display Name</label>
+				<input class="input" id="displayName" name="displayName" type="text" value={form?.displayName ?? displayName} />
+			</div>
 
-		<div class="p-2">
-			<label for="gender">Gender</label>
-			<input class="input" id="gender" name="gender" type="text" value={form?.gender ?? gender} />
-		</div>
+			<div class="p-2">
+				<label for="gender">Gender</label>
+				<input class="input" id="gender" name="gender" type="text" value={form?.gender ?? gender} />
+			</div>
 
-		<div class="p-2">
-			<label for="dob">Date of Birth</label>
-			<input class="input" id="dob" name="dob" type="date" value={form?.dob ?? dob} />
-		</div>
+			<div class="p-2">
+				<label for="dob">Date of Birth</label>
+				<input class="input" id="dob" name="dob" type="date" value={form?.dob ?? dob} />
+			</div>
 
-		<div class="p-2">
-			<input
-				type="submit"
-				class="button block primary"
-				value={loading ? 'Loading...' : 'Update'}
-				disabled={loading}
-			/>
-		</div>
-	</form>
-
-	<form method="post" action="?/signout" use:enhance={handleSignOut}>
-		<div class="p-2">
-			<button class="button block" disabled={loading}>Sign Out</button>
-		</div>
-	</form>
+			<div class="p-2">
+				<button type='submit' class='btn variant-filled-surface'>Update</button>
+			</div>
+		</form>
+	</div>
 </div>
