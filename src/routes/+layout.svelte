@@ -51,7 +51,7 @@
 				<a class="btn btn-sm variant-ghost-primary" href="/programs/templateslist" on:click={closeDrawer}>Programs</a>
 			</li>
 			<li>
-				<a class="btn btn-sm variant-ghost-primary" href="/account/edit" on:click={closeDrawer}>Account</a>
+				<a class="btn btn-sm variant-ghost-primary" href="/account/view" on:click={closeDrawer}>Account</a>
 			</li>
 		</ul>
 
