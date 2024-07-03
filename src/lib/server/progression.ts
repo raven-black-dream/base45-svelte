@@ -43,7 +43,11 @@ export async function modifySetNumber(
   if (numSets > 0) {
     // Add sets to the workout
     let newSets = [];
+    let setIsLast = false;
     workoutData.forEach((set) => {
+      if (set.is_last) {
+        setIsLast = true;
+      }
       newSets.push({
         id: set.id,
         workout: workoutId,
@@ -60,7 +64,7 @@ export async function modifySetNumber(
         exercise: exercise,
         set_num: maxSet + i + 1,
         is_first: false,
-        is_last: i == numSets - 1 ? true : false,
+        is_last: i == numSets - 1 && setIsLast ? true : false,
       });
       console.log("Write New Sets to DB", newSets);
       const { error } = await supabase.from("workout_set").upsert(newSets);
@@ -130,6 +134,8 @@ export async function shouldDoProgression(
       } else {
         progressMuscleGroups.set(muscleGroup, true);
       }
+    } else {
+      progressMuscleGroups.set(muscleGroup, false);
     }
   }
   return progressMuscleGroups;
