@@ -602,12 +602,12 @@ async function loadAndRepProgression(
 
 async function nonProgression(workoutId: string, muscleGroup: string) {
   let mesoId = await getMesoId(workoutId);
-  const isDeload = await checkDeload(workoutId, muscleGroup);
   const weekNumber: number = await getWeekNumber(workoutId);
   if (weekNumber == 0) {
     return;
   }
   const nextWorkoutId = await getNextWorkoutId(mesoId, muscleGroup);
+  const isDeload = await checkDeload(nextWorkoutId, muscleGroup);
   const mesoDay = await getMesoDay(nextWorkoutId);
   const dayOfWeek = await getDayOfWeek(mesoDay);
   const midpoint = await getWeekMidpoint(mesoId, muscleGroup);

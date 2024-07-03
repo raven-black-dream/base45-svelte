@@ -20,7 +20,7 @@ $: cols = colVariants[numCols];
 	{#each workouts as workout, index}
 			{#if workout.complete}
 				<div class='card p-4 variant-ghost-primary'>
-					<a class='text-xs md:text-base' href="/workout/{workout.id}">{workout.day_name}</a>
+					<a class='text-xs md:text-base' href="/workout/summary/{workout.id}">{workout.day_name}</a>
 				</div>
 			{:else}
 				<div class='card p-4 variant-ghost-secondary'>
