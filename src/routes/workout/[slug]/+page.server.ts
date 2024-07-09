@@ -607,7 +607,7 @@ async function nonProgression(workoutId: string, muscleGroup: string) {
     return;
   }
   const nextWorkoutId = await getNextWorkoutId(mesoId, muscleGroup);
-  const isDeload = await checkDeload(nextWorkoutId, muscleGroup);
+  const isDeload = await checkDeload(workoutId, muscleGroup);
   const mesoDay = await getMesoDay(nextWorkoutId);
   const dayOfWeek = await getDayOfWeek(mesoDay);
   const midpoint = await getWeekMidpoint(mesoId, muscleGroup);
