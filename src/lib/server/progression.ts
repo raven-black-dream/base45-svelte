@@ -102,7 +102,6 @@ export async function shouldDoProgression(
   const weekNumber: number = await getWeekNumber(workoutId);
   const muscleGroups: string[] = await getMuscleGroups(workoutId);
   let progressMuscleGroups: Map<string, boolean> = new Map();
-  let result: boolean = false;
 
   for (const muscleGroup of muscleGroups) {
     progressMuscleGroups.set(muscleGroup, false);
@@ -308,7 +307,7 @@ export async function modifyLoad(
   const previousLoadData = await getWorkoutSets(previousWorkoutId, exercise);
   let newLoads = [];
   if (loadModifier > 0 && loadModifier < 1) {
-    const load = previousLoadData[i].weight * loadModifier;
+    const load = previousLoadData[0].weight * loadModifier;
     for (let i = 0; i < workoutSetIds.length; i++) {
       newLoads.push({
         id: workoutSetIds[i],

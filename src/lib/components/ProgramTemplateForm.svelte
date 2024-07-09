@@ -1,13 +1,17 @@
 <script lang="ts">
+	import { enhance } from '$app/forms';
   import { onDestroy } from 'svelte';
   import DayForm from './DayForm.svelte';
   import { writable } from 'svelte/store';
   import Icon from '@iconify/svelte';
+  import type { Writable } from 'svelte/store';
 
   const days = writable([{}]); // Start with one empty day form
+  let dayMuscleGroups: Writable<string[]>[] = $days.map(() => writable([""])); 
 
   const addDay = () => {
     days.update(currentDays => [...currentDays, {}]);
+    dayMuscleGroups = [...dayMuscleGroups, writable([""])];
   };
 
   const removeDay = (index: number) => {
@@ -18,9 +22,12 @@
     });
   };
 
-  onDestroy(() => days.set([]));
+  onDestroy(() => {
+    days.set([])
+    dayMuscleGroups = [];
+  });
 
-  let dayMuscleGroups: string[][] = [];
+  
 
   const handleSubmit = async (event: Event) => {
 
@@ -44,22 +51,27 @@
   };
 </script>
 
-<form>
+<form use:enhance on:submit={handleSubmit}>
 
     <div class='card p-4 variant-ghost-surface'>
         <header class='card-header text-xl font-extrabold'>Create Program Tempate</header>
 
+        <label class='label p-4'>
+          <span>Program Name</span>
+          <input class='input' type="text" name="programName" required />
+        </label>
+
         <section class='space-y-4'>
-                {#each $days as _, i}
-                <DayForm bind:muscleGroups={dayMuscleGroups[i]}/>
+                {#each $days as _, dayIndex (dayIndex)}
+                <DayForm bind:muscleGroups={dayMuscleGroups[dayIndex]}/>
+                <button class='btn-icon variant-ghost-secondary' on:click|preventDefault={() => removeDay(dayIndex)}>
+                  <Icon icon="flowbite:minus-outline" />
+                </button>
                 {/each}
             
 
-            <button class='btn-icon variant-ghost-primary' on:click={addDay}>
+            <button class='btn-icon variant-ghost-primary' on:click|preventDefault={addDay}>
                 <Icon icon="flowbite:plus-outline" />
-            </button>
-            <button class='btn-icon variant-ghost-secondary' on:click={removeDay}>
-                <Icon icon="flowbite:minus-outline" />
             </button>
 
         </section>

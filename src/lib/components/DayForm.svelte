@@ -21,20 +21,25 @@
 <div class="card p-4 variant-ghost-primary">
     <label class='p-4'>
         <span>Day Name</span>
-        <input type="text" placeholder="Name" name='name' />
+        <input type="text" placeholder="Name" name='name' class='input'/>
     </label>
-  {#each $muscleGroups as muscleGroup, i}
+  {#each $muscleGroups as muscleGroup, i (i)}
     <label class='p-4'>
         <span>
             Muscle Group {i + 1}
         </span>
-        <MuscleGroupInput bind:value={muscleGroup} />
+        <div class='input-group input-group-divider grid-cols-[1fr_auto]'>
+          <MuscleGroupInput bind:value={muscleGroup} />
+          <button class='btn-icon variant-ghost-secondary' on:click|preventDefault={() => removeMuscleGroup(i)}>
+            <Icon icon="flowbite:minus-outline" />
+          </button>
+
+        </div>
+        
     </label>
   {/each}
-  <button class='btn-icon variant-ghost-primary' on:click={addMuscleGroup}>
+  <button class='btn-icon variant-ghost-primary' on:click|preventDefault={addMuscleGroup}>
     <Icon icon="flowbite:plus-outline" />
   </button>
-  <button class='btn-icon variant-ghost-secondary ' on:click={removeMuscleGroup}>
-    <Icon icon="flowbite:minus-outline" />
-  </button>
+  
 </div>
