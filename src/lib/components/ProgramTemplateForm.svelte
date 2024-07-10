@@ -37,7 +37,7 @@
         muscleGroups: groups.filter(group => group !== "") // Filter out empty muscle groups
       }))
     }
-    const response = await fetch('/program-templates', { 
+    const response = await fetch('/program/create', { 
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(formData)

@@ -214,6 +214,7 @@ export const load = async ({ locals: { supabase, getSession }, params }) => {
 };
 
 export const actions = {
+  addSet: async ({ locals: { supabase, getSession }, params }) => {},
   complete: async ({ locals: { supabase, getSession }, params }) => {
     const session = await getSession();
     if (!session) {
