@@ -2,6 +2,7 @@
 
 <script lang="ts">
     import WorkoutRow from './WorkoutRow.svelte';
+    import Icon from '@iconify/svelte';
     export let data
 </script>
 
@@ -26,9 +27,18 @@
             <!-- if there is an existing rep/weight record, display that
                 if not, but there is a target, display that
                 if not that either, empty field -->
+
             {#each data.existing_sets.get(exercise_name) as set, i (set.id) }
-                <WorkoutRow {set} {i} len={data.existing_sets.get(exercise_name).length - 1} recovery={ data.muscleGroupRecovery.get(set.exercises.muscle_group)} />
+                    <WorkoutRow {set} {i} len={data.existing_sets.get(exercise_name).length - 1} recovery={ data.muscleGroupRecovery.get(set.exercises.muscle_group)} />
             {/each}
+            <div class='btn-group variant-ghost-primary'>
+                <button>
+                    <Icon icon="flowbite:plus-outline" />
+                </button>
+                <button>
+                    <Icon icon="flowbite:minus-outline" />
+                </button>
+            </div>
             <hr class="solid">
         {/each}
     </ul>

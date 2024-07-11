@@ -1,6 +1,7 @@
 <script lang="ts">
     import { Accordion, AccordionItem } from '@skeletonlabs/skeleton';
     import type { PageData } from './$types';
+    import LinePlot from '$lib/components/LinePlot.svelte';
     import { enhance } from '$app/forms';
     import Icon, { iconLoaded } from '@iconify/svelte';
     
@@ -35,10 +36,10 @@
                     Weight History
                 </svelte:fragment>
                 <svelte:fragment slot='content'>
-                    {#if !data.plot}
+                    {#if !data.weightHistoryData}
                         <div class='placeholder'></div>
                     {:else}
-                        {@html data.plot}
+                        <LinePlot data={data.weightHistoryData}/>
                     {/if}
 
                     <form class='p-4' method="post" use:enhance action='?/addWeight'>

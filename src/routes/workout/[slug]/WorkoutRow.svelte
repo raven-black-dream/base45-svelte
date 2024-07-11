@@ -19,7 +19,7 @@
 
         if (set.is_first) {
             if (recovery.completed === true){
-                questions.push("When did your " + set.exercises.muscle_group +  " recover after your last workout? (0: didn't get sore - 4: still sore)")
+                questions.push("When did your " + set.exercises.muscle_group +  " recover after your last workout? (1: didn't get sore - 4: still sore)")
             }
             
         }

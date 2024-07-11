@@ -44,7 +44,9 @@
     "eslint": "^8.57.0",
     "jsdom": "^24.1.0",
     "mathjs": "^12.4.2",
+    "plotly.js-dist": "^2.33.0",
     "prettier": "^3.2.5",
-    "prettier-eslint": "^16.3.0"
+    "prettier-eslint": "^16.3.0",
+    "svelte-plotly.js": "^0.4.0"
   }
 }

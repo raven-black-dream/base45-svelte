@@ -2,6 +2,7 @@ import type { PageServerLoad } from "./$types";
 import { redirect } from "@sveltejs/kit";
 import * as Plot from "@observablehq/plot";
 import { JSDOM } from "jsdom";
+import { mode } from "mathjs";
 
 const { document } = new JSDOM().window;
 
@@ -32,18 +33,16 @@ export const load = (async ({ locals: { supabase, getSession } }) => {
     .eq("complete", true)
     .order("date", { ascending: false });
 
-  const weightHistoryData = weightHistory?.forEach((row) => {
-    row.date = new Date(row.date);
-  });
+  const weightHistoryData = [
+    {
+      x: weightHistory?.map((d) => d.date),
+      y: weightHistory?.map((d) => d.value),
+      type: "scatter",
+      line: { color: "#2E7D32" },
+    },
+  ];
 
-  const plot = weightHistory
-    ? Plot.plot({
-        marks: [Plot.line(weightHistory, { x: "date", y: "value" })],
-        document,
-      }).outerHTML
-    : null;
-
-  return { session, profile, plot, workoutHistory };
+  return { session, profile, weightHistoryData, workoutHistory };
 }) satisfies PageServerLoad;
 
 export const actions = {
