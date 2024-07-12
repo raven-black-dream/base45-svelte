@@ -3,6 +3,7 @@
 <script lang="ts">
     import WorkoutRow from './WorkoutRow.svelte';
     import Icon from '@iconify/svelte';
+    import { enhance } from '$app/forms';
     export let data
 </script>
 
@@ -33,13 +34,13 @@
             {/each}
             <div class='p-4'>
                 <div class='btn-group variant-ghost-primary'>
-                    <form method='post' action='?/addSet'>
+                    <form method='post' use:enhance action='?/addSet'>
                         <button>
                             <input type='hidden' name='exercise' value={exercise_name}/>
                             <Icon icon="flowbite:plus-outline" />
                         </button>
                     </form>
-                    <form method='post' action='?/removeSet'>
+                    <form method='post' use:enhance action='?/removeSet'>
                         <input type='hidden' name='exercise' value={exercise_name}/>
                         <button>
                             <Icon icon="flowbite:minus-outline" />
