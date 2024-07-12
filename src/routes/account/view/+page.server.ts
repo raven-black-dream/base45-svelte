@@ -1,7 +1,5 @@
 import type { PageServerLoad } from "./$types";
 import { redirect } from "@sveltejs/kit";
-import * as Plot from "@observablehq/plot";
-import { JSDOM } from "jsdom";
 import { mode } from "mathjs";
 
 const { document } = new JSDOM().window;

@@ -2,9 +2,12 @@
 
 <script lang="ts">
     import WorkoutRow from './WorkoutRow.svelte';
+    import type { PopupSettings } from '@skeletonlabs/skeleton';
+    import { popup } from '@skeletonlabs/skeleton';
     import Icon from '@iconify/svelte';
     import { enhance } from '$app/forms';
     export let data
+
 </script>
 
 <svelte:head>
@@ -14,7 +17,20 @@
 {#if data.existing_sets}
     <ul>
         {#each data.existing_sets.keys() as exercise_name}
-            <li class="p-4 text-xl font-extrabold">{exercise_name}</li>
+            <li>
+                <div class='p-4 grid grid-cols-2 items-center'>
+                    <span class="p-4 text-xl font-extrabold">{exercise_name}</span>
+                    <div class='flex justify-end'>
+                        <button class='btn-icon' use:popup={{event: 'click', target: exercise_name +'-menu', placement: 'left'}}><Icon icon='flowbite:dots-vertical-outline'/></button>
+                        <div class='card p-4 variant-ghost-primary' data-popup="{exercise_name}-menu">
+                            <p>This is a test</p>
+                        </div>
+                    </div>
+                        
+
+                </div>
+                
+            </li>
             <li class='p-4'>
                 <span>Target RIR: </span> <span class='text-primary-500 font-extrabold'>{data.target_rir}</span>
             </li>

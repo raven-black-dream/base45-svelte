@@ -4,7 +4,10 @@
 	import { invalidate } from '$app/navigation'
 	import { onMount } from 'svelte'
 	import { initializeStores, getDrawerStore } from '@skeletonlabs/skeleton';
-
+	import { computePosition, autoUpdate, offset, shift, flip, arrow } from '@floating-ui/dom';
+	import { storePopup } from '@skeletonlabs/skeleton';
+	storePopup.set({ computePosition, autoUpdate, offset, shift, flip, arrow });
+			
 	export let data
 
 	let { supabase, session } = data
