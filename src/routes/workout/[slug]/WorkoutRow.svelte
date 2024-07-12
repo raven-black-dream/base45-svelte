@@ -128,10 +128,10 @@
 <!-- use:enhance keeps the page from reloading on form submission; reloading also clears any modals -->
 <form class="p-4" method="post" use:enhance action="?/recordSet">
     <div class="input-group input-group-divider grid-cols-[1fr_1fr_auto]">
-        <input type="hidden" name="set_id" value={set.id}>
-        <input type="hidden" name="exercise_id" value={set.exercises.id}>
-        <input type="hidden" name="exercise_name" value={set.exercises.exercise_name}>
-        <input type="hidden" name="muscle_group" value={set.exercises.muscle_group}>
+        <input type="hidden" name="set_id" value={set.id}/>
+        <input type="hidden" name="exercise_id" value={set.exercises.id}/>
+        <input type="hidden" name="exercise_name" value={set.exercises.exercise_name}/>
+        <input type="hidden" name="muscle_group" value={set.exercises.muscle_group}/>
         <input 
             class="input" 
             type="number" name="actualreps" 

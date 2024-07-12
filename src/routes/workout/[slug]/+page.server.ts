@@ -214,7 +214,67 @@ export const load = async ({ locals: { supabase, getSession }, params }) => {
 };
 
 export const actions = {
-  addSet: async ({ locals: { supabase, getSession }, params }) => {},
+  addSet: async ({ locals: { supabase, getSession }, params, request }) => {
+    const session = await getSession();
+    if (!session) {
+      redirect(303, "/");
+    }
+
+    const data = await request.formData();
+    console.log(data);
+
+    const { data: setData } = await supabase
+      .from("workout_set")
+      .select(
+        `
+      *,
+      exercises!inner(
+        exercise_name
+      )
+      `,
+      )
+      .eq("workout", params.slug)
+      .eq("exercises.exercise_name", data.get("exercise"));
+
+    const { data: setId } = await supabase
+      .from("workout_set")
+      .select(
+        `        
+      id`,
+      )
+      .order("id", { ascending: false })
+      .limit(1)
+      .single();
+
+    const isLastSet: boolean = setData?.reduce((acc, set) => {
+      return set.is_last ? true : acc;
+    }, false);
+    const setNum: number = setData?.reduce((acc, set) => {
+      if (set.set_num > acc) {
+        return set.set_num;
+      }
+      return acc;
+    }, 0);
+
+    const set = {
+      id: setId.id + 1,
+      workout: params.slug,
+      exercise: setData[0].exercise,
+      reps: null,
+      weight: null,
+      target_reps: null,
+      target_weight: setData[0].target_weight,
+      is_first: false,
+      is_last: isLastSet,
+      set_num: setNum + 1,
+      completed: false,
+    };
+
+    const { error } = await supabase.from("workout_set").insert(set);
+    if (error) {
+      console.log(error);
+    }
+  },
   complete: async ({ locals: { supabase, getSession }, params }) => {
     const session = await getSession();
     if (!session) {
@@ -272,6 +332,33 @@ export const actions = {
     if (error) {
       console.log(error);
     }
+  },
+
+  removeSet: async ({ locals: { supabase, getSession }, params, request }) => {
+    const session = await getSession();
+    if (!session) {
+      redirect(303, "/");
+    }
+
+    const data = await request.formData();
+
+    const { data: setId } = await supabase
+      .from("workout_set")
+      .select(
+        `        
+        id,
+        exercises!inner(exercise_name)`,
+      )
+      .eq("workout", params.slug)
+      .eq("exercises.exercise_name", data.get("exercise"))
+      .order("id", { ascending: false })
+      .limit(1)
+      .single();
+
+    const { error } = await supabase
+      .from("workout_set")
+      .delete()
+      .eq("id", setId.id);
   },
 
   feedback: async ({ locals: { supabase, getSession }, request }) => {
