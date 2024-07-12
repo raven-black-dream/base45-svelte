@@ -31,13 +31,22 @@
             {#each data.existing_sets.get(exercise_name) as set, i (set.id) }
                     <WorkoutRow {set} {i} len={data.existing_sets.get(exercise_name).length - 1} recovery={ data.muscleGroupRecovery.get(set.exercises.muscle_group)} />
             {/each}
-            <div class='btn-group variant-ghost-primary'>
-                <button>
-                    <Icon icon="flowbite:plus-outline" />
-                </button>
-                <button>
-                    <Icon icon="flowbite:minus-outline" />
-                </button>
+            <div class='p-4'>
+                <div class='btn-group variant-ghost-primary'>
+                    <form method='post' action='?/addSet'>
+                        <button>
+                            <input type='hidden' name='exercise' value={exercise_name}/>
+                            <Icon icon="flowbite:plus-outline" />
+                        </button>
+                    </form>
+                    <form method='post' action='?/removeSet'>
+                        <input type='hidden' name='exercise' value={exercise_name}/>
+                        <button>
+                            <Icon icon="flowbite:minus-outline" />
+                        </button>
+
+                    </form>
+                </div>
             </div>
             <hr class="solid">
         {/each}
