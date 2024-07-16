@@ -69,6 +69,12 @@ export const actions = {
       .limit(1)
       .single();
 
+    mesocycleData.current = false;
+
+    const { error: updateError } = await supabase
+      .from("mesocycle")
+      .update(mesocycleData);
+
     const { data: mesoDays } = await supabase
       .from("meso_day")
       .select("*")
@@ -89,7 +95,7 @@ export const actions = {
       ...mesocycleData,
       id: undefined,
       created_at: undefined,
-      current: false,
+      current: true,
       start_date: new Date().toISOString(),
       end_date: new Date(new Date().getTime() + end_date).toISOString(),
     };
