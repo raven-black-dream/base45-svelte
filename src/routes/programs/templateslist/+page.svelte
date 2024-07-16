@@ -3,6 +3,19 @@
 <script lang="ts">
 	export let data
     import { Accordion, AccordionItem } from '@skeletonlabs/skeleton';
+    import type { PopupSettings } from '@skeletonlabs/skeleton';
+    import { popup } from '@skeletonlabs/skeleton';
+    import Icon from '@iconify/svelte';
+
+    const mesoPopup: PopupSettings = {
+        event: 'click',
+        target: 'meso-menu',
+        placement: 'right',
+    }
+
+    const onClick = () => {
+
+    }
 </script>
 
 <!-- TODO: this page will be for listing the program templates, and also link to building a mesocycle -->
@@ -16,9 +29,35 @@
         <Accordion class="py-2">
             <AccordionItem class="card variant-glass-primary">
                 <svelte:fragment slot="lead">
-                    <a class="btn btn-sm variant-ghost-secondary" href="/programs/templateslist/{program.id}">
+                    {#if data.mesocycles[program.id]}
+                    <button class='btn-icon' use:popup={mesoPopup} on:click|stopPropagation><Icon icon='flowbite:dots-vertical-outline'/></button>
+                        <div class='card p-4' data-popup="meso-menu">
+                            <ul>
+                                <li class='p-2'>
+                                    <a class="btn btn-sm variant-ghost-primary" href="/programs/templateslist/{program.id}">
+                                        Create a new Mesocycle
+                                    </a>
+                                </li>
+                                <li class='p-2'>
+                                    <form method='POST' action='?/duplicate'>
+                                        <input type='hidden' name='mesoId' value={data.mesocycles[program.id]}>
+                                        <button class='btn btn-sm variant-ghost-primary' type='submit'>
+                                            Duplicate Last Meso
+                                        </button>
+
+                                    </form>
+                                </li>
+                            
+                            </ul>
+                            
+                        </div>
+                    {:else}    
+
+                    <a class="btn btn-sm variant-ghost-secondary" href="/programs/templateslist/{program.id}" on:click|stopPropagation>
                         Create a Mesocycle
-                    </a>
+                    </a>    
+
+                    {/if}
                 </svelte:fragment>
                 <svelte:fragment slot="summary" >{program.template_name}</svelte:fragment>
                 <svelte:fragment slot="content" >

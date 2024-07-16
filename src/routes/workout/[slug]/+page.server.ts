@@ -208,12 +208,77 @@ export const load = async ({ locals: { supabase, getSession }, params }) => {
       });
     }
   }
+
+  const filter = "workout.eq." + params.slug + "," + "continue.eq.true";
+
+  const { data: exerciseComments } = await supabase
+    .from("exercise_comments")
+    .select("*, exercises!inner(exercise_name)")
+    .eq("mesocycle", selected_day?.meso_day.mesocycle)
+    .or(filter);
+
+  let comments = {};
+  if (!exerciseComments) {
+    comments = {};
+  } else {
+    for (const comment of exerciseComments) {
+      if (!comments[comment.exercises.exercise_name]) {
+        comments[comment.exercises.exercise_name] = [];
+      }
+      comments[comment.exercises.exercise_name].push(comment);
+    }
+  }
+
+  console.log(comments["Bent Over Row"]);
+
   const target_rir = selected_day?.target_rir;
   // console.log(muscleGroupRecovery)
-  return { session, meso_day, existing_sets, muscleGroupRecovery, target_rir };
+  return {
+    session,
+    meso_day,
+    existing_sets,
+    muscleGroupRecovery,
+    target_rir,
+    comments,
+  };
 };
 
 export const actions = {
+  addComment: async ({ locals: { supabase, getSession }, params, request }) => {
+    const session = await getSession();
+    if (!session) {
+      redirect(303, "/");
+    }
+    const data = await request.formData();
+
+    const { data: mesoId } = await supabase
+      .from("workouts")
+      .select("mesocycle")
+      .eq("id", params.slug)
+      .limit(1)
+      .single();
+
+    const { data: exerciseId } = await supabase
+      .from("exercises")
+      .select("id")
+      .eq("exercise_name", data.get("exercise"))
+      .limit(1)
+      .single();
+
+    const comment = {
+      workout: params.slug,
+      mesocycle: mesoId.mesocycle,
+      exercise: exerciseId.id,
+      text: data.get("commentText"),
+      continue: data.get("continue") === "on" ? true : false,
+    };
+
+    const { error } = await supabase.from("exercise_comments").insert(comment);
+
+    if (error) {
+      console.log(error);
+    }
+  },
   addSet: async ({ locals: { supabase, getSession }, params, request }) => {
     const session = await getSession();
     if (!session) {

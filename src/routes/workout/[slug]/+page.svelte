@@ -2,9 +2,13 @@
 
 <script lang="ts">
     import WorkoutRow from './WorkoutRow.svelte';
+    import { popup } from '@skeletonlabs/skeleton';
     import Icon from '@iconify/svelte';
     import { enhance } from '$app/forms';
     export let data
+
+
+
 </script>
 
 <svelte:head>
@@ -14,7 +18,39 @@
 {#if data.existing_sets}
     <ul>
         {#each data.existing_sets.keys() as exercise_name}
-            <li class="p-4 text-xl font-extrabold">{exercise_name}</li>
+            <li>
+                <div class='p-4 grid grid-cols-2 items-center'>
+                    <span class="p-4 text-xl font-extrabold">{exercise_name}</span>
+                    <div class='flex justify-end'>
+                    <button class='btn-icon btn-icon-lg' use:popup={{event: 'click', target: exercise_name +'-menu', placement: 'bottom-start'}}><Icon icon='flowbite:annotation-outline'/></button>
+                        <div class='card p-4 space-y-2 z-10' data-popup="{exercise_name}-menu">
+                            <form method='POST' use:enhance action='?/addComment'>
+                                <span class='font-extrabold'>Comment for {exercise_name}</span>
+                                <label class='label'>
+                                    <span>Comment:</span>
+                                    <input class='input' type='text' name='commentText'/>
+                                    <input type='hidden' name='exercise' value={exercise_name}/>
+                                </label>
+                                <label class='label flex items-center space-x-2'>
+                                    <span>Continue for the rest of the meso?</span>
+                                    <input class='checkbox accent-primary-500' type='checkbox' name='continue'/>
+                                </label>
+                                <button class='btn variant-ghost-primary' type='submit'>Submit</button>
+                            </form>
+                        </div>
+                    </div>    
+                </div>
+                
+            </li>
+            <li>
+                {#if data.comments[exercise_name]}
+                {#each data.comments[exercise_name] as comment}
+                    <div class='p-4 variant-glass-primary space-y-2'>
+                        <span>Comment: </span> <span class='text-primary-500 font-extrabold'>{comment.text}</span>
+                    </div>
+                {/each}
+                {/if}
+            </li>
             <li class='p-4'>
                 <span>Target RIR: </span> <span class='text-primary-500 font-extrabold'>{data.target_rir}</span>
             </li>
