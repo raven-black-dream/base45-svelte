@@ -1,8 +1,5 @@
 import type { PageServerLoad } from "./$types";
 import { redirect } from "@sveltejs/kit";
-import { mode } from "mathjs";
-
-const { document } = new JSDOM().window;
 
 export const load = (async ({ locals: { supabase, getSession } }) => {
   const session = await getSession();
