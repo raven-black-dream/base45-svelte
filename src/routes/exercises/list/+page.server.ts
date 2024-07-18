@@ -8,7 +8,10 @@ export const load = (async ({ locals: { supabase, getSession }, params }) => {
     redirect(303, "/");
   }
 
-  const { data } = await supabase.from("exercises").select("*");
+  const { data: exerciseData } = await supabase
+    .from("exercises")
+    .select("*")
+    .order("exercise_name");
 
   return { exerciseData };
 }) satisfies PageServerLoad;

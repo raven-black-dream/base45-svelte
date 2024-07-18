@@ -12,7 +12,7 @@
         {#each data.exerciseData as exercise}
             <AccordionItem>
                 <svelte:fragment slot="lead">
-                <Icon icon=''/>     
+                <Icon icon='fa6-solid:dumbbell'/>     
                 </svelte:fragment>
                 <svelte:fragment slot='summary'>
                     {exercise.exercise_name}

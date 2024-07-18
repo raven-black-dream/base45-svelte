@@ -48,13 +48,19 @@
 	<nav class="list-nav">
 		<ul>
 			<li>
+				<a class="btn btn-sm variant-ghost-primary" href="/account/view" on:click={closeDrawer}>Account</a>
+			</li>
+			<li>
 				<a class="btn btn-sm variant-ghost-primary" href="/landing" on:click={closeDrawer}>Home</a>
 			</li>
 			<li>
-				<a class="btn btn-sm variant-ghost-primary" href="/programs/templateslist" on:click={closeDrawer}>Programs</a>
+				<a class="btn btn-sm variant-ghost-primary" href="/exercises/create" on:click={closeDrawer}>Create Exercise</a>
 			</li>
 			<li>
-				<a class="btn btn-sm variant-ghost-primary" href="/account/view" on:click={closeDrawer}>Account</a>
+				<a class="btn btn-sm variant-ghost-primary" href="/exercises/list" on:click={closeDrawer}>Exercise List</a>
+			</li>
+			<li>
+				<a class="btn btn-sm variant-ghost-primary" href="/programs/templateslist" on:click={closeDrawer}>Programs</a>
 			</li>
 			<li>
 				<a class="btn btn-sm variant-ghost-primary" href="/account/workout-history" on:click={closeDrawer}>Workout History</a>
