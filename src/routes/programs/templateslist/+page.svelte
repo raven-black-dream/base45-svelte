@@ -30,7 +30,7 @@
             <AccordionItem class="card variant-glass-primary">
                 <svelte:fragment slot="lead">
                     {#if data.mesocycles[program.id]}
-                    <button class='btn-icon' use:popup={mesoPopup} on:click|stopPropagation><Icon icon='flowbite:dots-vertical-outline'/></button>
+                    <button class='btn-icon' use:popup={mesoPopup} on:click|stopPropagation><Icon icon='fa6-solid:ellipsis-vertical'/></button>
                         <div class='card p-4' data-popup="meso-menu">
                             <ul>
                                 <li class='p-2'>

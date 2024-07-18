@@ -22,7 +22,7 @@
                 <div class='p-4 grid grid-cols-2 items-center'>
                     <span class="p-4 text-xl font-extrabold">{exercise_name}</span>
                     <div class='flex justify-end'>
-                    <button class='btn-icon btn-icon-lg' use:popup={{event: 'click', target: exercise_name +'-menu', placement: 'bottom-start'}}><Icon icon='flowbite:annotation-outline'/></button>
+                    <button class='btn-icon btn-icon-lg' use:popup={{event: 'click', target: exercise_name +'-menu', placement: 'bottom-start'}}><Icon icon='fa6-solid:comment'/></button>
                         <div class='card p-4 space-y-2 z-10' data-popup="{exercise_name}-menu">
                             <form method='POST' use:enhance action='?/addComment'>
                                 <span class='font-extrabold'>Comment for {exercise_name}</span>
@@ -73,13 +73,13 @@
                     <form method='post' use:enhance action='?/addSet'>
                         <button>
                             <input type='hidden' name='exercise' value={exercise_name}/>
-                            <Icon icon="flowbite:plus-outline" />
+                            <Icon icon="fa6-solid:plus" />
                         </button>
                     </form>
                     <form method='post' use:enhance action='?/removeSet'>
                         <input type='hidden' name='exercise' value={exercise_name}/>
                         <button>
-                            <Icon icon="flowbite:minus-outline" />
+                            <Icon icon="fa6-solid:minus" />
                         </button>
 
                     </form>

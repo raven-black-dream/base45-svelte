@@ -65,13 +65,13 @@
                 {#each $days as _, dayIndex (dayIndex)}
                 <DayForm bind:muscleGroups={dayMuscleGroups[dayIndex]}/>
                 <button class='btn-icon variant-ghost-secondary' on:click|preventDefault={() => removeDay(dayIndex)}>
-                  <Icon icon="flowbite:minus-outline" />
+                  <Icon icon="fa6-solid:minus" />
                 </button>
                 {/each}
             
 
             <button class='btn-icon variant-ghost-primary' on:click|preventDefault={addDay}>
-                <Icon icon="flowbite:plus-outline" />
+                <Icon icon="fa6-solid:plus" />
             </button>
 
         </section>
