@@ -6,6 +6,10 @@
 
 </script>
 
+<svelte:head>
+	<title>Create Program Templates</title>
+</svelte:head>
+
 <ProgramTemplateForm />
 
 

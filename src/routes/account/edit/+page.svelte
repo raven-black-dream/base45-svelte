@@ -34,6 +34,10 @@
 	}
 </script>
 
+<svelte:head>
+	<title>Edit Profile</title>
+</svelte:head>
+
 <div class='card p-4 variant-glass-primary'>
 	<header class="card-header">
 		<p class="card-title p-2 text-lg font-extrabold">Edit Profile</p>

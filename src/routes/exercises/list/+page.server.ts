@@ -10,5 +10,5 @@ export const load = (async ({ locals: { supabase, getSession }, params }) => {
 
   const { data } = await supabase.from("exercises").select("*");
 
-  return { data };
+  return { exerciseData };
 }) satisfies PageServerLoad;

@@ -6,6 +6,11 @@ import Icon from '@iconify/svelte';
 export let data: PageData;
 </script>
 
+
+<svelte:head>
+	<title>Workout Summary - {data.workout?.date}</title>
+</svelte:head>
+
 <div class='card p-4 variant-glass-primary'>
     <header class='card-header text-xl font-extrabold'>
         {data.workout?.day_name} - {new Date(data.workout?.date).toDateString()}
@@ -48,9 +53,9 @@ export let data: PageData;
                             <li>
                             <p>{key}:</p> 
                             <Ratings value={value + 1} max=4>
-                                <svelte:fragment slot="empty"><Icon icon="flowbite:star-outline" height='1.5em' /></svelte:fragment>
-                                <svelte:fragment slot="half"><Icon icon="flowbite:star-outline" height='1.5em'/></svelte:fragment>
-                                <svelte:fragment slot="full"><Icon icon="flowbite:star-solid" height='1.5em'/></svelte:fragment>
+                                <svelte:fragment slot="empty"><Icon icon="fa6-regular:star" height='1.5em' /></svelte:fragment>
+                                <svelte:fragment slot="half"><Icon icon="fa6-regular:star" height='1.5em'/></svelte:fragment>
+                                <svelte:fragment slot="full"><Icon icon="fa6-solid:star" height='1.5em'/></svelte:fragment>
                             </Ratings>
                             </li>
                             {/each}

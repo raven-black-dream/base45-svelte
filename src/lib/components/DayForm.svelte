@@ -31,7 +31,7 @@
         <div class='input-group input-group-divider grid-cols-[1fr_auto]'>
           <MuscleGroupInput bind:value={muscleGroup} />
           <button class='btn-icon variant-ghost-secondary' on:click|preventDefault={() => removeMuscleGroup(i)}>
-            <Icon icon="flowbite:minus-outline" />
+            <Icon icon="fa6-solid:minus" />
           </button>
 
         </div>
@@ -39,7 +39,7 @@
     </label>
   {/each}
   <button class='btn-icon variant-ghost-primary' on:click|preventDefault={addMuscleGroup}>
-    <Icon icon="flowbite:plus-outline" />
+    <Icon icon="fa6-solid:plus" />
   </button>
   
 </div>

@@ -43,9 +43,9 @@
                 <Ratings bind:value={ratings[question]} max={4} interactive on:icon={(e) => {
 					ratings[question] = e.detail.index;
 				  }}>
-                    <svelte:fragment slot="empty"><Icon icon="flowbite:star-outline" height='2.5em' /></svelte:fragment>
-                    <svelte:fragment slot="half"><Icon icon="flowbite:star-outline" height='2.5em'/></svelte:fragment>
-                    <svelte:fragment slot="full"><Icon icon="flowbite:star-solid" height='2.5em'/></svelte:fragment>
+                    <svelte:fragment slot="empty"><Icon icon="fa6-regular:star" height='2.5em' /></svelte:fragment>
+                    <svelte:fragment slot="half"><Icon icon="fa6-regular:star" height='2.5em'/></svelte:fragment>
+                    <svelte:fragment slot="full"><Icon icon="fa6-solid:star" height='2.5em'/></svelte:fragment>
                 </Ratings>
 			</div>
             {/each}

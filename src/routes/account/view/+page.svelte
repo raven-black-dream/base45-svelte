@@ -11,6 +11,10 @@
 
 </script>
 
+<svelte:head>
+	<title>Account</title>
+</svelte:head>
+
 {#if !data.profile}
     <div class='placeholder animate-pulse'/>
 {:else}
@@ -53,7 +57,7 @@
                             </select>
                             <input name='date' type='date'>
                             <button class='btn btn-sm variant-filled-primary' type='submit'>
-                                <Icon icon='flowbite:plus-outline' />
+                                <Icon icon='fa6-solid:plus' />
                             </button>
                         </div>
 

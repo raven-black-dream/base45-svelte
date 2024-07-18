@@ -15,6 +15,11 @@ $: weeklyProgress = data.numComplete/data.numberOfDays * 100;
 
 </script>
 
+
+<svelte:head>
+	<title>Home</title>
+</svelte:head>
+
 <div class="container mx-auto mt-8">
 	<h1 class="text-3xl font-bold mb-4">Welcome Back!</h1>
 
