@@ -21,13 +21,6 @@ export const load = (async ({ locals: { supabase, getSession } }) => {
     .eq("user", session.user.id)
     .order("date", { ascending: true });
 
-  const { data: workoutHistory } = await supabase
-    .from("workouts")
-    .select("*")
-    .eq("user", session.user.id)
-    .eq("complete", true)
-    .order("date", { ascending: false });
-
   const weightHistoryData = [
     {
       x: weightHistory?.map((d) => d.date),
@@ -37,7 +30,7 @@ export const load = (async ({ locals: { supabase, getSession } }) => {
     },
   ];
 
-  return { session, profile, weightHistoryData, workoutHistory };
+  return { session, profile, weightHistoryData };
 }) satisfies PageServerLoad;
 
 export const actions = {

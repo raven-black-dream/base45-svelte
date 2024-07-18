@@ -56,6 +56,9 @@
 			<li>
 				<a class="btn btn-sm variant-ghost-primary" href="/account/view" on:click={closeDrawer}>Account</a>
 			</li>
+			<li>
+				<a class="btn btn-sm variant-ghost-primary" href="/account/workout-history" on:click={closeDrawer}>Workout History</a>
+			</li>
 		</ul>
 
 	</nav>

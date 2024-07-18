@@ -73,7 +73,8 @@ export const actions = {
 
     const { error: updateError } = await supabase
       .from("mesocycle")
-      .update(mesocycleData);
+      .update({ current: false })
+      .eq("id", mesoId);
 
     const { data: mesoDays } = await supabase
       .from("meso_day")
