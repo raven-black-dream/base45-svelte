@@ -167,7 +167,7 @@ export async function getWorkoutSets(
         exercise,
         set_num,
         reps,
-        weight,
+        weight
     `,
     )
     .eq("workout", workoutId)
