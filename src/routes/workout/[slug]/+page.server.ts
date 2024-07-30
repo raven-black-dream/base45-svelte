@@ -148,6 +148,85 @@ export const load = async ({ locals: { supabase, getSession }, params }) => {
     muscleGroups.add(mesoExercise.exercises.muscle_group);
   }
 
+  const feedbackData = await supabase
+    .from("workout_feedback")
+    .select(`*`)
+    .eq("workout", params.slug);
+
+  if (feedbackData === undefined || feedbackData.data.length === 0) {
+    let questions = [];
+    for (const muscleGroup of muscleGroups) {
+      const sets = selected_day?.workout_set.filter(
+        (set) => set.exercises.muscle_group === muscleGroup,
+      );
+      const firstSet = sets.find((set) => set.is_first);
+      const lastSet = sets.find((set) => set.is_last);
+
+      questions.push(
+        {
+          feedback_type: "workout_feedback",
+          question_type: "ex_mmc",
+          value: null,
+          workout: params.slug,
+          exercise: firstSet.exercises.id,
+          muscle_group: muscleGroup,
+        },
+        {
+          feedback_type: "workout_feedback",
+          question_type: "ex_soreness",
+          value: null,
+          workout: params.slug,
+          exercise: firstSet.exercises.id,
+          muscle_group: muscleGroup,
+        },
+        {
+          feedback_type: "workout_feedback",
+          question_type: "ex_mmc",
+          value: null,
+          workout: params.slug,
+          exercise: lastSet.exercises.id,
+          muscle_group: muscleGroup,
+        },
+        {
+          feedback_type: "workout_feedback",
+          question_type: "ex_soreness",
+          value: null,
+          workout: params.slug,
+          exercise: lastSet.exercises.id,
+          muscle_group: muscleGroup,
+        },
+        {
+          feedback_type: "workout_feedback",
+          question_type: "mg_difficulty",
+          value: null,
+          workout: params.slug,
+          exercise: lastSet.exercises.id,
+          muscle_group: muscleGroup,
+        },
+        {
+          feedback_type: "workout_feedback",
+          question_type: "mg_pump",
+          value: null,
+          workout: params.slug,
+          exercise: lastSet.exercises.id,
+          muscle_group: muscleGroup,
+        },
+        {
+          feedback_type: "workout_feedback",
+          question_type: "mg_soreness",
+          value: null,
+          workout: params.slug,
+          exercise: lastSet.exercises.id,
+          muscle_group: muscleGroup,
+        },
+      );
+    }
+    const { error } = await supabase.from("workout_feedback").upsert(questions);
+    if (error) {
+      console.log(error);
+    }
+  }
+
   // retrieve workout ids given the mesocycle and muscle groups worked
   const { data: workoutList } = await supabase
     .from("recent_workout_id")
@@ -443,66 +522,53 @@ export const actions = {
     data.delete("muscle_group");
     data.delete("current_workout");
 
-    let feedback = [];
-
-    for (let entry of data.entries()) {
-      feedback.push({
-        feedback_type: "workout_feedback",
-        question_type: entry[0],
-        value: entry[1] != "" ? entry[1] - 1 : null,
-        workout: workout,
-        exercise: exercise,
-        muscle_group: muscleGroup,
-      });
-    }
-    if (
-      feedback.length === 1 &&
-      feedback[0].question_type == "mg_soreness" &&
-      feedback[0].value != null
-    ) {
-      const { error: sorenessError } = await supabase
+    if (data.has("mg_soreness")) {
+      const { data: soreness } = await supabase
         .from("workout_feedback")
-        .update(feedback[0])
-        .eq("workout", workout)
+        .select("*")
+        .eq("workout", currentWorkout)
+        .eq("question_type", "mg_soreness")
         .eq("muscle_group", muscleGroup)
-        .eq("question_type", "mg_soreness");
-      if (sorenessError) {
-        console.log(sorenessError);
+        .limit(1)
+        .single();
+
+      if (soreness) {
+        soreness.value = data.get("mg_soreness") - 1;
+        const { data: temp, error } = await supabase
+          .from("workout_feedback")
+          .upsert(soreness)
+          .select();
+        if (error) {
+          console.log(error);
+        }
       }
-      const { error: currentSorenessError } = await supabase
+    }
+
+    data.delete("mg_soreness");
+    const feedbackTypes = [];
+
+    data.forEach((value, key) => {
+      feedbackTypes.push(key);
+    });
+
+    const { data: feedbackData } = await supabase
+      .from("workout_feedback")
+      .select("*")
+      .eq("workout", workout)
+      .eq("exercise", exercise);
+
+    for (const feedbackType of feedbackTypes) {
+      let entry = feedbackData.filter(
+        (entry) => entry.question_type === feedbackType,
+      );
+      entry = entry[0];
+      entry.value = data.get(feedbackType) - 1;
+      const { data: temp, error } = await supabase
         .from("workout_feedback")
-        .insert({
-          feedback_type: "workout_feedback",
-          question_type: "mg_soreness",
-          value: null,
-          workout: currentWorkout,
-          exercise: exercise,
-          muscle_group: muscleGroup,
-        });
-      if (currentSorenessError) {
-        console.log(sorenessError);
-      }
-    } else {
-      const { error } = await supabase
-        .from("workout_feedback")
-        .insert(feedback);
+        .upsert(entry)
+        .select();
       if (error) {
         console.log(error);
-      }
-      if (feedback[0].question_type == "mg_soreness") {
-        const { error: currentSorenessError } = await supabase
-          .from("workout_feedback")
-          .insert({
-            feedback_type: "workout_feedback",
-            question_type: "mg_soreness",
-            value: null,
-            workout: currentWorkout,
-            exercise: exercise,
-            muscle_group: muscleGroup,
-          });
-        if (currentSorenessError) {
-          console.log(currentSorenessError);
-        }
       }
     }
   },
@@ -738,7 +804,7 @@ async function loadAndRepProgression(
           key,
           repsToAdd,
         );
-        await modifyLoad(nextWorkoutId, previousWorkoutId, key, 0);
+        await modifyLoad(nextWorkoutId, previousWorkoutMesoDayId, key, 0);
       }
       if (loadToAdd != 0) {
         await modifyLoad(
@@ -747,7 +813,7 @@ async function loadAndRepProgression(
           key,
           loadToAdd,
         );
-        await modifyRepNumber(nextWorkoutId, previousWorkoutId, key, 0);
+        await modifyRepNumber(nextWorkoutId, previousWorkoutMesoDayId, key, 0);
       }
     }
   }

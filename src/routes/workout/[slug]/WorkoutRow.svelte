@@ -32,6 +32,9 @@
             questions.push("How much of a pump did you get working your " + set.exercises.muscle_group + "?")
             questions.push("How hard, on average, did you find working your " + set.exercises.muscle_group + "?")
         }
+
+        console.log("questions: ", questions)
+        console.log("length", questions.length)
         
         if (questions.length > 0 && questions[0] !== "") {
             // TODO: Trigger modal. Get question response from the modal. Update the workout_feedback table with the response.
@@ -106,22 +109,6 @@
             console.error(error);
         });
         }
-        else if (set.is_first) {
-            const f = document.createElement("form"); // Create a form
-            document.body.appendChild(f); // Add it to the document body
-            f.action = "?/feedback"; // Add action and method attributes
-            f.method = "POST";
-            // register an event listener for form data
-            // formdata info can be added through the listener
-            f.addEventListener("formdata", (e) => {
-                const formData = e.formData;
-                formData.append("mg_soreness", '');
-                formData.append("exercise", set.exercises.id);
-                formData.append("workout", set.workout);
-                formData.append("muscle_group", set.exercises.muscle_group);
-            });
-            f.requestSubmit(); // Call the form's submit() method
-        }    
     }
 </script>
 

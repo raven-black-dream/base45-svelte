@@ -160,16 +160,7 @@ export async function getWorkoutSets(
 > {
   const { data: workoutData } = await supabase
     .from("workout_set")
-    .select(
-      `
-        id,
-        workout,
-        exercise,
-        set_num,
-        reps,
-        weight
-    `,
-    )
+    .select(`*`)
     .eq("workout", workoutId)
     .eq("exercise", exercise)
     .order("set_num", { ascending: true });
