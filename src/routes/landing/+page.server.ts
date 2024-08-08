@@ -78,9 +78,13 @@ export const load = async ({ locals: { supabase, getSession } }) => {
   let numComplete = 0;
   workouts.forEach((workout) => {
     const workoutDate = new Date(workout.date);
-    firstDay = new Date(firstDay);
-    lastDay = new Date(lastDay);
-    if (workout.complete && workoutDate >= firstDay && workoutDate <= lastDay) {
+    let firstDayDate = new Date(firstDay);
+    let lastDayDate = new Date(lastDay);
+    if (
+      workout.complete &&
+      workoutDate >= firstDayDate &&
+      workoutDate <= lastDayDate
+    ) {
       numComplete++;
     }
   });
