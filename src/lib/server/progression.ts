@@ -39,7 +39,6 @@ export async function modifySetNumber(
     .order("set_num", { ascending: true });
   let maxSet = workoutData[workoutData.length - 1].set_num;
   let maxSetId = await getMaxSetId();
-
   if (numSets > 0) {
     // Add sets to the workout
     let newSets = [];
@@ -71,15 +70,39 @@ export async function modifySetNumber(
     }
   } else {
     // Remove sets from the workout
-    for (let i = 0; i > numSets; i--) {
-      const {} = await supabase
-        .from("workout_set")
-        .delete()
-        .eq("workout", workoutId)
-        .eq("exercise", exercise)
-        .eq("set_num", maxSet);
-      console.log("Delete Set from DB");
-      maxSet--;
+    const isLastSet: boolean = workoutData?.reduce((acc, set) => {
+      return set.is_last ? true : acc;
+    }, false);
+
+    if (workoutData?.length == 1) {
+      console.log("Cannot remove the last set from the exercise workout");
+      return;
+    } else {
+      for (let i = 0; i > numSets; i--) {
+        const {} = await supabase
+          .from("workout_set")
+          .delete()
+          .eq("workout", workoutId)
+          .eq("exercise", exercise)
+          .eq("set_num", maxSet);
+        console.log("Delete Set from DB");
+        maxSet--;
+      }
+      if (isLastSet) {
+        const newMaxSet = await supabase
+          .from("workout_set")
+          .select("id")
+          .eq("workout", workoutId)
+          .eq("exercise", exercise)
+          .eq("set_num", maxSet)
+          .limit(1)
+          .single();
+
+        const {} = await supabase
+          .from("workout_set")
+          .update({ is_last: true })
+          .eq("id", newMaxSet.id);
+      }
     }
   }
 }
@@ -228,6 +251,10 @@ export async function modifyRepNumber(
   }
   const workoutSetIds = workoutData.map((set) => set.id);
   const previousWorkoutData = await getWorkoutSets(previousWorkoutId, exercise);
+  if (previousWorkoutData.length == 0) {
+    console.log("No previous workout data found for this exercise");
+    return;
+  }
   let newReps = [];
   if (numReps > 0 && numReps < 1) {
     for (let i = 0; i < workoutSetIds.length; i++) {
@@ -296,6 +323,10 @@ export async function modifyLoad(
   const workoutSetIds = workoutData.map((set) => set.id);
   const weightStep: number = await getWeightStep(exercise);
   const previousLoadData = await getWorkoutSets(previousWorkoutId, exercise);
+  if (previousLoadData.length == 0) {
+    console.log("No previous workout data found for this exercise");
+    return;
+  }
   let newLoads = [];
   if (loadModifier > 0 && loadModifier < 1) {
     const load = previousLoadData[0].weight * loadModifier;
