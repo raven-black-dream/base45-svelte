@@ -251,6 +251,10 @@ export async function modifyRepNumber(
   }
   const workoutSetIds = workoutData.map((set) => set.id);
   const previousWorkoutData = await getWorkoutSets(previousWorkoutId, exercise);
+  if (previousWorkoutData.length == 0) {
+    console.log("No previous workout data found for this exercise");
+    return;
+  }
   let newReps = [];
   if (numReps > 0 && numReps < 1) {
     for (let i = 0; i < workoutSetIds.length; i++) {
@@ -319,6 +323,10 @@ export async function modifyLoad(
   const workoutSetIds = workoutData.map((set) => set.id);
   const weightStep: number = await getWeightStep(exercise);
   const previousLoadData = await getWorkoutSets(previousWorkoutId, exercise);
+  if (previousLoadData.length == 0) {
+    console.log("No previous workout data found for this exercise");
+    return;
+  }
   let newLoads = [];
   if (loadModifier > 0 && loadModifier < 1) {
     const load = previousLoadData[0].weight * loadModifier;
