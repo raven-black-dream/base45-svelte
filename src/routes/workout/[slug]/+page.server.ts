@@ -3,23 +3,32 @@
 import { supabase } from "$lib/supabaseClient.js";
 import { redirect } from "@sveltejs/kit";
 import { rpMevEstimator } from "$lib/utils/progressionUtils";
-import { checkDeload, getMesoId, getMuscleGroups } from "$lib/server/workout";
 import {
+  checkDeload,
+  getMesoId,
+  getMuscleGroups,
+  getNextWorkoutId,
+  getPreviousWorkoutId,
+  getMesoDay,
+  getDayOfWeek,
+  getWeekMidpoint,
+  getWeekNumber,
+  getMaxSetId,
+} from "$lib/server/workout";
+import {
+  shouldDoProgression,
   modifyLoad,
   modifyRepNumber,
   modifySetNumber,
 } from "$lib/server/progression";
-import { shouldDoProgression } from "$lib/server/progression";
-import { getNextWorkoutId } from "$lib/server/workout";
-import { getPreviousWorkoutId } from "$lib/server/workout";
-import { getMesoDay, getDayOfWeek, getWeekMidpoint } from "$lib/server/workout";
-import { getWeekNumber } from "$lib/server/workout";
 import { calculateMuscleGroupMetrics } from "$lib/server/metrics";
 import { calculateExerciseMetrics } from "$lib/server/metrics";
 import { setProgressionAlgorithm } from "$lib/utils/progressionUtils";
 import { repProgressionAlgorithm } from "$lib/utils/progressionUtils";
 import { loadProgressionAlgorithm } from "$lib/utils/progressionUtils";
 import { getSorenessAndPerformance } from "$lib/server/progression";
+import { get } from "http";
+import { i } from "mathjs";
 
 interface MesoExercise {
   sort_order: number;
@@ -159,6 +168,9 @@ export const load = async ({ locals: { supabase, getSession }, params }) => {
       const sets = selected_day?.workout_set.filter(
         (set) => set.exercises.muscle_group === muscleGroup,
       );
+      if (sets === undefined || sets.length === 0) {
+        continue;
+      }
       const firstSet = sets.find((set) => set.is_first);
       const lastSet = sets.find((set) => set.is_last);
 
@@ -399,6 +411,22 @@ export const actions = {
       }
       return acc;
     }, 0);
+    let sets = [];
+    for (const exSet of setData) {
+      sets.push({
+        id: exSet.id,
+        workout: exSet.workout,
+        exercise: exSet.exercise,
+        reps: exSet.reps,
+        weight: exSet.weight,
+        target_reps: exSet.target_reps,
+        target_weight: exSet.target_weight,
+        is_first: exSet.is_first,
+        is_last: false,
+        set_num: exSet.set_num,
+        completed: exSet.completed,
+      });
+    }
 
     const set = {
       id: setId.id + 1,
@@ -414,7 +442,9 @@ export const actions = {
       completed: false,
     };
 
-    const { error } = await supabase.from("workout_set").insert(set);
+    sets.push(set);
+
+    const { error } = await supabase.from("workout_set").upsert(sets);
     if (error) {
       console.log(error);
     }
@@ -491,7 +521,8 @@ export const actions = {
       .select(
         `        
         id,
-        exercises!inner(exercise_name)`,
+        is_last,
+        exercises!inner(id, exercise_name)`,
       )
       .eq("workout", params.slug)
       .eq("exercises.exercise_name", data.get("exercise"))
@@ -499,10 +530,35 @@ export const actions = {
       .limit(1)
       .single();
 
+    const isLastSet = setId.is_last;
+    const exercise = setId.exercises.id;
+
     const { error } = await supabase
       .from("workout_set")
       .delete()
       .eq("id", setId.id);
+
+    const { data: newMaxSet } = await supabase
+      .from("workout_set")
+      .select("id")
+      .eq("workout", params.slug)
+      .eq("exercise", exercise)
+      .order("id", { ascending: false })
+      .limit(1)
+      .single();
+    const { error: error2 } = await supabase
+      .from("workout_set")
+      .update({ is_last: true })
+      .eq("id", newMaxSet.id);
+
+    if (error || error2) {
+      if (error) {
+        console.log(error);
+      }
+      if (error2) {
+        console.log(error2);
+      }
+    }
   },
 
   feedback: async ({ locals: { supabase, getSession }, request }) => {
