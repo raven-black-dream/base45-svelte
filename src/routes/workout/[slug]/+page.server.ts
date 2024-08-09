@@ -1,6 +1,7 @@
 // src/routes/workout/[slug]/+page.server.ts
 
 import { supabase } from "$lib/supabaseClient.js";
+import { error } from "@sveltejs/kit";
 import { redirect } from "@sveltejs/kit";
 import { rpMevEstimator } from "$lib/utils/progressionUtils";
 import {
@@ -78,7 +79,7 @@ export const load = async ({ locals: { supabase, getSession }, params }) => {
   }
 
   // Pull all the information for the day's workout
-  const { data: selected_day } = await supabase
+  const { data: selected_day, error: dbError } = await supabase
     .from("workouts")
     .select(
       `
@@ -125,6 +126,10 @@ export const load = async ({ locals: { supabase, getSession }, params }) => {
     .eq("id", params.slug)
     .limit(1)
     .single();
+
+  if (dbError) {
+    error(401, "You do not have access to this workout");
+  }
 
   // define meso day for a shorthand
   const meso_day: MesoDay | undefined = selected_day?.meso_day;
