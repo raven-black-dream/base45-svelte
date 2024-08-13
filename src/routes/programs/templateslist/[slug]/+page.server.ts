@@ -4,9 +4,11 @@ import { redirect } from "@sveltejs/kit";
 import { createWorkouts } from "$lib/server/mesocycle.js";
 
 export const load = async ({ locals: { supabase, getSession }, params }) => {
-  const session = await getSession();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  if (!session) {
+  if (!user) {
     redirect(303, "/");
   }
 
@@ -38,15 +40,17 @@ export const load = async ({ locals: { supabase, getSession }, params }) => {
     .select()
     .eq("public", true);
 
-  return { session, program, exercises };
+  return { user, program, exercises };
 };
 
 export const actions = {
   create: async ({ locals: { supabase, getSession }, params, request }) => {
     const data = await request.formData();
 
-    const session = await getSession();
-    if (!session) {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
       redirect(303, "/");
     }
 
@@ -61,7 +65,7 @@ export const actions = {
     const {} = await supabase
       .from("mesocycle")
       .update({ current: false })
-      .eq("user", session.user.id);
+      .eq("user", user.id);
 
     // second form field is the start date
     let start_date: Date = new Date(Date.parse(form[1][1].toString()));
@@ -77,7 +81,7 @@ export const actions = {
     const { data: current_meso, error } = await supabase
       .from("mesocycle")
       .insert({
-        user: session.user.id,
+        user: user.id,
         meso_name: form[0][1], // first form field is the name
         template: params.slug,
         start_date: start_date.toISOString(),
@@ -175,7 +179,7 @@ export const actions = {
 
       await createWorkouts(
         supabase,
-        session.user.id,
+        user.id,
         start_date,
         end_date,
         current_meso?.id,

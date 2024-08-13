@@ -2,9 +2,11 @@ import type { PageServerLoad } from "./$types";
 import { redirect } from "@sveltejs/kit";
 
 export const load = (async ({ locals: { supabase, getSession } }) => {
-  const session = await getSession();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  if (!session) {
+  if (!user) {
     redirect(303, "/");
   }
 
@@ -12,13 +14,13 @@ export const load = (async ({ locals: { supabase, getSession } }) => {
   const { data: profile } = await supabase
     .from("users")
     .select(`display_name, gender, date_of_birth`)
-    .eq("id", session.user.id)
+    .eq("id", user.id)
     .single();
 
   const { data: weightHistory } = await supabase
     .from("user_weight_history")
     .select("date, value")
-    .eq("user", session.user.id)
+    .eq("user", user.id)
     .order("date", { ascending: true });
 
   const weightHistoryData = [
@@ -30,14 +32,16 @@ export const load = (async ({ locals: { supabase, getSession } }) => {
     },
   ];
 
-  return { session, profile, weightHistoryData };
+  return { user, profile, weightHistoryData };
 }) satisfies PageServerLoad;
 
 export const actions = {
   async addWeight({ locals: { supabase, getSession }, params, request }) {
-    const session = await getSession();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-    if (!session) {
+    if (!user) {
       redirect(303, "/");
     }
 
@@ -47,7 +51,7 @@ export const actions = {
       value: Number(data.get("value")),
       unit: data.get("unit"),
       date: date,
-      user: session.user.id,
+      user: user.id,
     };
     const {} = await supabase.from("user_weight_history").insert(weightValue);
   },
