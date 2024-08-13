@@ -1,45 +1,42 @@
 <script lang="ts">
   import MuscleGroupInput from './MuscleGroupInput.svelte';
-  import { writable } from 'svelte/store';
+  import { createEventDispatcher } from 'svelte';
   import Icon from '@iconify/svelte';
 
-  export let muscleGroups = writable([""]);
 
-  const addMuscleGroup = () => {
-    muscleGroups.update(currentGroups => [...currentGroups, ""]);
-  };
-  const removeMuscleGroup = (index: number) => {
-    muscleGroups.update(currentGroups => {
-      const newGroups = [...currentGroups];
-      newGroups.splice(index, 1);
-      return newGroups;
-    });
-  };
+  export let day: {name: string, muscle_groups: {muscleGroup: string, numSets: number}[]};
+
+  const dispatch = createEventDispatcher();
+
+  function addMuscleGroup() {
+    day.muscle_groups = [... day.muscle_groups, { muscleGroup: '', numSets: 0 }];
+  }
+
+  function removeMuscleGroup(index: number){
+    day.muscle_groups = day.muscle_groups.filter((muscleGroup, i) => i !== index);
+  }
 
 </script>
 
-<div class="card p-4 variant-ghost-primary">
+<div class="card p-4 variant-ghost-primary space-y-2">
     <label class='p-4'>
         <span>Day Name</span>
-        <input type="text" placeholder="Name" name='name' class='input'/>
+        <input type="text" placeholder="Name" name='name' class='input' bind:value={day.name}/>
     </label>
-  {#each $muscleGroups as muscleGroup, i (i)}
-    <label class='p-4'>
-        <span>
-            Muscle Group {i + 1}
-        </span>
-        <div class='input-group input-group-divider grid-cols-[1fr_auto]'>
-          <MuscleGroupInput bind:value={muscleGroup} />
-          <button class='btn-icon variant-ghost-secondary' on:click|preventDefault={() => removeMuscleGroup(i)}>
-            <Icon icon="fa6-solid:minus" />
-          </button>
-
-        </div>
-        
-    </label>
+  {#each day.muscle_groups as muscleGroup, i (i)}
+  <label class='p-2'>
+    <span>{"Muscle Group " + (i + 1) }</span>
+    <MuscleGroupInput bind:muscleGroup on:remove={() => removeMuscleGroup(i)}/>
+  </label>
+  
   {/each}
-  <button class='btn-icon variant-ghost-primary' on:click|preventDefault={addMuscleGroup}>
+  <button class='btn-icon variant-ghost-secondary' type='button' on:click={addMuscleGroup}>
     <Icon icon="fa6-solid:plus" />
   </button>
+
+  <button class='btn-icon variant-ghost-primary float-right' type='button' on:click={() => dispatch('remove')}>
+    <Icon icon="fa6-solid:minus" /> 
+  </button>
+
   
 </div>

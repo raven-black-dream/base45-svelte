@@ -1,8 +1,14 @@
 <script lang="ts">
-  export let value = "";
+	import { createEventDispatcher } from 'svelte';
+  import Icon from '@iconify/svelte';
+  export let muscleGroup = {muscleGroup: '', numSets: 0};
+
+  const dispatch = createEventDispatcher();
 </script>
 
-<select class='select'>
+<div class='input-group input-group-divider grid-cols-[1fr_1fr_auto]'>
+
+  <select class='select'  bind:value={muscleGroup.muscleGroup}>
     <option value=''>Select a muscle group</option>
     <option value='Abs'>Abs</option>
     <option value='Back'>Back</option>
@@ -16,4 +22,12 @@
     <option value='Shoulders'>Shoulders</option>
     <option value='Triceps'>Triceps</option>
 </select>
+
+<input type='number' class='input' placeholder='Number of sets' bind:value={muscleGroup.numSets}/>  
+
+<button class='btn-icon variant-ghost-secondary' type='button' on:click={() => dispatch('remove')}><Icon icon="fa6-solid:minus" /></button>
+
+</div>
+
+
     

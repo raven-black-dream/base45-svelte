@@ -3,9 +3,11 @@
 import { redirect } from "@sveltejs/kit";
 
 export const load = async ({ locals: { supabase, getSession } }) => {
-  const session = await getSession();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  if (!session) {
+  if (!user) {
     redirect(303, "/");
   }
 
@@ -18,7 +20,7 @@ export const load = async ({ locals: { supabase, getSession } }) => {
       id
     `,
     )
-    .eq("user", session.user.id)
+    .eq("user", user.id)
     .eq("current", true)
     .limit(1)
     .single();
@@ -27,7 +29,7 @@ export const load = async ({ locals: { supabase, getSession } }) => {
   }
   if (!mesocycle) {
     console.log("No mesocycle found for the current user.");
-    return { session, workouts: [], numberOfDays: 0 };
+    return { user, workouts: [], numberOfDays: 0 };
   }
 
   const { data: workouts, error: error2 } = await supabase
@@ -89,7 +91,7 @@ export const load = async ({ locals: { supabase, getSession } }) => {
     }
   });
 
-  return { session, workouts, nextWorkouts, numberOfDays, numComplete };
+  return { user, workouts, nextWorkouts, numberOfDays, numComplete };
 };
 
 function getCurrentWeek() {

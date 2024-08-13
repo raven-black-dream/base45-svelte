@@ -28,8 +28,6 @@ import { setProgressionAlgorithm } from "$lib/utils/progressionUtils";
 import { repProgressionAlgorithm } from "$lib/utils/progressionUtils";
 import { loadProgressionAlgorithm } from "$lib/utils/progressionUtils";
 import { getSorenessAndPerformance } from "$lib/server/progression";
-import { get } from "http";
-import { i } from "mathjs";
 
 interface MesoExercise {
   sort_order: number;
@@ -72,9 +70,11 @@ interface WorkoutSet {
 
 // @ts-ignore
 export const load = async ({ locals: { supabase, getSession }, params }) => {
-  const session = await getSession();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  if (!session) {
+  if (!user) {
     redirect(303, "/");
   }
 
@@ -330,7 +330,7 @@ export const load = async ({ locals: { supabase, getSession }, params }) => {
   const target_rir = selected_day?.target_rir;
   // console.log(muscleGroupRecovery)
   return {
-    session,
+    user,
     meso_day,
     existing_sets,
     muscleGroupRecovery,
@@ -341,8 +341,10 @@ export const load = async ({ locals: { supabase, getSession }, params }) => {
 
 export const actions = {
   addComment: async ({ locals: { supabase, getSession }, params, request }) => {
-    const session = await getSession();
-    if (!session) {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
       redirect(303, "/");
     }
     const data = await request.formData();
@@ -376,8 +378,10 @@ export const actions = {
     }
   },
   addSet: async ({ locals: { supabase, getSession }, params, request }) => {
-    const session = await getSession();
-    if (!session) {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
       redirect(303, "/");
     }
 
@@ -455,8 +459,10 @@ export const actions = {
     }
   },
   complete: async ({ locals: { supabase, getSession }, params }) => {
-    const session = await getSession();
-    if (!session) {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
       redirect(303, "/");
     }
 
@@ -490,8 +496,10 @@ export const actions = {
   },
 
   recordSet: async ({ locals: { supabase, getSession }, params, request }) => {
-    const session = await getSession();
-    if (!session) {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
       redirect(303, "/");
     }
     const data = await request.formData();
@@ -514,8 +522,10 @@ export const actions = {
   },
 
   removeSet: async ({ locals: { supabase, getSession }, params, request }) => {
-    const session = await getSession();
-    if (!session) {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
       redirect(303, "/");
     }
 
@@ -567,8 +577,10 @@ export const actions = {
   },
 
   feedback: async ({ locals: { supabase, getSession }, request }) => {
-    const session = await getSession();
-    if (!session) {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
       redirect(303, "/");
     }
     const data = await request.formData();

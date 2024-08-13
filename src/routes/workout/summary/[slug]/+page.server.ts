@@ -2,9 +2,11 @@ import type { PageServerLoad } from "./$types";
 import { redirect } from "@sveltejs/kit";
 
 export const load = (async ({ locals: { supabase, getSession }, params }) => {
-  const session = await getSession();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  if (!session) {
+  if (!user) {
     redirect(303, "/");
   }
   const { data: workoutData } = await supabase

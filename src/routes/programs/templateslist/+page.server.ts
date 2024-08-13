@@ -5,9 +5,11 @@ import { createWorkouts } from "$lib/server/mesocycle.js";
 
 // @ts-ignore
 export const load = async ({ locals: { supabase, getSession } }) => {
-  const session = await getSession();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  if (!session) {
+  if (!user) {
     redirect(303, "/");
   }
 
@@ -28,12 +30,12 @@ export const load = async ({ locals: { supabase, getSession } }) => {
     `,
     )
     // select all program templates that are either authored by the user, or public
-    .or("author.eq." + session.user.id + ",public.eq.true");
+    .or("author.eq." + user.id + ",public.eq.true");
 
   const { data: mesocycleData } = await supabase
     .from("mesocycle")
     .select("*")
-    .eq("user", session.user.id)
+    .eq("user", user.id)
     .in(
       "template",
       programs.map((program) => program.id),
@@ -49,14 +51,16 @@ export const load = async ({ locals: { supabase, getSession } }) => {
     return result;
   }, {});
 
-  return { session, programs, mesocycles };
+  return { user, programs, mesocycles };
 };
 
 export const actions = {
   duplicate: async ({ locals: { supabase, getSession }, request }) => {
-    const session = await getSession();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-    if (!session) {
+    if (!user) {
       redirect(303, "/");
     }
     const data = await request.formData();
@@ -135,7 +139,7 @@ export const actions = {
     for (const day in newMesoDays) {
       createWorkouts(
         supabase,
-        session.user.id,
+        user.id,
         new Date(newMesoData.start_date),
         new Date(newMesoData.end_date),
         newMesoData.id,

@@ -7,8 +7,10 @@ export const load = (async () => {
 
 export const actions = {
   create: async ({ locals: { supabase, getSession }, params, request }) => {
-    const session = await getSession();
-    if (!session) {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
       redirect(303, "/");
     }
     const data = await request.formData();
@@ -18,7 +20,7 @@ export const actions = {
       weighted: data.get("weighted") === "on",
       weight_step: Number(data.get("weightStep")),
       public: data.get("public") === "on",
-      creator: session.user.id,
+      creator: user.id,
       muscle_group: data.get("muscleGroup"),
       progression_method: data.get("progressionMethod"),
     };
