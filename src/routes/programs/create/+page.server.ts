@@ -1,7 +1,6 @@
 import type { PageServerLoad } from "./$types";
 import { error, fail, redirect } from "@sveltejs/kit";
 import type { Actions } from "./$types";
-import { redirect } from "@sveltejs/kit";
 
 export const load = (async () => {
   return {};
