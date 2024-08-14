@@ -89,4 +89,6 @@
         </AccordionItem>
     </Accordion>
 	{/each}
+
+    <a href='/programs/create' class='btn variant-ghost-primary float-right'>Create New Template</a>
 </ul>
