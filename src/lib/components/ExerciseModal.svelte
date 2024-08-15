@@ -18,9 +18,18 @@
 
 	// We've created a custom submit function to pass the response and close the modal.
 	function onFormSubmit(): void {
-		if ($modalStore[0].response) $modalStore[0].response(ratings);
-		ratings = new Map();		
-		modalStore.close();
+		const allRatingsFilled = questions.every((question) => ratings[question] !== 0);
+		console.log('allRatingsFilled', allRatingsFilled);
+		if (allRatingsFilled === false) {
+			alert('Please fill out all ratings before submitting.');
+			return;
+		}
+		else{
+			if ($modalStore[0].response) $modalStore[0].response(ratings);
+				ratings = new Map();		
+				modalStore.close();
+
+		}
 	}
 
 	// Base Classes
