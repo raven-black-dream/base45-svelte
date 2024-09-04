@@ -9,7 +9,7 @@
 	// Props
 	/** Exposes parent props to this component. */
 	export let parent: SvelteComponent;
-	export let questions: string[];
+	export let questions: ModalFeedbackItem[];
 
 	const modalStore = getModalStore();
 
@@ -25,7 +25,7 @@
 			return;
 		}
 		else{
-			if ($modalStore[0].response) $modalStore[0].response(ratings);
+			if ($modalStore[0].response) $modalStore[0].response(questions);
 				ratings = new Map();		
 				modalStore.close();
 
@@ -49,8 +49,8 @@
 			{#each questions as question, i}
 				<div>
                 <p>{question}</p>
-                <Ratings bind:value={ratings[question]} max={4} interactive on:icon={(e) => {
-					ratings[question] = e.detail.index;
+                <Ratings bind:value={question.value} max={4} interactive on:icon={(e) => {
+					question.value = e.detail.index;
 				  }}>
                     <svelte:fragment slot="empty"><Icon icon="fa6-regular:star" height='2.5em' /></svelte:fragment>
                     <svelte:fragment slot="half"><Icon icon="fa6-regular:star" height='2.5em'/></svelte:fragment>

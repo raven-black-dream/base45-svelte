@@ -66,7 +66,9 @@
                 if not that either, empty field -->
 
             {#each data.existing_sets.get(exercise_name) as set, i (set.id) }
-                    <WorkoutRow {set} {i} len={data.existing_sets.get(exercise_name).length - 1} recovery={ data.muscleGroupRecovery.get(set.exercises.muscle_group)} />
+                {@const recovery = data.muscleGroupRecovery.get(set.exercises.muscle_group)}
+                {@const questions = set.is_first | set.is_last ? data.feedbackData?.filter(item => item.exercise === set.exercises.id): []}
+                    <WorkoutRow {set} {i} len={data.existing_sets.get(exercise_name).length - 1} {recovery} {questions}/>
             {/each}
             <div class='p-4'>
                 <div class='btn-group variant-ghost-primary'>

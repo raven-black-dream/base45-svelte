@@ -1,6 +1,7 @@
 <script lang="ts">
+    import { onMount } from 'svelte';
     import { getModalStore } from '@skeletonlabs/skeleton';
-    import type { ModalSettings, ModalComponent } from '@skeletonlabs/skeleton';
+    import type { ModalSettings, ModalComponent, Modal } from '@skeletonlabs/skeleton';
     import ExerciseModal from '$lib/components/ExerciseModal.svelte';
     import { enhance } from '$app/forms';
 
@@ -9,34 +10,36 @@
     export let i: number;
     export let len: number;
     export let recovery: {completed: boolean, workout: string};
+    export let questions: ModalFeedbackItem[];
+
+    let isLastSet = i === len;
+
+    onMount(() => {
+        if (set.is_last){
+            questions.filter(
+                (question) => question.question_type in ['ex_soreness', 'ex_mmc', 'mg_pump', 'mg_difficulty']
+        )
+        }
+
+        if (set.is_first && recovery.completed === true){
+            questions.filter(
+                (question) => question.question_type in ['mg_soreness']
+            )
+            questions[0].workout = recovery.workout;
+        }
+    });
+
+    console.log(questions)
+
+
     // modalStore needs to be where the trigger will be
     const modalStore = getModalStore();
 
     // TODO: over here you could have logic about if a modal is to be shown or not, or
     // simply trigger it as below
     function askForFeedback() {
-        let questions:string[] = [];
-
-        if (set.is_first) {
-            if (recovery.completed === true){
-                questions.push("When did your " + set.exercises.muscle_group +  " recover after your last workout? (1: didn't get sore - 4: still sore)")
-            }
-            
-        }
-        if (i == len) {
-            questions.push("How sore did your joints get doing " + set.exercises.exercise_name + "?");
-            questions.push("How much of a burn did you feel in your " + set.exercises.muscle_group + " doing " + set.exercises.exercise_name + "?")
-        }
-
-        if (set.is_last){
-            questions.push("How much of a pump did you get working your " + set.exercises.muscle_group + "?")
-            questions.push("How hard, on average, did you find working your " + set.exercises.muscle_group + "?")
-        }
-
-        console.log("questions: ", questions)
-        console.log("length", questions.length)
         
-        if (questions.length > 0 && questions[0] !== "") {
+        if (questions.length > 0) {
             // TODO: Trigger modal. Get question response from the modal. Update the workout_feedback table with the response.
             const modalComponent: ModalComponent = { ref: ExerciseModal, props: {questions: questions}};
 

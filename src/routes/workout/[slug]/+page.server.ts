@@ -78,260 +78,76 @@ export const load = async ({ locals: { supabase, getSession }, params }) => {
     redirect(303, "/");
   }
 
-  // Pull all the information for the day's workout
-  const { data: selected_day, error: dbError } = await supabase
-    .from("workouts")
-    .select(
-      `
-      id,
-      meso_day(
-        id,
-        meso_day_name,
-        day_of_week,
-        mesocycle,
-        meso_exercise(
-          sort_order,
-          num_sets,
-          exercises(
-            id,
-            exercise_name,
-            muscle_group,
-            weighted,
-            weight_step
-          )
-        )
-      ),
-      workout_set(
-        id,
-        workout,
-        reps,
-        target_reps,
-        weight,
-        target_weight,
-        set_num,
-        exercises(
-          id,
-          exercise_name,
-          weighted,
-          weight_step,
-          muscle_group
-        ),
-        is_first,
-        is_last,
-        completed
-      ),
-      target_rir
-    `,
-    )
-    .eq("id", params.slug)
-    .limit(1)
-    .single();
+  const workoutId = params.slug;
 
-  if (dbError) {
+  let [
+    workoutData,
+    feedbackData,
+    exerciseCommentData,
+    muscleGroupRecoveryData,
+  ] = await Promise.all([
+    fetchWorkoutData(workoutId),
+    fetchFeedbackData(workoutId),
+    fetchExerciseCommentData(workoutId),
+    fetchMuscleGroupRecoveryData(workoutId),
+  ]);
+
+  if (workoutData.error) {
     error(401, "You do not have access to this workout");
   }
 
-  // define meso day for a shorthand
-  const meso_day: MesoDay | undefined = selected_day?.meso_day;
-
-  // put the exercises in the correct order
-  meso_day?.meso_exercise.sort(
-    (a: MesoExercise, b: MesoExercise) => a.sort_order - b.sort_order,
+  const { meso_day, existing_sets, target_rir } =
+    processWorkoutData(workoutData);
+  const muscleGroupRecovery = processMuscleGroupRecovery(
+    muscleGroupRecoveryData,
+    meso_day,
+    workoutId,
   );
-
-  let existing_sets = new Map();
-
-  // get a list of just the titles of the exercises, ordered as the user requested
-  const exerciseNamesInOrder: string[] | undefined =
-    meso_day?.meso_exercise.map((exercise) => exercise.exercises.exercise_name);
-
-  // for each exercise name, add an ordered list of the relevant sets for the key of the exercise name
-  exerciseNamesInOrder.forEach((exercise) => {
-    const matchingSets = selected_day?.workout_set
-      .filter((wset: WorkoutSet) => wset.exercises.exercise_name === exercise)
-      .sort((a: WorkoutSet, b: WorkoutSet) => a.set_num - b.set_num);
-
-    if (matchingSets) {
-      existing_sets.set(exercise, matchingSets);
-    }
-  });
-
-  // collect a list of all the muscle groups applicable to the day's workout
-  const muscleGroups = new Set();
-  for (const mesoExercise of meso_day?.meso_exercise) {
-    muscleGroups.add(mesoExercise.exercises.muscle_group);
-  }
-
-  const feedbackData = await supabase
-    .from("workout_feedback")
-    .select(`*`)
-    .eq("workout", params.slug);
+  const comments = processExerciseComments(exerciseCommentData);
 
   if (feedbackData === undefined || feedbackData.data.length === 0) {
-    let questions = [];
-    for (const muscleGroup of muscleGroups) {
-      const sets = selected_day?.workout_set.filter(
-        (set) => set.exercises.muscle_group === muscleGroup,
-      );
-      if (sets === undefined || sets.length === 0) {
-        continue;
-      }
-      const firstSet = sets.find((set) => set.is_first);
-      const lastSet = sets.find((set) => set.is_last);
-
-      questions.push(
-        {
-          feedback_type: "workout_feedback",
-          question_type: "ex_mmc",
-          value: null,
-          workout: params.slug,
-          exercise: firstSet.exercises.id,
-          muscle_group: muscleGroup,
-        },
-        {
-          feedback_type: "workout_feedback",
-          question_type: "ex_soreness",
-          value: null,
-          workout: params.slug,
-          exercise: firstSet.exercises.id,
-          muscle_group: muscleGroup,
-        },
-        {
-          feedback_type: "workout_feedback",
-          question_type: "ex_mmc",
-          value: null,
-          workout: params.slug,
-          exercise: lastSet.exercises.id,
-          muscle_group: muscleGroup,
-        },
-        {
-          feedback_type: "workout_feedback",
-          question_type: "ex_soreness",
-          value: null,
-          workout: params.slug,
-          exercise: lastSet.exercises.id,
-          muscle_group: muscleGroup,
-        },
-        {
-          feedback_type: "workout_feedback",
-          question_type: "mg_difficulty",
-          value: null,
-          workout: params.slug,
-          exercise: lastSet.exercises.id,
-          muscle_group: muscleGroup,
-        },
-        {
-          feedback_type: "workout_feedback",
-          question_type: "mg_pump",
-          value: null,
-          workout: params.slug,
-          exercise: lastSet.exercises.id,
-          muscle_group: muscleGroup,
-        },
-        {
-          feedback_type: "workout_feedback",
-          question_type: "mg_soreness",
-          value: null,
-          workout: params.slug,
-          exercise: lastSet.exercises.id,
-          muscle_group: muscleGroup,
-        },
-      );
-    }
-    const { error } = await supabase.from("workout_feedback").upsert(questions);
-    if (error) {
-      console.log(error);
-    }
-  }
-
-  // retrieve workout ids given the mesocycle and muscle groups worked
-  const { data: workoutList } = await supabase
-    .from("recent_workout_id")
-    .select()
-    .eq("mesocycle_id", selected_day?.meso_day.mesocycle)
-    .in("muscle_group", Array.from(muscleGroups));
-
-  let recovery: {
-    question_type: string;
-    value: number;
-    muscle_group: string;
-    workout: string;
-  }[] = [];
-
-  // for every workout that was relevant to the mesocycle and muscle groups worked,
-  // fetch the muscle soreness feedback question, and add it to the recovery questions array
-  if (workoutList) {
-    for (const workout of workoutList) {
-      const { data: feedback } = await supabase
-        .from("workout_feedback")
-        .select(
-          `
-          question_type,
-          value,
-          muscle_group,
-          workout
-        `,
-        )
-        .eq("workout", workout.most_recent_workout_id)
-        .eq("muscle_group", workout.muscle_group)
-        .eq("question_type", "mg_soreness")
-        .limit(1);
-
-      if (feedback) {
-        recovery.push(feedback[0]);
-      }
-    }
-  }
-  const muscleGroupRecovery = new Map();
-  // for every exercise of the workout,
-  // if the muscle group does not yet exist in the muscleGroupRecovery map,
-  // then add a default of not completed and null
-  // if there was a recovery question in the database for the muscle group, and it was not for the current page's workout,
-  // set that there is a completed answer and the attached workout
-  for (const mesoExercise of meso_day?.meso_exercise) {
-    const muscleGroup = mesoExercise.exercises.muscle_group;
-
-    if (!muscleGroupRecovery.has(muscleGroup)) {
-      muscleGroupRecovery.set(muscleGroup, { completed: false, workout: null });
-    }
-    const recoveryEntry = recovery?.find(
-      (entry) => entry.muscle_group === muscleGroup,
+    feedbackData = await createFeedbackQuestions(
+      workoutId,
+      meso_day,
+      workoutData.data.workout_set,
     );
-    if (recoveryEntry && recoveryEntry.workout !== params.slug) {
-      muscleGroupRecovery.set(muscleGroup, {
-        completed: true,
-        workout: recoveryEntry.workout,
-      });
-    }
   }
+  let feedback = [];
+  feedbackData.data.forEach((element) => {
+    const questions = {
+      ex_mmc:
+        "How much of a burn did you feel in your " +
+        element.muscle_group +
+        " doing " +
+        element.exercise_name +
+        "?",
+      ex_soreness:
+        "How sore did your joints get doing " + element.exercise_name + "?",
+      mg_difficulty:
+        "How hard, on average, did you find working your " +
+        element.muscle_group +
+        "?",
+      mg_pump:
+        "How much of a pump did you get working your " +
+        element.muscle_group +
+        "?",
+      mg_soreness:
+        "When did your " +
+        element.muscle_group +
+        " recover after your last workout? (1: didn't get sore - 4: still sore)",
+    };
 
-  const filter = "workout.eq." + params.slug + "," + "continue.eq.true";
+    feedback.push({
+      ...element,
+      question: questions[element.question_type],
+    });
+  });
 
-  const { data: exerciseComments } = await supabase
-    .from("exercise_comments")
-    .select("*, exercises!inner(exercise_name)")
-    .eq("mesocycle", selected_day?.meso_day.mesocycle)
-    .or(filter);
-
-  let comments = {};
-  if (!exerciseComments) {
-    comments = {};
-  } else {
-    for (const comment of exerciseComments) {
-      if (!comments[comment.exercises.exercise_name]) {
-        comments[comment.exercises.exercise_name] = [];
-      }
-      comments[comment.exercises.exercise_name].push(comment);
-    }
-  }
-
-  console.log(comments["Bent Over Row"]);
-
-  const target_rir = selected_day?.target_rir;
   // console.log(muscleGroupRecovery)
   return {
     user,
     meso_day,
+    feedbackData: feedback,
     existing_sets,
     muscleGroupRecovery,
     target_rir,
@@ -646,6 +462,229 @@ export const actions = {
     }
   },
 };
+
+async function fetchWorkoutData(workoutId: string) {
+  // Pull all the information for the day's workout
+  return await supabase
+    .from("workouts")
+    .select(
+      `
+      id,
+      meso_day(
+        id,
+        meso_day_name,
+        day_of_week,
+        mesocycle,
+        meso_exercise(
+          sort_order,
+          num_sets,
+          exercises(
+            id,
+            exercise_name,
+            muscle_group,
+            weighted,
+            weight_step
+          )
+        )
+      ),
+      workout_set(
+        id,
+        workout,
+        reps,
+        target_reps,
+        weight,
+        target_weight,
+        set_num,
+        exercises(
+          id,
+          exercise_name,
+          weighted,
+          weight_step,
+          muscle_group
+        ),
+        is_first,
+        is_last,
+        completed
+      ),
+      target_rir
+    `,
+    )
+    .eq("id", workoutId)
+    .limit(1)
+    .single();
+}
+
+async function fetchFeedbackData(workoutId: string) {
+  return await supabase
+    .from("workout_feedback")
+    .select("*")
+    .eq("workout", workoutId);
+}
+
+async function fetchExerciseCommentData(workoutId: string) {
+  const mesoId = await getMesoId(workoutId);
+
+  return await supabase
+    .from("exercise_comments")
+    .select("*")
+    .eq("mesocycle", mesoId)
+    .or("workout.eq." + workoutId + ",continue.eq.true");
+}
+
+async function fetchMuscleGroupRecoveryData(workoutId: string) {
+  const mesoId = await getMesoId(workoutId);
+
+  return await supabase
+    .from("recent_workout_id")
+    .select(
+      `
+    muscle_group,
+    most_recent_workout_id,
+    workout_feedback!inner(
+    question_type,
+    value
+    )
+    `,
+    )
+    .eq("mesocycle_id", mesoId)
+    .neq("most_recent_workout_id", workoutId);
+}
+
+function processWorkoutData(data) {
+  const meso_day = data.data.meso_day;
+  meso_day.meso_exercise.sort((a, b) => a.sort_order - b.sort_order);
+
+  const existing_sets = new Map();
+  const exerciseNamesInOrder = meso_day.meso_exercise.map(
+    (exercise) => exercise.exercises.exercise_name,
+  );
+
+  exerciseNamesInOrder.forEach((exercise) => {
+    const matchingSets = data.data.workout_set
+      .filter((wset) => wset.exercises.exercise_name === exercise)
+      .sort((a, b) => a.set_num - b.set_num);
+    existing_sets.set(exercise, matchingSets);
+  });
+
+  return { meso_day, existing_sets, target_rir: data.data.target_rir };
+}
+
+function processMuscleGroupRecovery(data, meso_day, currentWorkoutId) {
+  const muscleGroupRecovery = new Map();
+
+  meso_day.meso_exercise.forEach((mesoExercise) => {
+    const muscleGroup = mesoExercise.exercises.muscle_group;
+    const recoveryEntry = data.data.find(
+      (entry) =>
+        entry.muscle_group === muscleGroup &&
+        entry.workout_feedback.length > 0 &&
+        entry.workout_feedback[0].workout !== currentWorkoutId,
+    );
+
+    muscleGroupRecovery.set(muscleGroup, {
+      completed: !!recoveryEntry,
+      workout: recoveryEntry ? recoveryEntry.most_recent_workout_id : null,
+    });
+  });
+
+  return muscleGroupRecovery;
+}
+
+function processExerciseComments(data) {
+  const comments = {};
+  data.data.forEach((comment) => {
+    if (!comments[comment.exercises.exercise_name]) {
+      comments[comment.exercises.exercise_name] = [];
+    }
+    comments[comment.exercises.exercise_name].push(comment);
+  });
+  return comments;
+}
+
+async function createFeedbackQuestions(workoutId, meso_day, workoutSets) {
+  const questions = meso_day.meso_exercise.flatMap((exercise) => {
+    const muscleGroup = exercise.exercises.muscle_group;
+    const sets = workoutSets.filter(
+      (set) => set.exercises.id == exercise.exercises.id,
+    );
+    if (!sets || sets.length === 0) return [];
+
+    const firstSet = sets.find((set) => set.is_first);
+    const lastSet = sets.find((set) => set.is_last);
+
+    return [
+      createQuestion(
+        "ex_mmc",
+        workoutId,
+        firstSet.exercises.id,
+        firstSet.exercises.exercise_name,
+        muscleGroup,
+      ),
+      createQuestion(
+        "ex_soreness",
+        workoutId,
+        firstSet.exercises.id,
+        firstSet.exercises.exercise_name,
+        muscleGroup,
+      ),
+      createQuestion(
+        "ex_mmc",
+        workoutId,
+        lastSet.exercises.id,
+        lastSet.exercises.exercise_name,
+        muscleGroup,
+      ),
+      createQuestion(
+        "ex_soreness",
+        workoutId,
+        lastSet.exercises.id,
+        lastSet.exercises.exercise_name,
+        muscleGroup,
+      ),
+      createQuestion(
+        "mg_difficulty",
+        workoutId,
+        lastSet.exercises.id,
+        lastSet.exercises.exercise_name,
+        muscleGroup,
+      ),
+      createQuestion(
+        "mg_pump",
+        workoutId,
+        lastSet.exercises.id,
+        lastSet.exercises.exercise_name,
+        muscleGroup,
+      ),
+      createQuestion(
+        "mg_soreness",
+        workoutId,
+        lastSet.exercises.id,
+        lastSet.exercises.exercise_name,
+        muscleGroup,
+      ),
+    ];
+  });
+
+  return await supabase.from("workout_feedback").upsert(questions).select();
+}
+
+function createQuestion(
+  questionType: string,
+  workoutId: string,
+  exerciseId: string,
+  exerciseName: string,
+  muscleGroup: string,
+) {
+  return {
+    feedback_type: "workout_feedback",
+    question_type: questionType,
+    value: null,
+    workout: workoutId,
+    exercise: exerciseId,
+    exercise_name: exerciseName,
+    muscle_group: muscleGroup,
+  };
+}
 
 async function calculateMetrics(workoutId: string) {
   await calculateExerciseMetrics(workoutId);
