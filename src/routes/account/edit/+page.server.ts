@@ -20,7 +20,7 @@ export const load = async ({ locals: { supabase, getSession } }) => {
     .single();
 
   console.log(profile);
-  return { session, profile };
+  return { user, profile };
 };
 
 // @ts-ignore
