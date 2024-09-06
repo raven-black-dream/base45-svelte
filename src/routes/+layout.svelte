@@ -9,8 +9,6 @@
 	storePopup.set({ computePosition, autoUpdate, offset, shift, flip, arrow });
 			
 	export let data
-
-	let { supabase, session } = data
 	$: ({ supabase, session } = data)
 
 	onMount(() => {
@@ -76,7 +74,11 @@
 		<!-- App Bar -->
 		<AppBar>
 			<svelte:fragment slot="lead">
-				<button class="text-xl font-extrabold uppercase" on:click={openDrawer}>Base45</button>
+				{#if session}
+					<button class="text-xl font-extrabold uppercase" on:click={openDrawer}>Base45</button>
+				{:else}
+					<button class="text-xl font-extrabold uppercase" disabled>Base45</button>
+				{/if}
 			</svelte:fragment>
 			<svelte:fragment slot="trail">
 			</svelte:fragment>

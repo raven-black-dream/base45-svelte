@@ -44,7 +44,7 @@ export const load = async ({ locals: { supabase, getSession }, params }) => {
 };
 
 export const actions = {
-  create: async ({ locals: { supabase, getSession }, params, request }) => {
+  default: async ({ locals: { supabase, getSession }, params, request }) => {
     const data = await request.formData();
 
     const {
@@ -185,9 +185,10 @@ export const actions = {
         current_meso?.id,
         meso_day_id?.id,
         day_of_weeks,
+        day,
         template_day?.template_day_name,
       );
     });
-    redirect(307, "landing");
+    redirect(303, "/landing");
   },
 };

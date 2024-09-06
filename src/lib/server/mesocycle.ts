@@ -6,6 +6,7 @@ export async function createWorkouts(
   meso_id: string,
   meso_day_id: string,
   day_of_weeks: Map<any, any>,
+  day: string,
   day_name: string,
 ) {
   let workouts: {
@@ -32,7 +33,7 @@ export async function createWorkouts(
       Math.abs(current.getTime() - start_date.getTime()) /
         (1000 * 60 * 60 * 24 * 7),
     );
-    if (current.getDay() === Number(day_of_weeks.get(meso_day_id))) {
+    if (current.getDay() === Number(day_of_weeks.get(day))) {
       workouts.push({
         user: user_id,
         mesocycle: meso_id,
