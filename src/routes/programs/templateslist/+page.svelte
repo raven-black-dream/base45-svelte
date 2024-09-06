@@ -25,13 +25,20 @@
 </svelte:head>
 
 <ul>
-	{#each data.programs as program}
+	{#each data.programs as program, i}
         <Accordion class="py-2">
             <AccordionItem class="card variant-glass-primary">
                 <svelte:fragment slot="lead">
                     {#if data.mesocycles[program.id]}
-                    <button class='btn-icon' use:popup={mesoPopup} on:click|stopPropagation><Icon icon='fa6-solid:ellipsis-vertical'/></button>
-                        <div class='card p-4' data-popup="meso-menu">
+                    <button class='btn-icon' use:popup={
+                        {
+                            event: 'click',
+                            target: 'meso-menu-' + i,
+                            placement: 'right'
+
+                        }
+                    } on:click|stopPropagation><Icon icon='fa6-solid:ellipsis-vertical'/></button>
+                        <div class='z-10 card p-4' data-popup="meso-menu-{i}">
                             <ul>
                                 <li class='p-2'>
                                     <a class="btn btn-sm variant-ghost-primary" href="/programs/templateslist/{program.id}">

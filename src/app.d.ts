@@ -2,18 +2,23 @@
 // for information about these interfaces
 // and what to do when importing types
 
-import { SupabaseClient, Session } from "@supabase/supabase-js";
+import type { Session, SupabaseClient, User } from '@supabase/supabase-js'
 
 declare global {
   namespace App {
+    // interface Error {}
     interface Locals {
-      supabase: SupabaseClient;
-      getSession(): Promise<Session | null>;
+      supabase: SupabaseClient
+      safeGetSession: () => Promise<{ session: Session | null; user: User | null }>
+      session: Session | null
+      user: User | null
     }
     interface PageData {
-      session: Session | null;
+      session: Session | null
     }
-    // interface Error {}
+    // interface PageState {}
     // interface Platform {}
   }
 }
+
+export {}

@@ -59,8 +59,7 @@
             </div>
         </div>
     {/each}
-
-    <button class="btn variant-ghost-primary" type="submit" formaction="?/create">
+    <button class="btn variant-ghost-primary" type="submit">
         Save Mesocycle
     </button>
 </form>

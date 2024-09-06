@@ -1,7 +1,5 @@
 <script lang="ts">
-    import type { PageData } from './$types';
-    
-    export let data: PageData;
+    import { enhance } from '$app/forms';
 </script>
 
 <svelte:head>
@@ -9,7 +7,7 @@
 </svelte:head>
 <div class='card p-4 space-y-2 justify-center'>
     <header class='card-header text-xl font-extrabold'>Create Exercise</header>
-    <form method='POST' action='?/create'>
+    <form method='POST' action='?/create' use:enhance>
         <label class='label'>
             <span>Exercise Name</span>
             <input class='input' type="text" name="exerciseName" required />
