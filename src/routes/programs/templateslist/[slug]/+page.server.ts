@@ -68,7 +68,8 @@ export const actions = {
       .eq("user", user.id);
 
     // second form field is the start date
-    let start_date: Date = new Date(Date.parse(form[1][1].toString()));
+    const [year, month, day] = form[1][1].toString().split("-").map(Number);
+    let start_date: Date = new Date(year, month-1, day);
     // third form field is the number of weeks
     let start_copy: Date = new Date(start_date.getTime());
     let day_duration: number = Number(form[2][1]) * 7;
