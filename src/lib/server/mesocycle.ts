@@ -18,6 +18,46 @@ export async function createWorkouts(
     target_rir: number;
     deload: boolean;
     complete: boolean;
+    }[] = calculateWorkoutCreation(
+      user_id,
+      start_date,
+      end_date,
+      meso_id,
+      meso_day_id,
+      day_of_weeks,
+      day,
+      day_name,
+    );
+
+  const {} = await conn.from("workouts").insert(workouts);
+
+  const { data: workouts_data } = await conn
+    .from("workouts")
+    .select("id, meso_day")
+    .eq("meso_day", meso_day_id);
+
+  await createSets(conn, workouts_data);
+}
+
+export function calculateWorkoutCreation(
+  user_id: string,
+  start_date: Date,
+  end_date: Date,
+  meso_id: string,
+  meso_day_id: string,
+  day_of_weeks: Map<any, any>,
+  day: string,
+  day_name: string,
+) {
+  let workouts: {
+    user: string;
+    mesocycle: string;
+    meso_day: string;
+    day_name: string;
+    date: Date;
+    target_rir: number;
+    deload: boolean;
+    complete: boolean;
   }[] = [];
   let current = new Date(start_date.getTime());
 
@@ -48,16 +88,9 @@ export async function createWorkouts(
     current.setDate(current.getDate() + 1);
     // console.log(workouts);
   }
-
-  const {} = await conn.from("workouts").insert(workouts);
-
-  const { data: workouts_data } = await conn
-    .from("workouts")
-    .select("id, meso_day")
-    .eq("meso_day", meso_day_id);
-
-  await createSets(conn, workouts_data);
+  return workouts;
 }
+
 
 export async function createSets(conn: any, workoutData: any) {
   // create a set record for each exercise in the workout record
