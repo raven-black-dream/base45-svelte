@@ -64,11 +64,12 @@ export function calculateWorkoutCreation(
   // console.log("Days of the week passed in", day_of_weeks);
 
   const timeDifference = Math.abs(end_date.getTime() - start_date.getTime());
+  const weeks: number =
+      Math.ceil(timeDifference / (1000 * 60 * 60 * 24 * 7)) - 2;
 
   while (current.getTime() < end_date.getTime()) {
     // Calculate number of weeks (rounded down to nearest whole week)
-    let weeks: number =
-      Math.ceil(timeDifference / (1000 * 60 * 60 * 24 * 7)) - 2;
+    
     let currentWeek = Math.floor(
       Math.abs(current.getTime() - start_date.getTime()) /
         (1000 * 60 * 60 * 24 * 7),
