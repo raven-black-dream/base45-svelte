@@ -1,6 +1,8 @@
 // src/routes/landing/+page.server.ts
 
 import { redirect } from "@sveltejs/kit";
+import  prisma from "$lib/server/prisma";
+
 
 export const load = async ({ locals: { supabase, getSession } }) => {
   const {
@@ -13,45 +15,37 @@ export const load = async ({ locals: { supabase, getSession } }) => {
 
   let { firstDay, lastDay } = getCurrentWeek();
 
-  const { data: mesocycle, error } = await supabase
-    .from("mesocycle")
-    .select(
-      `
-      id
-    `,
-    )
-    .eq("user", user.id)
-    .eq("current", true)
-    .limit(1)
-    .single();
-  if (error) {
-    console.log("The query threw the following error: ", error);
-  }
+  const mesocycle = await prisma.mesocycle.findFirst(
+    {
+      where: {
+        user: user.id,
+        current: true,
+      },
+      select: {
+        id: true,
+        workouts_workouts_mesocycleTomesocycle: {
+          select: {
+            id: true,
+            day_name: true,
+            date: true,
+            complete: true
+          },
+        },
+        meso_day_meso_day_mesocycleTomesocycle: true
+    }
+
+    }
+
+  );
+  console.log(mesocycle);
   if (!mesocycle) {
     console.log("No mesocycle found for the current user.");
     return { user, workouts: [], numberOfDays: 0 };
   }
 
-  const { data: workouts, error: error2 } = await supabase
-    .from("workouts")
-    .select(
-      `
-      id,
-      day_name,
-      date,
-      complete
-    `,
-    )
-    .eq("mesocycle", mesocycle.id)
-    .order("date", { ascending: true });
-  if (error2) {
-    console.log("The query threw the following error: ", error2);
-  }
+  const workouts = mesocycle.workouts_workouts_mesocycleTomesocycle;
 
-  const { data: mesoDay, error: error4 } = await supabase
-    .from("meso_day")
-    .select("*")
-    .eq("mesocycle", mesocycle.id);
+  const mesoDay = mesocycle.meso_day_meso_day_mesocycleTomesocycle;
 
   // turn a mesocycle into a list of calendar calendar_items
   // ({ title: string; className: string; date: Date; len: number;
@@ -59,23 +53,10 @@ export const load = async ({ locals: { supabase, getSession } }) => {
   // startCol?: number; startRow?: number;})
   let numberOfDays = mesoDay?.length || 0;
 
-  const { data: nextWorkouts, error: error3 } = await supabase
-    .from("workouts")
-    .select(
-      `
-      id,
-      day_name,
-      date,
-      complete
-    `,
-    )
-    .eq("mesocycle", mesocycle.id)
-    .eq("complete", false)
-    .order("date", { ascending: true })
-    .limit(numberOfDays);
-  if (error3) {
-    console.log("The query threw the following error: ", error2);
-  }
+  const nextWorkouts = workouts
+  .filter(workout => !workout.complete)
+  .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+  .slice(0, numberOfDays);
 
   let numComplete = 0;
   workouts.forEach((workout) => {
@@ -97,12 +78,8 @@ export const load = async ({ locals: { supabase, getSession } }) => {
 function getCurrentWeek() {
   const current = new Date();
   const first = current.getDate() - current.getDay() + 1;
-  const firstDay = new Date(current.setDate(first)).toLocaleString("en-US", {
-    timeZone: "America/Vancouver",
-  });
+  const firstDay = new Date(current.setDate(first));
   const last = first + 8;
-  const lastDay = new Date(current.setDate(last)).toLocaleDateString("en-US", {
-    timeZone: "America/Vancouver",
-  });
+  const lastDay = new Date(current.setDate(last));
   return { firstDay, lastDay };
 }
