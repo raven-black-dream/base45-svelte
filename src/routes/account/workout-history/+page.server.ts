@@ -1,7 +1,9 @@
 import type { PageServerLoad } from "./$types";
 import { redirect } from "@sveltejs/kit";
+import prisma from "$lib/server/prisma";
+import { Prisma } from "@prisma/client";
 
-export const load = (async ({ locals: { supabase, getSession } }) => {
+export const load = (async ({ locals: { supabase } }) => {
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -10,11 +12,16 @@ export const load = (async ({ locals: { supabase, getSession } }) => {
     redirect(303, "/");
   }
 
-  const { data: workoutHistory } = await supabase
-    .from("workouts")
-    .select("*")
-    .eq("user", user.id)
-    .eq("complete", true)
-    .order("date", { ascending: false });
+  const workoutHistory = await prisma
+  .workouts
+  .findMany({
+    where : {
+      user: user.id,
+      complete: true
+    },
+    orderBy: {
+      date: "desc",
+    }
+  })
   return { workoutHistory };
 }) satisfies PageServerLoad;

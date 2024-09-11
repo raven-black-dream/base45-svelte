@@ -7,14 +7,15 @@
 	export let data
 	export let form
 
-	let { session, supabase, profile } = data
-	$: ({ session, supabase, profile } = data)
+	let { user, profile } = data;
+	$: ({ user, profile } = data);
+	
 
 	let profileForm: HTMLFormElement
 	let loading = false
     let displayName: string = profile?.display_name ?? ''
     let gender: string = profile?.gender ?? ''
-    let dob: Date = profile?.date_of_birth ?? null
+    let dob: Date = profile?.date_of_birth ?? new Date()
 
 
 	const handleSubmit: SubmitFunction = () => {
@@ -51,7 +52,7 @@
 		>
 			<div class="p-2">
 				<label for="email">Email</label>
-				<input class="input" id="email" type="text" value={session.user.email} disabled />
+				<input class="input" id="email" type="text" value={user.email} disabled />
 			</div>
 
 			<div class="p-2">

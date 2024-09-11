@@ -18,7 +18,7 @@
         </label>
         <label class='label'>
             <span>Muscle Group</span>
-            <select class='select' name='muscleGroup'>
+            <select class='select' name='muscleGroup' required>
                 <option value='Abs'>Abs</option>
                 <option value='Abductors'>Abductors</option>
                 <option value='Adductors'>Adductors</option>
@@ -35,7 +35,7 @@
         </label>
         <label class='label'>
             <span>Progression Method</span>
-            <select class='select' name='progressionMethod'>
+            <select class='select' name='progressionMethod' required>
                 <option value='Rep'>Rep Progression</option>
                 <option value='Load'>Load Progression</option>
             </select>
@@ -43,11 +43,11 @@
         <div class='p-4'>
             <label>
                 <span>Public?</span>
-                <input class='checkbox accent-primary-500' type='checkbox' name='public'/>
+                <input class='checkbox accent-primary-500' type='checkbox' name='public' required/>
             </label>
             <label>
                 <span>Weighted?</span>
-                <input class='checkbox accent-primary-500' type='checkbox' name='weighted'/>
+                <input class='checkbox accent-primary-500' type='checkbox' name='weighted' required/>
             </label>
         </div>
         <button class='btn variant-ghost-primary' type='submit'>Create Exercise</button>

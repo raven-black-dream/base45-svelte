@@ -1,5 +1,6 @@
 import type { PageServerLoad } from "./$types";
 import { redirect } from "@sveltejs/kit";
+import prisma from "$lib/server/prisma";
 
 export const load = (async ({ locals: { supabase, getSession }, params }) => {
   const {
@@ -10,10 +11,15 @@ export const load = (async ({ locals: { supabase, getSession }, params }) => {
     redirect(303, "/");
   }
 
-  const { data: exerciseData } = await supabase
-    .from("exercises")
-    .select("*")
-    .order("exercise_name");
+  const exerciseData = await prisma.exercises.findMany({
+    select: {
+      exercise_name: true,
+    },
+    orderBy: {
+      exercise_name: "asc",
+    },
+
+  })
 
   return { exerciseData };
 }) satisfies PageServerLoad;

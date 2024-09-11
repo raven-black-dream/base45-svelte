@@ -1,12 +1,14 @@
 import type { PageServerLoad } from "./$types";
 import { redirect } from "@sveltejs/kit";
+import prisma from "$lib/server/prisma";
+import { Prisma } from "@prisma/client";
 
 export const load = (async () => {
   return {};
 }) satisfies PageServerLoad;
 
 export const actions = {
-  create: async ({ locals: { supabase, getSession }, params, request }) => {
+  create: async ({ locals: { supabase }, params, request }) => {
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -15,22 +17,24 @@ export const actions = {
     }
     const data = await request.formData();
 
-    const exercise = {
-      exercise_name: data.get("exerciseName"),
+    const exercise_name: string = data.get("exerciseName")?.toString() ?? "";
+    const muscle_group: string = data.get("muscleGroup")?.toString() ?? "";
+    const progression_method: string = data.get("progressionMethod")?.toString() ?? "";
+
+    const exercise: Prisma.exercisesCreateInput = {
+      exercise_name: exercise_name,
       weighted: data.get("weighted") === "on",
       weight_step: Number(data.get("weightStep")),
       public: data.get("public") === "on",
-      creator: user.id,
-      muscle_group: data.get("muscleGroup"),
-      progression_method: data.get("progressionMethod"),
+      users: {
+        connect: { id: user.id },
+      },
+      muscle_group: muscle_group,
+      progression_method: progression_method ?? "Rep",
     };
 
-    const { data: newExercise, error } = await supabase
-      .from("exercises")
-      .insert(exercise);
+    const createExercise = await prisma.exercises.create({ data: exercise });
 
-    if (error) {
-      console.log(error);
-    }
+    redirect(303, '/exercises/list')
   },
 };

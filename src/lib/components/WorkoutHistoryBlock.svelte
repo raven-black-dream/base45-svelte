@@ -1,7 +1,6 @@
 <script lang="ts">
     
-    export let data;
-    console.log(data);
+    export let workoutHistory;
 
 </script>
 <div class='card p-4'>
@@ -9,7 +8,7 @@
                     WorkoutHistory
     </header>
     <section class='grid p-4 space-y-4 justify-center'>
-        {#each data.workoutHistory as workout, i (workout.id)}
+        {#each workoutHistory as workout, i (workout.id)}
             {#if !workout.deload}
             <div class="snap-start shrink-0 card py-20 w-40 md:w-80 text-center variant-filled-surface">
                 <header class='card-header'>{new Date(workout.date).toDateString()}</header>

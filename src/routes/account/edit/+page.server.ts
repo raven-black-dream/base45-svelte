@@ -1,9 +1,10 @@
 // src/routes/account/+page.server.ts
 
 import { fail, redirect } from "@sveltejs/kit";
+import prisma from "$lib/server/prisma.js";
 
 // @ts-ignore
-export const load = async ({ locals: { supabase, getSession } }) => {
+export const load = async ({ locals: { supabase } }) => {
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -13,19 +14,23 @@ export const load = async ({ locals: { supabase, getSession } }) => {
   }
 
   console.log("loading");
-  const { data: profile } = await supabase
-    .from("users")
-    .select(`display_name, gender, date_of_birth`)
-    .eq("id", user.id)
-    .single();
-
-  console.log(profile);
+  const profile = await prisma.users.findUnique({
+    where: {
+      id: user.id,
+    },
+    select: {
+      display_name: true,
+      gender: true,
+      date_of_birth: true,
+    },
+  })
   return { user, profile };
 };
 
 // @ts-ignore
+// TODO: refactor to use prisma
 export const actions = {
-  update: async ({ request, locals: { supabase, getSession } }) => {
+  update: async ({ request, locals: { supabase } }) => {
     const formData = await request.formData();
     const displayName = formData.get("displayName") as string;
     const gender = formData.get("gender") as string;
@@ -68,8 +73,8 @@ export const actions = {
     };
   },
 
-  signout: async ({ locals: { supabase, getSession } }) => {
-    const session = await getSession();
+  signout: async ({ locals: { supabase, safeGetSession } }) => {
+    const session = await safeGetSession();
     if (session) {
       await supabase.auth.signOut();
       redirect(303, "/");
