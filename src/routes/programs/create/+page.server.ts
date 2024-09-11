@@ -61,7 +61,7 @@ export const actions: Actions = {
               id: maxMGId.id + 1,
               template_day: programDay.id,
               muscle_group: muscleGroup.muscleGroup,
-              sets: muscleGroup.sets,
+              sets: muscleGroup.numSets,
             });
           if (muscleGroupError) throw muscleGroupError;
           maxMGId.id += 1;
@@ -71,6 +71,6 @@ export const actions: Actions = {
       console.error(e);
       return fail(500, { message: "Failed to create program" });
     }
-    redirect("303", "/programs");
+    redirect(303, "/programs/templateslist");
   },
 };

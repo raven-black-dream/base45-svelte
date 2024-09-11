@@ -3,10 +3,9 @@
 
     import { Accordion, AccordionItem } from '@skeletonlabs/skeleton';
     import type { PageData } from './$types';
-    import LinePlot from '$lib/components/DataVisualization.svelte';
     import { enhance } from '$app/forms';
     import Icon, { iconLoaded } from '@iconify/svelte';
-    import DataVisualization from '$lib/components/DataVisualization.svelte';
+    import LinePlot from '$lib/components/LinePlot.svelte';
     
     export let data: PageData;
 
@@ -46,7 +45,7 @@
                     {#if !data.weightHistoryData}
                         <div class='placeholder'></div>
                     {:else}
-                        <DataVisualization data={data.weightHistoryData}/>
+                        <LinePlot data={data.weightHistoryData}/>
                     {/if}
 
                     <form class='p-4' method="post" use:enhance action='?/addWeight'>

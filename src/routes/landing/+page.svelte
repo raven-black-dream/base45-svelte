@@ -7,6 +7,7 @@
 import { ProgressBar } from "@skeletonlabs/skeleton";
 import WeeklyGrid from "$lib/components/WeeklyGrid.svelte";
 import WorkoutCard from "$lib/components/WorkoutCard.svelte";
+import Indicator from "$lib/components/Indicator.svelte";
 
 export let data;
 
@@ -41,6 +42,19 @@ $: weeklyProgress = data.numComplete/data.numberOfDays * 100;
       <ProgressBar value={weeklyProgress} max={100} height="h-4" meter="bg-primary-500"/>
     </section>
 	</div>
+
+  <div class="card variant-glass-primary mt-6 p-2">
+    <header class='card-header'>Weekly Metrics</header>
+    <section class='p-4'>
+      <div class="grid grid-cols-3 gap-2">
+
+        {#each data.weeklyMetrics as metric, index}
+            <Indicator data={metric} />
+        {/each}
+
+      </div>
+    </section>
+  </div>
 
   <div class='card variant-glass mt-6'>
     <header class='card-header'>Next Workouts</header>

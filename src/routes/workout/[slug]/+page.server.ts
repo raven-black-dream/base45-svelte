@@ -29,6 +29,10 @@ import { repProgressionAlgorithm } from "$lib/utils/progressionUtils";
 import { loadProgressionAlgorithm } from "$lib/utils/progressionUtils";
 import { getSorenessAndPerformance } from "$lib/server/progression";
 
+import prisma from "$lib/server/prisma";
+import { Prisma } from "@prisma/client";
+
+
 interface MesoExercise {
   sort_order: number;
   num_sets: number;
@@ -238,7 +242,17 @@ export const load = async ({ locals: { supabase, getSession }, params }) => {
         },
       );
     }
-    const { error } = await supabase.from("workout_feedback").upsert(questions);
+    let unique_set = new Set();
+    let unique_questions = [];
+
+    for (const question of questions) {
+      const stringified = JSON.stringify(question);
+      if (!unique_set.has(stringified)) {
+        unique_set.add(stringified);
+        unique_questions.push(question);
+      }
+    }
+    const { error } = await supabase.from("workout_feedback").upsert(unique_questions);
     if (error) {
       console.log(error);
     }
@@ -325,8 +339,6 @@ export const load = async ({ locals: { supabase, getSession }, params }) => {
     }
   }
 
-  console.log(comments["Bent Over Row"]);
-
   const target_rir = selected_day?.target_rir;
   // console.log(muscleGroupRecovery)
   return {
@@ -340,7 +352,7 @@ export const load = async ({ locals: { supabase, getSession }, params }) => {
 };
 
 export const actions = {
-  addComment: async ({ locals: { supabase, getSession }, params, request }) => {
+  addComment: async ({ locals: { supabase }, params, request }) => {
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -470,7 +482,7 @@ export const actions = {
     const { error } = await supabase
       .from("workouts")
       .update({
-        date: new Date(Date.now()),
+        // date: new Date(Date.now()),
         complete: true,
       })
       .eq("id", params.slug);
@@ -585,10 +597,10 @@ export const actions = {
     }
     const data = await request.formData();
 
-    const workout = data.get("workout");
-    const exercise = data.get("exercise");
-    const muscleGroup = data.get("muscle_group");
-    const currentWorkout = data.get("current_workout");
+    const workout = data.get("workout")?.toString() ?? "";
+    const exercise = data.get("exercise")?.toString() ?? "";
+    const muscleGroup = data.get("muscle_group")?.toString() ?? "";
+    const currentWorkout = data.get("current_workout")?.toString() ?? "";
 
     data.delete("workout");
     data.delete("exercise");
