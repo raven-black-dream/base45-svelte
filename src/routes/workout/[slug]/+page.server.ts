@@ -482,7 +482,7 @@ export const actions = {
     const { error } = await supabase
       .from("workouts")
       .update({
-        date: new Date(Date.now()),
+        // date: new Date(Date.now()),
         complete: true,
       })
       .eq("id", params.slug);

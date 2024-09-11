@@ -2,8 +2,10 @@
 
 import { redirect } from "@sveltejs/kit";
 import { createWorkouts } from "$lib/server/mesocycle.js";
+import prisma from "$lib/server/prisma.js";
+import { Prisma } from "@prisma/client";
 
-export const load = async ({ locals: { supabase, getSession }, params }) => {
+export const load = async ({ locals: { supabase }, params }) => {
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -12,39 +14,54 @@ export const load = async ({ locals: { supabase, getSession }, params }) => {
     redirect(303, "/");
   }
 
-  const { data: programs } = await supabase
-    .from("program_templates")
-    .select(
-      `
-      id,
-      template_name,
-      template_day(
-        id, 
-        template_day_name,
-        template_muscle_group(
-          id,
-          muscle_group
-        )
-      )
-    `,
-    )
-    // in theory someone could get to a private program if they have the correct id,
-    // am not checking that here
-    .eq("id", params.slug);
+  const program = await prisma.program_templates.findUnique({
+    where: {
+      id: params.slug,
+    },
+    select: {
+      id: true,
+      template_name: true,
+      template_day: {
+        select: {
+          id: true,
+          template_day_name: true,
+          template_muscle_group_template_muscle_group_template_dayTotemplate_day: {
+            select: {
+              id: true,
+              muscle_group: true,
+            },
+            orderBy: {
+              id: "asc",
+            }
+          }
+        }
+      }
+    }
+  });
 
-  // TODO: if we can't get exactly one progam we should throw an error, or maybe a redirect... something
-  const program = programs[0];
-
-  const { data: exercises } = await supabase
-    .from("exercises")
-    .select()
-    .eq("public", true);
+  const exercises = await prisma.exercises.findMany({
+    where: {
+      OR: [
+      { public: true },
+      { creator: user.id },
+      ]
+    },
+    select: {
+      id: true,
+      exercise_name: true,
+      muscle_group: true,
+      
+    },
+    orderBy: {
+      exercise_name: "asc",
+    }
+  });
 
   return { user, program, exercises };
 };
 
 export const actions = {
-  default: async ({ locals: { supabase, getSession }, params, request }) => {
+  default: async ({ locals: { supabase }, params, request }) => {
     const data = await request.formData();
 
     const {

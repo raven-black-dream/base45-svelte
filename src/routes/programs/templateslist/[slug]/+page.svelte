@@ -45,7 +45,7 @@
                         <option value="6">Saturday</option>
                         <option value="0">Sunday</option>
                     </select>
-                    <SortableList list={day.template_muscle_group} on:sort={event => sortExercises(event, day.id)} let:item let:index>
+                    <SortableList list={day.template_muscle_group_template_muscle_group_template_dayTotemplate_day} on:sort={event => sortExercises(event, day.id)} let:item let:index>
                         {item.muscle_group}
                         <select class="select" name="{day.id}_{item.id}">
                             {#each data.exercises as exercise}
