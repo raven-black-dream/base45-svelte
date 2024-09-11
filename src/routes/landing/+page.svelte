@@ -4,7 +4,7 @@
 <!-- TODO: events aren't changing when the month changes -->
 
 <script lang="ts">
-import { ProgressRadial } from "@skeletonlabs/skeleton";
+import { ProgressBar } from "@skeletonlabs/skeleton";
 import WeeklyGrid from "$lib/components/WeeklyGrid.svelte";
 import WorkoutCard from "$lib/components/WorkoutCard.svelte";
 
@@ -20,7 +20,7 @@ $: weeklyProgress = data.numComplete/data.numberOfDays * 100;
 	<title>Home</title>
 </svelte:head>
 
-<div class="container mx-auto mt-8">
+<div class="container mx-auto mt-8 space-y-4">
 	<h1 class="text-3xl font-bold mb-4">Welcome Back!</h1>
 
   {#if data.workouts.length === 0}
@@ -34,19 +34,20 @@ $: weeklyProgress = data.numComplete/data.numberOfDays * 100;
      </div>
   {:else}
 
+  <div class="card variant-glass-primary mt-6 p-2">
+    <header class='card-header'>Weekly Progress - Week {data.currentWeek}</header>
+    <section class='p-4 justify-center'>
+      <p class="text-xl font-bold">{data.numComplete}/{data.numberOfDays}</p>
+      <ProgressBar value={weeklyProgress} max={100} height="h-4" meter="bg-primary-500"/>
+    </section>
+	</div>
+
   <div class="card variant-glass-primary items-center">
     <header class="card-header">Mesocycle Progress</header>
     <p class='text-xs text-center text-secondary-500'>Click Previous Workout Name to view the workout</p>
 		<section class='p-4'>
     <WeeklyGrid workouts={data.workouts} numCols={data.numberOfDays} />
 		</section>
-	</div>
-
-	<div class="card variant-glass-primary mt-6 p-2">
-    <header class='card-header'>Weekly Progress</header>
-    <section class='p-4 flex justify-center'>
-      <ProgressRadial value={weeklyProgress} stroke={100} meter="stroke-primary-500" track="stroke-primary-500/30" strokeLinecap="round">{weeklyProgress}%</ProgressRadial>
-    </section>
 	</div>
 
   <div class='card variant-glass mt-6'>

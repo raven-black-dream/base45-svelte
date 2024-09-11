@@ -1,5 +1,7 @@
 import type { PageServerLoad } from "./$types";
 import { redirect } from "@sveltejs/kit";
+import prisma from "$lib/server/prisma";
+import { Prisma } from "@prisma/client";
 
 export const load = (async ({ locals: { supabase, getSession } }) => {
   const {
@@ -11,24 +13,40 @@ export const load = (async ({ locals: { supabase, getSession } }) => {
   }
 
   console.log("loading");
-  const { data: profile } = await supabase
-    .from("users")
-    .select(`display_name, gender, date_of_birth`)
-    .eq("id", user.id)
-    .single();
 
-  const { data: weightHistory } = await supabase
-    .from("user_weight_history")
-    .select("date, value")
-    .eq("user", user.id)
-    .order("date", { ascending: true });
+  const profile = await prisma.users.findUnique({
+    where: {
+      id: user.id,
+    },
+    select: {
+      display_name: true,
+      gender: true,
+      date_of_birth: true,
+    }
+  })
 
-  const weightHistoryData = [
+  const weightHistory = await prisma.user_weight_history.findMany({
+    where: {
+      user: user.id,
+    },
+    select: {
+      date: true,
+      value: true
+    },
+    orderBy: {
+      date: "asc",
+    },
+  });
+
+  const weightHistoryData= [
     {
-      x: weightHistory?.map((d) => d.date),
-      y: weightHistory?.map((d) => d.value),
-      type: "scatter",
-      line: { color: "#2E7D32" },
+      x: weightHistory?.map((d) => d.date?.toLocaleDateString(
+        'en-CA',
+        { year: 'numeric', month: '2-digit', day: '2-digit' }
+      )),
+      y: weightHistory?.map((d) => Number(d.value)),
+      type : "scatter",
+      line : {color : "#2E7D32"},
     },
   ];
 
@@ -36,7 +54,7 @@ export const load = (async ({ locals: { supabase, getSession } }) => {
 }) satisfies PageServerLoad;
 
 export const actions = {
-  async addWeight({ locals: { supabase, getSession }, params, request }) {
+  async addWeight({ locals: { supabase }, params, request }) {
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -46,13 +64,15 @@ export const actions = {
     }
 
     const data = await request.formData();
-    const date = new Date(data.get("date"));
-    const weightValue = {
+    const date = new Date(data.get("date")?.toString() ?? Date.now());
+    const weightValue: Prisma.user_weight_historyCreateInput = {
       value: Number(data.get("value")),
-      unit: data.get("unit"),
+      unit: data.get("unit")?.toString() ?? "lbs",
       date: date,
-      user: user.id,
+      users: {
+        connect: {id: user.id},
+      },
     };
-    const {} = await supabase.from("user_weight_history").insert(weightValue);
+    const createWeight = await prisma.user_weight_history.create({data: weightValue})
   },
 };

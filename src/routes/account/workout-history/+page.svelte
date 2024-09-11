@@ -3,6 +3,7 @@
     import WorkoutHistoryBlock from '$lib/components/WorkoutHistoryBlock.svelte'
     
     export let data: PageData;
+    let workoutHistory = data.workoutHistory
 </script>
 
-<WorkoutHistoryBlock {data} />
+<WorkoutHistoryBlock {workoutHistory} />

@@ -23,6 +23,7 @@ export const load = async ({ locals: { supabase, getSession } }) => {
       },
       select: {
         id: true,
+        start_date: true,
         workouts_workouts_mesocycleTomesocycle: {
           select: {
             id: true,
@@ -30,6 +31,9 @@ export const load = async ({ locals: { supabase, getSession } }) => {
             date: true,
             complete: true
           },
+          orderBy: {
+            date: "asc"
+          }
         },
         meso_day_meso_day_mesocycleTomesocycle: true
     }
@@ -37,7 +41,6 @@ export const load = async ({ locals: { supabase, getSession } }) => {
     }
 
   );
-  console.log(mesocycle);
   if (!mesocycle) {
     console.log("No mesocycle found for the current user.");
     return { user, workouts: [], numberOfDays: 0 };
@@ -72,7 +75,16 @@ export const load = async ({ locals: { supabase, getSession } }) => {
     }
   });
 
-  return { user, workouts, nextWorkouts, numberOfDays, numComplete };
+  const lastCompletedWorkout = workouts
+    .filter(workout => workout.complete)
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+    .pop();
+
+  const ref_date = lastCompletedWorkout?.date ?? new Date(Date.now());
+
+  const currentWeek = calculateWeekNumber(mesocycle.start_date, ref_date);
+
+  return { user, workouts, nextWorkouts, numberOfDays, numComplete, currentWeek };
 };
 
 function getCurrentWeek() {
@@ -82,4 +94,10 @@ function getCurrentWeek() {
   const last = first + 8;
   const lastDay = new Date(current.setDate(last));
   return { firstDay, lastDay };
+}
+
+function calculateWeekNumber(start_date: Date, reference_date: Date) {
+  const timeDifference = Math.abs(reference_date.getTime() - start_date.getTime());
+  const weeks = Math.ceil(timeDifference / (1000 * 60 * 60 * 24 * 7));
+  return weeks;
 }
