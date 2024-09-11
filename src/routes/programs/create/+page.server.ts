@@ -71,6 +71,6 @@ export const actions: Actions = {
       console.error(e);
       return fail(500, { message: "Failed to create program" });
     }
-    redirect("303", "/programs");
+    redirect(303, "/programs");
   },
 };

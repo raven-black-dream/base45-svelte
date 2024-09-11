@@ -55,7 +55,7 @@ export const load = async ({ locals: { supabase, getSession } }) => {
 };
 
 export const actions = {
-  duplicate: async ({ locals: { supabase, getSession }, request }) => {
+  duplicate: async ({ locals: { supabase, }, request }) => {
     const {
       data: { user },
     } = await supabase.auth.getUser();
