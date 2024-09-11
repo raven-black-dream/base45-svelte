@@ -37,17 +37,9 @@ $: weeklyProgress = data.numComplete/data.numberOfDays * 100;
   <div class="card variant-glass-primary mt-6 p-2">
     <header class='card-header'>Weekly Progress - Week {data.currentWeek}</header>
     <section class='p-4 justify-center'>
-      <p class="text-xl font-bold">{data.numComplete}/{data.numberOfDays}</p>
+      <p class="text-xl font-bold">{data.numComplete}/{data.numberOfDays} Workouts Comleted this Week</p>
       <ProgressBar value={weeklyProgress} max={100} height="h-4" meter="bg-primary-500"/>
     </section>
-	</div>
-
-  <div class="card variant-glass-primary items-center">
-    <header class="card-header">Mesocycle Progress</header>
-    <p class='text-xs text-center text-secondary-500'>Click Previous Workout Name to view the workout</p>
-		<section class='p-4'>
-    <WeeklyGrid workouts={data.workouts} numCols={data.numberOfDays} />
-		</section>
 	</div>
 
   <div class='card variant-glass mt-6'>
@@ -61,7 +53,16 @@ $: weeklyProgress = data.numComplete/data.numberOfDays * 100;
 
     </section>
   </div>
-    
+
+  <div class="card variant-glass-primary items-center">
+    <header class="card-header">Mesocycle Progress</header>
+    <p class='text-xs text-center text-secondary-500'>Click Previous Workout Name to view the workout</p>
+		<section class='p-4'>
+    <WeeklyGrid workouts={data.workouts} numCols={data.numberOfDays} />
+		</section>
+	</div>
+
+  
 
   {/if}
 	
