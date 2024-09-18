@@ -1,4 +1,5 @@
 import { supabase } from "$lib/supabaseClient";
+import { Prisma } from "@prisma/client";
 import { sum, multiply, matrix } from "mathjs";
 
 interface Exercise {
@@ -151,7 +152,7 @@ export async function exerciseSFR(
     }
 
     fatigueScore += performanceScore;
-    const stimulusToFatigueRatio = rawStimulusMagnitude + 1 / fatigueScore + 1;
+    const stimulusToFatigueRatio = (rawStimulusMagnitude + 1) / (fatigueScore + 1);
 
     exerciseMetrics.set(exercise.id, {
       muscleGroup: exercise.muscle_group,
@@ -309,42 +310,7 @@ export async function calculateMuscleGroupMetrics(
  * performance_score: The performance score for the exercise - Used to facilitate the calculation of fatigue score for the muscle group
  *
  */
-export async function calculateExerciseMetrics(workoutId: string) {
-  const { data: exerciseData } = await supabase
-    .from("workout_set")
-    .select(
-      `
-      id,
-      exercises!inner(
-        id,
-        muscle_group,
-        weight_step
-      ),
-      reps,
-      target_reps,
-      target_weight,
-      weight,
-      workouts!inner(
-        id,
-        mesocycle
-      )
-    `,
-    )
-    .eq("workouts.id", workoutId);
-
-  const { data: currentWorkoutFeedback } = await supabase
-    .from("workout_feedback")
-    .select(
-      `
-      question_type,
-      value,
-      exercise,
-      muscle_group,
-      workout
-    `,
-    )
-    .eq("workout", workoutId)
-    .in("question_type", ["ex_soreness", "mg_difficulty"]);
+export async function calculateExerciseMetrics(exerciseData, currentWorkoutFeedback, mesocycleId: string, workoutId: string) {
 
   let exerciseMetrics: Map<string, ExerciseMetric> = new Map();
   let userExerciseMetrics: {
@@ -359,13 +325,7 @@ export async function calculateExerciseMetrics(workoutId: string) {
     // for each exercise, calculate the metrics for that exercise
     for (const item of exerciseData) {
       const exerciseId = item.exercises.id;
-      const feedback = currentWorkoutFeedback?.find((obj) => {
-        if (obj.exercise === exerciseId) {
-          return true;
-
-          return item.exercises.muscle_group === obj.muscle_group;
-        }
-      });
+      const feedback = currentWorkoutFeedback?.filter((f) => (f.exercise === exerciseId));
 
       if (!exerciseMetrics.has(exerciseId)) {
         exerciseMetrics.set(exerciseId, {
@@ -380,7 +340,7 @@ export async function calculateExerciseMetrics(workoutId: string) {
           performanceScore: 0,
           exerciseSets: [],
           feedback: feedback,
-          mesocycle: item.workouts.mesocycle,
+          mesocycle: mesocycleId,
           num_sets: 0,
           weight_step: item.exercises.weight_step,
         });
@@ -449,49 +409,49 @@ export async function calculateExerciseMetrics(workoutId: string) {
     exerciseMetrics.forEach((exercise, key) => {
       userExerciseMetrics.push({
         exercise: key,
-        mesocycle: exercise.mesocycle,
+        mesocycle: mesocycleId,
         metric_name: "average_reps",
         value: exercise.averageReps,
         workout: workoutId,
       });
       userExerciseMetrics.push({
         exercise: key,
-        mesocycle: exercise.mesocycle,
+        mesocycle: mesocycleId,
         metric_name: "average_weight",
         value: exercise.averageWeight,
         workout: workoutId,
       });
       userExerciseMetrics.push({
         exercise: key,
-        mesocycle: exercise.mesocycle,
+        mesocycle: mesocycleId,
         metric_name: "rep_std_dev",
         value: exercise.repStdDev,
         workout: workoutId,
       });
       userExerciseMetrics.push({
         exercise: key,
-        mesocycle: exercise.mesocycle,
+        mesocycle: mesocycleId,
         metric_name: "weight_std_dev",
         value: exercise.weightStdDev,
         workout: workoutId,
       });
       userExerciseMetrics.push({
         exercise: key,
-        mesocycle: exercise.mesocycle,
+        mesocycle: mesocycleId,
         metric_name: "total_reps",
         value: exercise.totalReps,
         workout: workoutId,
       });
       userExerciseMetrics.push({
         exercise: key,
-        mesocycle: exercise.mesocycle,
+        mesocycle: mesocycleId,
         metric_name: "total_weight",
         value: exercise.totalWeight,
         workout: workoutId,
       });
       userExerciseMetrics.push({
         exercise: key,
-        mesocycle: exercise.mesocycle,
+        mesocycle: mesocycleId,
         metric_name: "performance_score",
         value: exercise.performanceScore,
         workout: workoutId,
