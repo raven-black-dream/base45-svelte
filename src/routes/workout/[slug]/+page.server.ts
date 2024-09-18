@@ -478,11 +478,13 @@ export const actions = {
       redirect(303, "/");
     }
 
+    await calculateMetrics(params.slug);
+
     // mark the workout complete and set the date of the workout to the date it was completed (today)
     const { error } = await supabase
       .from("workouts")
       .update({
-        date: new Date(Date.now()),
+        // date: new Date(Date.now()),
         complete: true,
       })
       .eq("id", params.slug);
@@ -490,9 +492,7 @@ export const actions = {
     if (error) {
       console.log(error);
     }
-
-    await calculateMetrics(params.slug);
-
+    /*
     const checkProgression: Map<string, boolean> = await shouldDoProgression(
       params.slug,
     );
@@ -504,6 +504,7 @@ export const actions = {
         await nonProgression(params.slug, key);
       }
     }
+    */
     redirect(303, "/landing");
   },
 
@@ -660,7 +661,42 @@ export const actions = {
 };
 
 async function calculateMetrics(workoutId: string) {
-  await calculateExerciseMetrics(workoutId);
+  const workoutData = await prisma.workouts.findUnique({
+    where: {
+      id: workoutId,
+    },
+    select: {
+      id: true,
+      mesocycle: true,
+      workout_set: {
+        select: {
+          id: true,
+          exercises: true,
+          reps: true,
+          target_reps: true,
+          weight: true,
+          target_weight: true
+        }
+      },
+      workout_feedback: {
+        select: {
+          question_type: true,
+          value: true,
+          exercise: true,
+          muscle_group: true,
+          workout: true
+        },
+        where: {
+          question_type : {
+            in: ["ex_soreness", "mg_difficulty"],
+          }
+        }
+      }
+    }
+  })
+
+
+  await calculateExerciseMetrics(workoutData?.workout_set, workoutData?.workout_feedback, workoutData?.mesocycle, workoutData?.id);
 
   // First get a list of muscle groups worked in the workout
   const { data: muscleGroups } = await supabase
@@ -702,8 +738,9 @@ async function calculateMetrics(workoutId: string) {
       workoutId: workout.most_recent_workout_id,
     });
   });
-
   await calculateMuscleGroupMetrics(workoutId, workoutIds);
+
+  
 }
 
 async function progression(workoutId: string, muscleGroup: string) {
