@@ -484,7 +484,7 @@ export const actions = {
     const { error } = await supabase
       .from("workouts")
       .update({
-        // date: new Date(Date.now()),
+        date: new Date(Date.now()),
         complete: true,
       })
       .eq("id", params.slug);
@@ -492,7 +492,7 @@ export const actions = {
     if (error) {
       console.log(error);
     }
-    /*
+
     const checkProgression: Map<string, boolean> = await shouldDoProgression(
       params.slug,
     );
@@ -504,7 +504,6 @@ export const actions = {
         await nonProgression(params.slug, key);
       }
     }
-    */
     redirect(303, "/landing");
   },
 
