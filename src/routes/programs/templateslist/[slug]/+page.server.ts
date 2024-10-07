@@ -25,36 +25,33 @@ export const load = async ({ locals: { supabase }, params }) => {
         select: {
           id: true,
           template_day_name: true,
-          template_muscle_group_template_muscle_group_template_dayTotemplate_day: {
-            select: {
-              id: true,
-              muscle_group: true,
+          template_muscle_group_template_muscle_group_template_dayTotemplate_day:
+            {
+              select: {
+                id: true,
+                muscle_group: true,
+              },
+              orderBy: {
+                id: "asc",
+              },
             },
-            orderBy: {
-              id: "asc",
-            }
-          }
-        }
-      }
-    }
+        },
+      },
+    },
   });
 
   const exercises = await prisma.exercises.findMany({
     where: {
-      OR: [
-      { public: true },
-      { creator: user.id },
-      ]
+      OR: [{ public: true }, { creator: user.id }],
     },
     select: {
       id: true,
       exercise_name: true,
       muscle_group: true,
-      
     },
     orderBy: {
       exercise_name: "asc",
-    }
+    },
   });
 
   return { user, program, exercises };
@@ -86,7 +83,7 @@ export const actions = {
 
     // second form field is the start date
     const [year, month, day] = form[1][1].toString().split("-").map(Number);
-    let start_date: Date = new Date(year, month-1, day);
+    let start_date: Date = new Date(year, month - 1, day);
     // third form field is the number of weeks
     let start_copy: Date = new Date(start_date.getTime());
     let day_duration: number = Number(form[2][1]) * 7;

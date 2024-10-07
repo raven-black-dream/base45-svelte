@@ -18,16 +18,16 @@ export async function createWorkouts(
     target_rir: number;
     deload: boolean;
     complete: boolean;
-    }[] = calculateWorkoutCreation(
-      user_id,
-      start_date,
-      end_date,
-      meso_id,
-      meso_day_id,
-      day_of_weeks,
-      day,
-      day_name,
-    );
+  }[] = calculateWorkoutCreation(
+    user_id,
+    start_date,
+    end_date,
+    meso_id,
+    meso_day_id,
+    day_of_weeks,
+    day,
+    day_name,
+  );
 
   const {} = await conn.from("workouts").insert(workouts);
 
@@ -65,11 +65,11 @@ export function calculateWorkoutCreation(
 
   const timeDifference = Math.abs(end_date.getTime() - start_date.getTime());
   const weeks: number =
-      Math.ceil(timeDifference / (1000 * 60 * 60 * 24 * 7)) - 2;
+    Math.ceil(timeDifference / (1000 * 60 * 60 * 24 * 7)) - 2;
 
   while (current.getTime() < end_date.getTime()) {
     // Calculate number of weeks (rounded down to nearest whole week)
-    
+
     let currentWeek = Math.floor(
       Math.abs(current.getTime() - start_date.getTime()) /
         (1000 * 60 * 60 * 24 * 7),
@@ -91,7 +91,6 @@ export function calculateWorkoutCreation(
   }
   return workouts;
 }
-
 
 export async function createSets(conn: any, workoutData: any) {
   // create a set record for each exercise in the workout record

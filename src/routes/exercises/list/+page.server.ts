@@ -18,8 +18,7 @@ export const load = (async ({ locals: { supabase, getSession }, params }) => {
     orderBy: {
       exercise_name: "asc",
     },
-
-  })
+  });
 
   return { exerciseData };
 }) satisfies PageServerLoad;
