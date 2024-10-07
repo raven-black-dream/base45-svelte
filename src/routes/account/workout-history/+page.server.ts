@@ -12,16 +12,14 @@ export const load = (async ({ locals: { supabase } }) => {
     redirect(303, "/");
   }
 
-  const workoutHistory = await prisma
-  .workouts
-  .findMany({
-    where : {
+  const workoutHistory = await prisma.workouts.findMany({
+    where: {
       user: user.id,
-      complete: true
+      complete: true,
     },
     orderBy: {
       date: "desc",
-    }
-  })
+    },
+  });
   return { workoutHistory };
 }) satisfies PageServerLoad;

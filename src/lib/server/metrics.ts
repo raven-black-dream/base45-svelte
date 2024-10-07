@@ -152,7 +152,8 @@ export async function exerciseSFR(
     }
 
     fatigueScore += performanceScore;
-    const stimulusToFatigueRatio = (rawStimulusMagnitude + 1) / (fatigueScore + 1);
+    const stimulusToFatigueRatio =
+      (rawStimulusMagnitude + 1) / (fatigueScore + 1);
 
     exerciseMetrics.set(exercise.id, {
       muscleGroup: exercise.muscle_group,
@@ -310,8 +311,12 @@ export async function calculateMuscleGroupMetrics(
  * performance_score: The performance score for the exercise - Used to facilitate the calculation of fatigue score for the muscle group
  *
  */
-export async function calculateExerciseMetrics(exerciseData, currentWorkoutFeedback, mesocycleId: string, workoutId: string) {
-
+export async function calculateExerciseMetrics(
+  exerciseData,
+  currentWorkoutFeedback,
+  mesocycleId: string,
+  workoutId: string,
+) {
   let exerciseMetrics: Map<string, ExerciseMetric> = new Map();
   let userExerciseMetrics: {
     exercise: string;
@@ -325,7 +330,9 @@ export async function calculateExerciseMetrics(exerciseData, currentWorkoutFeedb
     // for each exercise, calculate the metrics for that exercise
     for (const item of exerciseData) {
       const exerciseId = item.exercises.id;
-      const feedback = currentWorkoutFeedback?.filter((f) => (f.exercise === exerciseId));
+      const feedback = currentWorkoutFeedback?.filter(
+        (f) => f.exercise === exerciseId,
+      );
 
       if (!exerciseMetrics.has(exerciseId)) {
         exerciseMetrics.set(exerciseId, {

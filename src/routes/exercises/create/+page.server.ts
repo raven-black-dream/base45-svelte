@@ -19,7 +19,8 @@ export const actions = {
 
     const exercise_name: string = data.get("exerciseName")?.toString() ?? "";
     const muscle_group: string = data.get("muscleGroup")?.toString() ?? "";
-    const progression_method: string = data.get("progressionMethod")?.toString() ?? "";
+    const progression_method: string =
+      data.get("progressionMethod")?.toString() ?? "";
 
     const exercise: Prisma.exercisesCreateInput = {
       exercise_name: exercise_name,
@@ -35,6 +36,6 @@ export const actions = {
 
     const createExercise = await prisma.exercises.create({ data: exercise });
 
-    redirect(303, '/exercises/list')
+    redirect(303, "/exercises/list");
   },
 };

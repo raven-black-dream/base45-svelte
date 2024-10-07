@@ -148,22 +148,22 @@ export const load = async ({ locals: { supabase } }) => {
   };
 
   const weeklyMetrics = [
-      [
-        {
-          type: "indicator",
-          mode: "number+delta",
-          value: caluclatedMetrics.totalLoad.current,
-          number: { font: { size: 40 } },
-          delta: {
-            reference: caluclatedMetrics.totalLoad.previous,
-            valueformat: ".0f",
-            increasing: { color: "#29712d" },
-            decreasing: { color: "#730000" },
-          },
-          title: { text: "Total Load Score" },
+    [
+      {
+        type: "indicator",
+        mode: "number+delta",
+        value: caluclatedMetrics.totalLoad.current,
+        number: { font: { size: 40 } },
+        delta: {
+          reference: caluclatedMetrics.totalLoad.previous,
+          valueformat: ".0f",
+          increasing: { color: "#29712d" },
+          decreasing: { color: "#730000" },
         },
-      ],
-      [
+        title: { text: "Total Load Score" },
+      },
+    ],
+    [
       {
         type: "indicator",
         mode: "number+delta",
@@ -287,9 +287,9 @@ function calculateAverageForDateRange(
   endDate: Date,
 ): number {
   const filteredMetrics = filterMetricsByDateRange(metrics, startDate, endDate);
+  const n = filteredMetrics.length;
   return filteredMetrics.length > 0
-    ? filteredMetrics.reduce((sum, metric) => sum + metric.value, 0) /
-        filteredMetrics.length
+    ? filteredMetrics.reduce((sum, metric) => sum + metric.value, 0) / n
     : 0;
 }
 

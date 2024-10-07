@@ -23,7 +23,7 @@ export const load = async ({ locals: { supabase } }) => {
       gender: true,
       date_of_birth: true,
     },
-  })
+  });
   return { user, profile };
 };
 

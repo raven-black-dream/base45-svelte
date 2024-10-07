@@ -32,7 +32,6 @@ import { getSorenessAndPerformance } from "$lib/server/progression";
 import prisma from "$lib/server/prisma";
 import { Prisma } from "@prisma/client";
 
-
 interface MesoExercise {
   sort_order: number;
   num_sets: number;
@@ -252,7 +251,9 @@ export const load = async ({ locals: { supabase, getSession }, params }) => {
         unique_questions.push(question);
       }
     }
-    const { error } = await supabase.from("workout_feedback").upsert(unique_questions);
+    const { error } = await supabase
+      .from("workout_feedback")
+      .upsert(unique_questions);
     if (error) {
       console.log(error);
     }
@@ -674,8 +675,8 @@ async function calculateMetrics(workoutId: string) {
           reps: true,
           target_reps: true,
           weight: true,
-          target_weight: true
-        }
+          target_weight: true,
+        },
       },
       workout_feedback: {
         select: {
@@ -683,19 +684,23 @@ async function calculateMetrics(workoutId: string) {
           value: true,
           exercise: true,
           muscle_group: true,
-          workout: true
+          workout: true,
         },
         where: {
-          question_type : {
+          question_type: {
             in: ["ex_soreness", "mg_difficulty"],
-          }
-        }
-      }
-    }
-  })
+          },
+        },
+      },
+    },
+  });
 
-
-  await calculateExerciseMetrics(workoutData?.workout_set, workoutData?.workout_feedback, workoutData?.mesocycle, workoutData?.id);
+  await calculateExerciseMetrics(
+    workoutData?.workout_set,
+    workoutData?.workout_feedback,
+    workoutData?.mesocycle,
+    workoutData?.id,
+  );
 
   // First get a list of muscle groups worked in the workout
   const { data: muscleGroups } = await supabase
@@ -738,8 +743,6 @@ async function calculateMetrics(workoutId: string) {
     });
   });
   await calculateMuscleGroupMetrics(workoutId, workoutIds);
-
-  
 }
 
 async function progression(workoutId: string, muscleGroup: string) {
