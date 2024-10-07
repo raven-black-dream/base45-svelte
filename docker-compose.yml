@@ -18,3 +18,8 @@ services:
     restart: unless-stopped
     ports:
       - 3000:5050
+    networks:
+      - frontend
+networks:
+  frontend:
+    external: true
