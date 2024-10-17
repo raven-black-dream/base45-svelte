@@ -2,6 +2,7 @@
 
 import { redirect } from "@sveltejs/kit";
 import { createWorkouts } from "$lib/server/mesocycle.js";
+import prisma from "$lib/server/prisma.js";
 
 // @ts-ignore
 export const load = async ({ locals: { supabase, getSession } }) => {
@@ -64,33 +65,38 @@ export const actions = {
       redirect(303, "/");
     }
     const data = await request.formData();
-    const mesoId = data.get("mesoId");
+    const mesoId = data.get("mesoId")?.toString();
 
-    const { data: mesocycleData } = await supabase
-      .from("mesocycle")
-      .select("*")
-      .eq("id", mesoId)
-      .limit(1)
-      .single();
+    const mesocycleData = await prisma.mesocycle.findUnique({
+      where: {
+        id: mesoId,
+      },
+    });
 
-    mesocycleData.current = false;
+    await prisma.mesocycle.update({
+      where: {
+        id: mesoId,
+      },
+      data: {
+        current: false,
+      },
+    });
 
-    const { error: updateError } = await supabase
-      .from("mesocycle")
-      .update({ current: false })
-      .eq("id", mesoId);
-
-    const { data: mesoDays } = await supabase
-      .from("meso_day")
-      .select("*")
-      .eq("mesocycle", mesocycleData.id);
+    const mesoDays = await prisma.meso_day.findMany({
+      where: {
+        mesocycle: mesoId,
+      },
+    });
 
     const dayIds = mesoDays.map((day) => day.id);
 
-    const { data: mesoDayExercises } = await supabase
-      .from("meso_exercise")
-      .select("*")
-      .in("meso_day", dayIds);
+    const mesoDayExercises = await prisma.meso_exercise.findMany({
+      where: {
+        meso_day: {
+          in: dayIds,
+        },
+      },
+    })
 
     const end_date =
       new Date(mesocycleData.end_date).getTime() -
@@ -136,16 +142,17 @@ export const actions = {
       daysOfWeek.set(day.id, day.day_of_week);
     }
 
-    for (const day in newMesoDays) {
+    for (const day of newMesoDays) {
       createWorkouts(
         supabase,
         user.id,
         new Date(newMesoData.start_date),
         new Date(newMesoData.end_date),
         newMesoData.id,
-        newMesoDays[day].id,
+        day.id,
         daysOfWeek,
-        newMesoDays[day].meso_day_name,
+        day.id,
+        day.meso_day_name
       );
     }
   },
