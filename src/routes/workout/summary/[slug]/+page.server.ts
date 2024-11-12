@@ -1,7 +1,7 @@
 import type { PageServerLoad } from "./$types";
 import { redirect } from "@sveltejs/kit";
 
-export const load = (async ({ locals: { supabase, getSession }, params }) => {
+export const load = (async ({ locals: { supabase}, params }) => {
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -49,6 +49,9 @@ export const load = (async ({ locals: { supabase, getSession }, params }) => {
   for (const entry of workoutData.workout_set) {
     const { exercise, reps, weight } = entry;
     const { muscle_group: muscleGroup, exercise_name: name } = exercise;
+    if (!reps || !weight) {
+      continue;
+    }
 
     if (!setData[muscleGroup]) {
       setData[muscleGroup] = {};

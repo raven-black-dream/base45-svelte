@@ -2,7 +2,11 @@
     import type { PageData } from './$types';
     import WorkoutHistoryBlock from '$lib/components/WorkoutHistoryBlock.svelte'
     
-    export let data: PageData;
+    interface Props {
+        data: PageData;
+    }
+
+    let { data }: Props = $props();
     let workoutHistory = data.workoutHistory
 </script>
 

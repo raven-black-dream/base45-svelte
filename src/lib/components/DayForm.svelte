@@ -4,7 +4,11 @@
   import Icon from '@iconify/svelte';
 
 
-  export let day: {name: string, muscle_groups: {muscleGroup: string, numSets: number}[]};
+  interface Props {
+    day: {name: string, muscle_groups: {muscleGroup: string, numSets: number}[]};
+  }
+
+  let { day = $bindable() }: Props = $props();
 
   const dispatch = createEventDispatcher();
 
@@ -30,11 +34,11 @@
   </label>
   
   {/each}
-  <button class='btn-icon variant-ghost-secondary' type='button' on:click={addMuscleGroup}>
+  <button class='btn-icon variant-ghost-secondary' type='button' onclick={addMuscleGroup}>
     <Icon icon="fa6-solid:plus" />
   </button>
 
-  <button class='btn-icon variant-ghost-primary float-right' type='button' on:click={() => dispatch('remove')}>
+  <button class='btn-icon variant-ghost-primary float-right' type='button' onclick={() => dispatch('remove')}>
     <Icon icon="fa6-solid:minus" /> 
   </button>
 

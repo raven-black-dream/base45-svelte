@@ -5,15 +5,20 @@
 	import { getModalStore } from '@skeletonlabs/skeleton';
 
 	// Props
-	/** Exposes parent props to this component. */
-	export let parent: SvelteComponent;
+	
+	interface Props {
+		/** Exposes parent props to this component. */
+		parent: SvelteComponent;
+	}
+
+	let { parent }: Props = $props();
 
 	const modalStore = getModalStore();
 
 	// Form Data
-	const formData = {
+	const formData = $state({
 		comment: '',
-	};
+	});
 
 	// We've created a custom submit function to pass the response and close the modal.
 	function onFormSubmit(): void {
@@ -43,8 +48,8 @@
 		</form>
 		<!-- prettier-ignore -->
 		<footer class="modal-footer {parent.regionFooter}">
-			<button class="btn {parent.buttonNeutral}" on:click={parent.onClose}>{parent.buttonTextCancel}</button>
-			<button class="btn {parent.buttonPositive}" on:click={onFormSubmit}>Submit Form</button>
+			<button class="btn {parent.buttonNeutral}" onclick={parent.onClose}>{parent.buttonTextCancel}</button>
+			<button class="btn {parent.buttonPositive}" onclick={onFormSubmit}>Submit Form</button>
 		</footer>
 	</div>
 {/if}

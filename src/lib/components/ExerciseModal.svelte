@@ -7,14 +7,19 @@
 	import { getModalStore } from '@skeletonlabs/skeleton';
 
 	// Props
-	/** Exposes parent props to this component. */
-	export let parent: SvelteComponent;
-	export let questions: string[];
+	
+	interface Props {
+		/** Exposes parent props to this component. */
+		parent: SvelteComponent;
+		questions: string[];
+	}
+
+	let { parent, questions }: Props = $props();
 
 	const modalStore = getModalStore();
 
 	// Form Data
-	let ratings: Map<string, number> = new Map();
+	let ratings: Map<string, number> = $state(new Map());
 
 	// We've created a custom submit function to pass the response and close the modal.
 	function onFormSubmit(): void {
@@ -52,17 +57,23 @@
                 <Ratings bind:value={ratings[question]} max={4} interactive on:icon={(e) => {
 					ratings[question] = e.detail.index;
 				  }}>
-                    <svelte:fragment slot="empty"><Icon icon="fa6-regular:star" height='2.5em' /></svelte:fragment>
-                    <svelte:fragment slot="half"><Icon icon="fa6-regular:star" height='2.5em'/></svelte:fragment>
-                    <svelte:fragment slot="full"><Icon icon="fa6-solid:star" height='2.5em'/></svelte:fragment>
+                    {#snippet empty()}
+												<Icon icon="fa6-regular:star" height='2.5em' />
+											{/snippet}
+                    {#snippet half()}
+												<Icon icon="fa6-regular:star" height='2.5em'/>
+											{/snippet}
+                    {#snippet full()}
+												<Icon icon="fa6-solid:star" height='2.5em'/>
+											{/snippet}
                 </Ratings>
 			</div>
             {/each}
 		</div>
 		<!-- prettier-ignore -->
 		<footer class="modal-footer {parent.regionFooter}">
-			<button class="btn {parent.buttonNeutral}" on:click={parent.onClose}>{parent.buttonTextCancel}</button>
-			<button class="btn {parent.buttonPositive}" on:click={onFormSubmit}>Submit Form</button>
+			<button class="btn {parent.buttonNeutral}" onclick={parent.onClose}>{parent.buttonTextCancel}</button>
+			<button class="btn {parent.buttonPositive}" onclick={onFormSubmit}>Submit Form</button>
 		</footer>
 	</div>
 {/if}

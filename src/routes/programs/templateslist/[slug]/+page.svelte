@@ -3,7 +3,7 @@
 <script lang="ts">
     import SortableList from "$lib/components/sortable_list.svelte";
 
-	export let data
+    let { data = $bindable() } = $props();
 
     function sortExercises(e: CustomEvent, day_id: any) {
       let new_template_days: { id: any; template_muscle_group: any; }[] = []
@@ -45,16 +45,18 @@
                         <option value="6">Saturday</option>
                         <option value="0">Sunday</option>
                     </select>
-                    <SortableList list={day.template_muscle_group_template_muscle_group_template_dayTotemplate_day} on:sort={event => sortExercises(event, day.id)} let:item let:index>
-                        {item.muscle_group}
-                        <select class="select" name="{day.id}_{item.id}">
-                            {#each data.exercises as exercise}
-                                {#if exercise.muscle_group === item.muscle_group}                        
-                                    <option value="{exercise.id}">{exercise.exercise_name}</option>
-                                {/if}
-                            {/each}
-                        </select>
-                    </SortableList>
+                    <SortableList list={day.template_muscle_group_template_muscle_group_template_dayTotemplate_day} on:sort={event => sortExercises(event, day.id)}  >
+                        {#snippet children({ item, index })}
+                                                {item.muscle_group}
+                            <select class="select" name="{day.id}_{item.id}">
+                                {#each data.exercises as exercise}
+                                    {#if exercise.muscle_group === item.muscle_group}                        
+                                        <option value="{exercise.id}">{exercise.exercise_name}</option>
+                                    {/if}
+                                {/each}
+                            </select>
+                                                                    {/snippet}
+                                        </SortableList>
                 </section>
             </div>
         </div>

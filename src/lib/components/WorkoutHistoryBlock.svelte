@@ -1,6 +1,6 @@
 <script lang="ts">
     
-    export let workoutHistory;
+    let { workoutHistory } = $props();
 
 </script>
 <div class='card p-4'>
