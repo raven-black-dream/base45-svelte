@@ -4,11 +4,20 @@
     import ExerciseModal from '$lib/components/ExerciseModal.svelte';
     import { enhance } from '$app/forms';
 
-    export let set: {id: number, workout: string, exercises: {id: string, exercise_name:string, weighted: boolean, weight_step:number, muscle_group:string}, 
+    interface Props {
+        set: {id: number, workout: string, exercises: {id: string, exercise_name:string, weighted: boolean, weight_step:number, muscle_group:string}, 
     reps:number, target_reps:number, target_weight:number, weight:number, is_first:boolean, is_last:boolean, completed:boolean};
-    export let i: number;
-    export let len: number;
-    export let recovery: {completed: boolean, workout: string};
+        i: number;
+        len: number;
+        recovery: {completed: boolean, workout: string};
+    }
+
+    let {
+        set,
+        i,
+        len,
+        recovery
+    }: Props = $props();
     // modalStore needs to be where the trigger will be
     const modalStore = getModalStore();
 
@@ -135,7 +144,7 @@
         <input type="hidden" name="is_last" value={set.is_last} />
         <input type="hidden" name="is_last_set" value={i === len}>
         {#if !set.completed}
-            <button class="btn variant-ghost-primary" type="submit" on:click={askForFeedback} >
+            <button class="btn variant-ghost-primary" type="submit" onclick={askForFeedback} >
 
                 Log Set
             </button>                    

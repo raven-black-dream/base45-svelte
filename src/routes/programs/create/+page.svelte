@@ -20,11 +20,11 @@
     numSets: number;
     }
 
-    let days: Day[] = [
+    let days: Day[] = $state([
     {name: '', muscle_groups: [{muscleGroup: '', numSets: 0}]},
-    ];
-    let templateName: string = '';
-    let isPublic: boolean = true;
+    ]);
+    let templateName: string = $state('');
+    let isPublic: boolean = $state(true);
 
     function addDay() {
     days = [...days, { name: "", muscle_groups: [{muscleGroup: '', numSets: 0}] }];
@@ -54,7 +54,7 @@
             <DayForm bind:day on:remove={() => removeDay(index)}/>
             {/each}
 
-            <button class='btn-icon variant-ghost-primary' type='button' on:click={addDay}>
+            <button class='btn-icon variant-ghost-primary' type='button' onclick={addDay}>
             <Icon icon="fa6-solid:plus" />
             </button>
         </div>

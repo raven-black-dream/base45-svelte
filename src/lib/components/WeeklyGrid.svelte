@@ -1,6 +1,10 @@
 <script lang="ts">
-	export let workouts: Workout[];
-	export let numCols: number;
+	interface Props {
+		workouts: Workout[];
+		numCols: number;
+	}
+
+	let { workouts, numCols }: Props = $props();
 
 	const colVariants = {
   1: "grid grid-cols-1 gap-2",
@@ -12,7 +16,7 @@
   
 }
 
-$: cols = colVariants[numCols];
+let cols = $derived(colVariants[numCols]);
 
 </script>
 

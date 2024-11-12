@@ -1,17 +1,20 @@
 <!-- src/routes/account/+page.svelte -->
 
 <script lang="ts">
+	import { run } from 'svelte/legacy';
+
 	import { enhance } from '$app/forms';
 	import type { SubmitFunction } from '@sveltejs/kit';
 
-	export let data
-	export let form
+	let { data, form } = $props();
 
-	let { user, profile } = data;
-	$: ({ user, profile } = data);
+	let { user, profile } = $state(data);
+	run(() => {
+		({ user, profile } = data);
+	});
 	
 
-	let profileForm: HTMLFormElement
+	let profileForm: HTMLFormElement = $state()
 	let loading = false
     let displayName: string = profile?.display_name ?? ''
     let gender: string = profile?.gender ?? ''

@@ -1,8 +1,8 @@
-<script>
+<script lang="ts">
 	import { onMount } from 'svelte';
     import Plot from 'svelte-plotly.js';
 
-    export let data;
+    let { data } = $props();
 
     onMount(async () => {
         console.log(data);

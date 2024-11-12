@@ -3,7 +3,11 @@ import type { PageData } from './$types';
 import { Ratings } from '@skeletonlabs/skeleton';
 import Icon from '@iconify/svelte';
     
-export let data: PageData;
+    interface Props {
+        data: PageData;
+    }
+
+    let { data }: Props = $props();
 </script>
 
 
@@ -53,9 +57,15 @@ export let data: PageData;
                             <li>
                             <p>{key}:</p> 
                             <Ratings value={value + 1} max=4>
-                                <svelte:fragment slot="empty"><Icon icon="fa6-regular:star" height='1.5em' /></svelte:fragment>
-                                <svelte:fragment slot="half"><Icon icon="fa6-regular:star" height='1.5em'/></svelte:fragment>
-                                <svelte:fragment slot="full"><Icon icon="fa6-solid:star" height='1.5em'/></svelte:fragment>
+                                {#snippet empty()}
+                                                                                        <Icon icon="fa6-regular:star" height='1.5em' />
+                                                                                    {/snippet}
+                                {#snippet half()}
+                                                                                        <Icon icon="fa6-regular:star" height='1.5em'/>
+                                                                                    {/snippet}
+                                {#snippet full()}
+                                                                                        <Icon icon="fa6-solid:star" height='1.5em'/>
+                                                                                    {/snippet}
                             </Ratings>
                             </li>
                             {/each}

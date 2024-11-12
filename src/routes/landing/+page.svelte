@@ -9,9 +9,9 @@ import WeeklyGrid from "$lib/components/WeeklyGrid.svelte";
 import WorkoutCard from "$lib/components/WorkoutCard.svelte";
 import Indicator from "$lib/components/Indicator.svelte";
 
-export let data;
+  let { data } = $props();
 
-$: weeklyProgress = data.numComplete/data.numberOfDays * 100;
+let weeklyProgress = $derived(data.numComplete/data.numberOfDays * 100);
 
 
 </script>

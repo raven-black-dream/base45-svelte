@@ -5,7 +5,7 @@
     import { popup } from '@skeletonlabs/skeleton';
     import Icon from '@iconify/svelte';
     import { enhance } from '$app/forms';
-    export let data
+    let { data } = $props();
 
 
 

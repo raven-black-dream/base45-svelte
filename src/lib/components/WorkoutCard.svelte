@@ -1,5 +1,9 @@
 <script lang="ts">
-	export let workout: Workout;
+    interface Props {
+        workout: Workout;
+    }
+
+    let { workout }: Props = $props();
 
 </script>
 
