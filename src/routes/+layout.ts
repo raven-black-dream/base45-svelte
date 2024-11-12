@@ -7,6 +7,7 @@ import {
   PUBLIC_SUPABASE_ANON_KEY,
   PUBLIC_SUPABASE_URL,
 } from "$env/static/public";
+import * as Sentry from "@sentry/sveltekit";
 import type { LayoutLoad } from "./$types";
 
 export const load: LayoutLoad = async ({ data, depends, fetch }) => {
@@ -45,6 +46,9 @@ export const load: LayoutLoad = async ({ data, depends, fetch }) => {
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  if (user) {
+    Sentry.setUser({ id: user.id });}
 
   return { session, supabase, user };
 };
