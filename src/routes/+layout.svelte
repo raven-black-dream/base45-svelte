@@ -1,12 +1,9 @@
 <script lang="ts">
 	import '../app.postcss';
-	import { AppShell, AppBar, Modal, Drawer, type DrawerSettings } from '@skeletonlabs/skeleton';
+	import { AppBar, Modal } from '@skeletonlabs/skeleton-svelte';
 	import { invalidate } from '$app/navigation'
 	import { onMount } from 'svelte'
-	import { initializeStores, getDrawerStore } from '@skeletonlabs/skeleton';
 	import { computePosition, autoUpdate, offset, shift, flip, arrow } from '@floating-ui/dom';
-	import { storePopup } from '@skeletonlabs/skeleton';
-	storePopup.set({ computePosition, autoUpdate, offset, shift, flip, arrow });
 			
 	let { data, children } = $props();
 	let { supabase, session } = $derived(data)
@@ -21,75 +18,58 @@
 		return () => data.subscription.unsubscribe()
 	})
 
-	const drawerSettings: DrawerSettings = {
-		id: 'main',
-		width: 'w-[280px] md:w-[480px]',
-		padding: 'p-4',
-		position: 'left',
+	let drawerState = $state(false);
+
+	function drawerClose() {
+		drawerState = false;
 	}
 
-	function openDrawer() {
-		drawerStore.open(drawerSettings)
-	};
-	function closeDrawer() {
-		drawerStore.close()
-	};
-
-	initializeStores();
-	const drawerStore = getDrawerStore();
-
 </script>
+<header>
+	{#if session}
+		<Modal bind:open={drawerState}
+		triggerBase='btn'
+		contentBase='bg-surface-500 p-4 rounded-container-token w-[480] h-screen'
+		positionerJustify='justify-start'
+		positionerAlign=''
+		positionerPadding=''
+		transitionsPositionerIn={{ x: -480, duration: 200 }}
+		transitionsPositionerOut={{ x: -480, duration: 200 }}
+		>
+		{#snippet trigger()}<p class='uppercase font-extrabold text-lg'>Base45</p>{/snippet}
+		{#snippet content()}
+		<nav class="list-nav">
+			<ul>
+				<li>
+					<a class="btn btn-sm variant-ghost-primary" href="/account/view" onclick={drawerClose}>Account</a>
+				</li>
+				<li>
+					<a class="btn btn-sm variant-ghost-primary" href="/landing" onclick={drawerClose}>Home</a>
+				</li>
+				<li>
+					<a class="btn btn-sm variant-ghost-primary" href="/exercises/create" onclick={drawerClose}>Create Exercise</a>
+				</li>
+				<li>
+					<a class="btn btn-sm variant-ghost-primary" href="/exercises/list" onclick={drawerClose}>Exercise List</a>
+				</li>
+				<li>
+					<a class="btn btn-sm variant-ghost-primary" href="/programs/templateslist" onclick={drawerClose}>Programs</a>
+				</li>
+				<li>
+					<a class="btn btn-sm variant-ghost-primary" href="/account/workout-history" onclick={drawerClose}>Workout History</a>
+				</li>
+			</ul>
 
-<!-- App Shell -->
-<Modal />
-<Drawer>
-	<nav class="list-nav">
-		<ul>
-			<li>
-				<a class="btn btn-sm variant-ghost-primary" href="/account/view" onclick={closeDrawer}>Account</a>
-			</li>
-			<li>
-				<a class="btn btn-sm variant-ghost-primary" href="/landing" onclick={closeDrawer}>Home</a>
-			</li>
-			<li>
-				<a class="btn btn-sm variant-ghost-primary" href="/exercises/create" onclick={closeDrawer}>Create Exercise</a>
-			</li>
-			<li>
-				<a class="btn btn-sm variant-ghost-primary" href="/exercises/list" onclick={closeDrawer}>Exercise List</a>
-			</li>
-			<li>
-				<a class="btn btn-sm variant-ghost-primary" href="/programs/templateslist" onclick={closeDrawer}>Programs</a>
-			</li>
-			<li>
-				<a class="btn btn-sm variant-ghost-primary" href="/account/workout-history" onclick={closeDrawer}>Workout History</a>
-			</li>
-		</ul>
+		</nav>
+		{/snippet}
+	</Modal>
+	{:else}
+		<button class="text-xl font-extrabold uppercase" disabled>Base45</button>
+	{/if}
 
-	</nav>
-	
 
-</Drawer>
-<AppShell>
-	{#snippet header()}
-	
-			<!-- App Bar -->
-			<AppBar>
-				{#snippet lead()}
-					
-						{#if session}
-							<button class="text-xl font-extrabold uppercase" onclick={openDrawer}>Base45</button>
-						{:else}
-							<button class="text-xl font-extrabold uppercase" disabled>Base45</button>
-						{/if}
-					
-					{/snippet}
-				{#snippet trail()}
-					
-					
-					{/snippet}
-			</AppBar>
-		
-	{/snippet}
-	<!-- Page Route Content -->
+</header>
+<main>
 	{@render children?.()}
-</AppShell>
+</main>
+

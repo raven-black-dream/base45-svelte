@@ -32,7 +32,7 @@
 	<input class="input" type="number" value=5 name="mesocycle_length" />
     {#each data.program.template_day as day}
         <div class="py-4">
-            <div class="card variant-ghost-primary">
+            <div class="card preset-filled-surface-200-800 preset-outlined-primary-100-900">
                 <header class="card-header">{day.template_day_name}</header>
                 <section class="p-4">        
                     Day of the Week

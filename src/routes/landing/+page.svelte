@@ -4,7 +4,7 @@
 <!-- TODO: events aren't changing when the month changes -->
 
 <script lang="ts">
-import { ProgressBar } from "@skeletonlabs/skeleton";
+import { Progress } from "@skeletonlabs/skeleton-svelte";
 import WeeklyGrid from "$lib/components/WeeklyGrid.svelte";
 import WorkoutCard from "$lib/components/WorkoutCard.svelte";
 import Indicator from "$lib/components/Indicator.svelte";
@@ -25,7 +25,7 @@ let weeklyProgress = $derived(data.numComplete/data.numberOfDays * 100);
 	<h1 class="text-3xl font-bold mb-4">Welcome Back!</h1>
 
   {#if data.workouts.length === 0}
-     <div class="card variant-ghost p-4 flex flex-col items-center"> 
+     <div class="card preset-filled-surface-200-800 p-4 flex flex-col items-center"> 
       <header class='card-header'>No Mesocycle Found</header>
       <section class="p-4">You don't currently have a Mesocycle. Please create a mesocycle from one of the Program Templates.</section>
       <footer class='card-footer'>
@@ -35,15 +35,15 @@ let weeklyProgress = $derived(data.numComplete/data.numberOfDays * 100);
      </div>
   {:else}
 
-  <div class="card variant-glass-primary mt-6 p-2">
+  <div class="card preset-filled-surface-200-800 mt-6 p-2">
     <header class='card-header'>Weekly Progress - Week {data.currentWeek}</header>
     <section class='p-4 justify-center'>
-      <p class="text-xl font-bold">{data.numComplete}/{data.numberOfDays} Workouts Comleted this Week</p>
-      <ProgressBar value={weeklyProgress} max={100} height="h-4" meter="bg-primary-500"/>
+      <p class="text-xl font-bold">{data.numComplete}/{data.numberOfDays} Workouts Completed this Week</p>
+      <Progress value={weeklyProgress} max={100} height="h-4" meterBg="bg-primary-500"/>
     </section>
 	</div>
 
-  <div class="card variant-glass-primary mt-6 p-2">
+  <div class="card preset-filled-surface-200-800 mt-6 p-2">
     <header class='card-header'>Weekly Metrics</header>
     <section class='p-4'>
       <div class="grid grid-cols-3 gap-2">
@@ -56,7 +56,7 @@ let weeklyProgress = $derived(data.numComplete/data.numberOfDays * 100);
     </section>
   </div>
 
-  <div class='card variant-glass mt-6'>
+  <div class='card preset-filled-surface-200-800 mt-6'>
     <header class='card-header'>Next Workouts</header>
     <section class='p-4'>
       <div class="snap-x scroll-px-4 snap-mandatory scroll-smooth flex gap-4 overflow-x-auto px-4 py-10">
@@ -68,7 +68,7 @@ let weeklyProgress = $derived(data.numComplete/data.numberOfDays * 100);
     </section>
   </div>
 
-  <div class="card variant-glass-primary items-center">
+  <div class="card preset-filled-surface-200-800 items-center">
     <header class="card-header">Mesocycle Progress</header>
     <p class='text-xs text-center text-secondary-500'>Click Previous Workout Name to view the workout</p>
 		<section class='p-4'>

@@ -23,11 +23,11 @@ let cols = $derived(colVariants[numCols]);
 <div class={`${cols}`}>
 	{#each workouts as workout, index}
 			{#if workout.complete}
-				<div class='card p-4 variant-ghost-primary'>
+				<div class='card p-4 preset-tonal-primary'>
 					<a class='text-xs md:text-base' href="/workout/summary/{workout.id}">{workout.day_name}</a>
 				</div>
 			{:else}
-				<div class='card p-4 variant-ghost-secondary'>
+				<div class='card p-4 preset-tonal-secondary'>
 					<p class='text-xs md:text-base'>{workout.day_name}</p>
 				</div>
 			{/if}

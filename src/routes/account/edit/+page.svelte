@@ -42,10 +42,10 @@
 	<title>Edit Profile</title>
 </svelte:head>
 
-<div class='card p-4 variant-glass-primary'>
+<div class='card p-4 preset-filled-surface-200-800'>
 	<header class="card-header">
 		<p class="card-title p-2 text-lg font-extrabold">Edit Profile</p>
-	<div class="p-2 variant-glass-surface form-widget">
+	<div class="p-2 preset-filled-surface-300-700 form-widget">
 		<form
 			class="form-widget"
 			method="post"
@@ -74,7 +74,7 @@
 			</div>
 
 			<div class="p-2">
-				<button type='submit' class='btn variant-filled-surface'>Update</button>
+				<button type='submit' class='btn preset-tonal-primary'>Update</button>
 			</div>
 		</form>
 	</div>

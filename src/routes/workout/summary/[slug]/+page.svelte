@@ -1,6 +1,6 @@
 <script lang="ts">
 import type { PageData } from './$types';
-import { Ratings } from '@skeletonlabs/skeleton';
+import { Rating } from '@skeletonlabs/skeleton-svelte';
 import Icon from '@iconify/svelte';
     
     interface Props {
@@ -15,14 +15,14 @@ import Icon from '@iconify/svelte';
 	<title>Workout Summary - {data.workout?.date}</title>
 </svelte:head>
 
-<div class='card p-4 variant-glass-primary'>
+<div class='card p-4 preset-filled-surface-200-800'>
     <header class='card-header text-xl font-extrabold'>
         {data.workout?.day_name} - {new Date(data.workout?.date).toDateString()}
     </header>
     <section class='p-4 space-y-4'>        
         <div class='space-y-4'>
             {#each Object.entries(data.setData) as [muscleGroup, exercises]}
-            <div class='card p-4 variant-glass'>
+            <div class='card p-4 preset-filled-surface-300-700'>
                 <header class='card-header p-4 text-xl font-extrabold'>{muscleGroup}</header>
                 <section>
                     {#each Object.entries(exercises) as [index, exercise]}
@@ -45,7 +45,7 @@ import Icon from '@iconify/svelte';
             {/each}
         </div>
 
-        <div class='top-4 card p-4 variant-glass'>
+        <div class='top-4 card p-4 preset-filled-surface-300-700'>
             <header class='card-header text-xl font-extrabold'>Feedback</header>
             <section>
                 {#each Object.entries(data.feedback) as [index, datum]}
@@ -56,7 +56,7 @@ import Icon from '@iconify/svelte';
                             {#each Object.entries(datum) as [key, value]}
                             <li>
                             <p>{key}:</p> 
-                            <Ratings value={value + 1} max=4>
+                            <Rating value={value + 1} max=4>
                                 {#snippet empty()}
                                                                                         <Icon icon="fa6-regular:star" height='1.5em' />
                                                                                     {/snippet}
@@ -66,7 +66,7 @@ import Icon from '@iconify/svelte';
                                 {#snippet full()}
                                                                                         <Icon icon="fa6-solid:star" height='1.5em'/>
                                                                                     {/snippet}
-                            </Ratings>
+                            </Rating>
                             </li>
                             {/each}
 

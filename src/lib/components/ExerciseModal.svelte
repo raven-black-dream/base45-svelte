@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { SvelteComponent } from 'svelte';
-    import { Ratings } from '@skeletonlabs/skeleton';
+    import { Rating } from '@skeletonlabs/skeleton-svelte';
     import Icon from '@iconify/svelte';
 
 	// Stores
@@ -54,7 +54,7 @@
 			{#each questions as question, i}
 				<div>
                 <p>{question}</p>
-                <Ratings bind:value={ratings[question]} max={4} interactive on:icon={(e) => {
+                <Rating bind:value={ratings[question]} max={4} interactive on:icon={(e) => {
 					ratings[question] = e.detail.index;
 				  }}>
                     {#snippet empty()}
@@ -66,7 +66,7 @@
                     {#snippet full()}
 												<Icon icon="fa6-solid:star" height='2.5em'/>
 											{/snippet}
-                </Ratings>
+                </Rating>
 			</div>
             {/each}
 		</div>

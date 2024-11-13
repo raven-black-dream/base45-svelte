@@ -1,7 +1,7 @@
 <script lang="ts">
   import WorkoutHistoryBlock from '../../../lib/components/WorkoutHistoryBlock.svelte';
 
-    import { Accordion, AccordionItem } from '@skeletonlabs/skeleton';
+    import { Accordion} from '@skeletonlabs/skeleton-svelte';
     import type { PageData } from './$types';
     import { enhance } from '$app/forms';
     import Icon, { iconLoaded } from '@iconify/svelte';
@@ -12,6 +12,7 @@
   }
 
   let { data }: Props = $props();
+  const value = $state('profile');
 
 </script>
 
@@ -23,19 +24,17 @@
     <div class='placeholder animate-pulse'></div>
 {:else}
 
-<div class='card p-4 variant-glass-primary'>
+<div class='card p-4 preset-filled-surface-200-800'>
     <header class="card-header text-xl font-extrabold">Hello {data.profile?.display_name}!</header>
     <section class='p-4'>
-        <Accordion >
-            <AccordionItem open>
-                {#snippet summary()}
-                  
+        <Accordion {value} collapsible>
+            <Accordion.Item value='profile'>
+                {#snippet control()}
                       Profile Details
-                  
                   {/snippet}
-                {#snippet content()}
+                {#snippet panel()}
                   
-                      <div class='p-4'>
+                      <div class='p-4 preset-filled-surface-300-700'>
                       <p>Display Name: {data.profile?.display_name}</p>
                       <p>Date of Birth: {data.profile?.date_of_birth} </p>
                       <p>Gender: {data.profile?.gender}</p>
@@ -44,17 +43,15 @@
 
                   
                   {/snippet}
-            </AccordionItem>
-            <AccordionItem>
-                {#snippet summary()}
-                  
+            </Accordion.Item>
+            <Accordion.Item value='weightHistory'>
+                {#snippet control()}
                       Weight History
-                  
                   {/snippet}
-                {#snippet content()}
+                {#snippet panel()}
                   
                       {#if !data.weightHistoryData}
-                          <div class='placeholder'></div>
+                          <div class='placeholder preset-filled-surface-300-700'></div>
                       {:else}
                           <LinePlot data={data.weightHistoryData}/>
                       {/if}
@@ -75,7 +72,7 @@
                       </form>
                   
                   {/snippet}
-            </AccordionItem>
+            </Accordion.Item>
         </Accordion>
     </section>
     <footer class='card-footer'></footer>
