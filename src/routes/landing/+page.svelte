@@ -29,21 +29,21 @@ let weeklyProgress = $derived(data.numComplete/data.numberOfDays * 100);
       <header class='card-header'>No Mesocycle Found</header>
       <section class="p-4">You don't currently have a Mesocycle. Please create a mesocycle from one of the Program Templates.</section>
       <footer class='card-footer'>
-        <a href="programs/templateslist" class="btn variant-ghost-primary mt-4">Create a Mesocycle</a>
+        <a href="programs/templateslist" class="btn preset-tonal-primary preset-outlined-primary-200-800 border-[1px] border-primary-600 mt-4">Create a Mesocycle</a>
       </footer>
   
      </div>
   {:else}
 
-  <div class="card preset-filled-surface-200-800 mt-6 p-2">
+  <div class="card preset-tonal-primary mt-6 p-2">
     <header class='card-header'>Weekly Progress - Week {data.currentWeek}</header>
-    <section class='p-4 justify-center'>
+    <section class='p-4 justify-center space-y-4'>
       <p class="text-xl font-bold">{data.numComplete}/{data.numberOfDays} Workouts Completed this Week</p>
-      <Progress value={weeklyProgress} max={100} height="h-4" meterBg="bg-primary-500"/>
+      <Progress value={weeklyProgress} max={100} height="h-4" meterBg="bg-primary-500" trackBg='bg-surface-900'/>
     </section>
 	</div>
 
-  <div class="card preset-filled-surface-200-800 mt-6 p-2">
+  <div class="card preset-tonal-primary mt-6 p-2">
     <header class='card-header'>Weekly Metrics</header>
     <section class='p-4'>
       <div class="grid grid-cols-3 gap-2">
@@ -56,7 +56,7 @@ let weeklyProgress = $derived(data.numComplete/data.numberOfDays * 100);
     </section>
   </div>
 
-  <div class='card preset-filled-surface-200-800 mt-6'>
+  <div class='card preset-filled-surface-50-950 mt-6'>
     <header class='card-header'>Next Workouts</header>
     <section class='p-4'>
       <div class="snap-x scroll-px-4 snap-mandatory scroll-smooth flex gap-4 overflow-x-auto px-4 py-10">
@@ -68,7 +68,7 @@ let weeklyProgress = $derived(data.numComplete/data.numberOfDays * 100);
     </section>
   </div>
 
-  <div class="card preset-filled-surface-200-800 items-center">
+  <div class="card preset-tonal-primary items-center">
     <header class="card-header">Mesocycle Progress</header>
     <p class='text-xs text-center text-secondary-500'>Click Previous Workout Name to view the workout</p>
 		<section class='p-4'>

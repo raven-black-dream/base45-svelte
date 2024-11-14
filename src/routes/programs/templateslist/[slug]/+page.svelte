@@ -55,8 +55,8 @@
                                     {/if}
                                 {/each}
                             </select>
-                                                                    {/snippet}
-                                        </SortableList>
+                        {/snippet}
+                    </SortableList>
                 </section>
             </div>
         </div>
