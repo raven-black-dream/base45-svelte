@@ -29,7 +29,7 @@
 	{#if session}
 		<Modal bind:open={drawerState}
 		triggerBase='btn'
-		contentBase='bg-surface-500 p-4 rounded-container-token w-[480] h-screen'
+		contentBase='bg-surface-100-900 p-4 space-y-4 shadow-xl max-w-[480px] h-screen'
 		positionerJustify='justify-start'
 		positionerAlign=''
 		positionerPadding=''
@@ -38,29 +38,29 @@
 		>
 		{#snippet trigger()}<p class='uppercase font-extrabold text-lg'>Base45</p>{/snippet}
 		{#snippet content()}
-		<nav class="list-nav">
-			<ul>
-				<li>
-					<a class="btn btn-sm variant-ghost-primary" href="/account/view" onclick={drawerClose}>Account</a>
-				</li>
-				<li>
-					<a class="btn btn-sm variant-ghost-primary" href="/landing" onclick={drawerClose}>Home</a>
-				</li>
-				<li>
-					<a class="btn btn-sm variant-ghost-primary" href="/exercises/create" onclick={drawerClose}>Create Exercise</a>
-				</li>
-				<li>
-					<a class="btn btn-sm variant-ghost-primary" href="/exercises/list" onclick={drawerClose}>Exercise List</a>
-				</li>
-				<li>
-					<a class="btn btn-sm variant-ghost-primary" href="/programs/templateslist" onclick={drawerClose}>Programs</a>
-				</li>
-				<li>
-					<a class="btn btn-sm variant-ghost-primary" href="/account/workout-history" onclick={drawerClose}>Workout History</a>
-				</li>
-			</ul>
+			<nav class="list-nav">
+				<ul>
+					<li>
+						<a class="btn preset-tonal-primary preset-outlined-primary-200-800" href="/account/view" onclick={drawerClose}>Account</a>
+					</li>
+					<li>
+						<a class="btn preset-tonal-primary preset-outlined-primary-200-800" href="/landing" onclick={drawerClose}>Home</a>
+					</li>
+					<li>
+						<a class="btn preset-tonal-primary preset-outlined-primary-200-800" href="/exercises/create" onclick={drawerClose}>Create Exercise</a>
+					</li>
+					<li>
+						<a class="btn preset-tonal-primary preset-outlined-primary-200-800" href="/exercises/list" onclick={drawerClose}>Exercise List</a>
+					</li>
+					<li>
+						<a class="btn preset-tonal-primary preset-outlined-primary-200-800" href="/programs/templateslist" onclick={drawerClose}>Programs</a>
+					</li>
+					<li>
+						<a class="btn preset-tonal-primary preset-outlined-primary-200-800" href="/account/workout-history" onclick={drawerClose}>Workout History</a>
+					</li>
+				</ul>
 
-		</nav>
+			</nav>
 		{/snippet}
 	</Modal>
 	{:else}

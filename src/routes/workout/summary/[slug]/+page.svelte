@@ -22,7 +22,7 @@ import Icon from '@iconify/svelte';
     <section class='p-4 space-y-4'>        
         <div class='space-y-4'>
             {#each Object.entries(data.setData) as [muscleGroup, exercises]}
-            <div class='card p-4 preset-filled-surface-300-700'>
+            <div class='card p-4 preset-tonal-primary preset-outlined-primary-200-800'>
                 <header class='card-header p-4 text-xl font-extrabold'>{muscleGroup}</header>
                 <section>
                     {#each Object.entries(exercises) as [index, exercise]}
@@ -45,7 +45,7 @@ import Icon from '@iconify/svelte';
             {/each}
         </div>
 
-        <div class='top-4 card p-4 preset-filled-surface-300-700'>
+        <div class='top-4 card p-4 preset-tonal-primary preset-outlined-primary-200-800'>
             <header class='card-header text-xl font-extrabold'>Feedback</header>
             <section>
                 {#each Object.entries(data.feedback) as [index, datum]}
