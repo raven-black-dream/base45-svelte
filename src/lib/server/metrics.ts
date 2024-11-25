@@ -1,4 +1,5 @@
 import { supabase } from "$lib/supabaseClient";
+import  prisma  from "$lib/server/prisma";
 import { Prisma } from "@prisma/client";
 import { sum, multiply, matrix } from "mathjs";
 
@@ -16,14 +17,11 @@ interface ExerciseMetric {
   totalWeight: number;
   repStdDev: number;
   weightStdDev: number;
-  repDiff: number;
-  weightDiff: number;
   performanceScore: number;
-  exerciseSets: Array<Object>;
-  feedback: Array<Object>;
+  exerciseSets: ExerciseSet[];
+  feedback: PreviousWorkoutFeedback[];
   mesocycle: string;
   num_sets: number;
-  weight_step: number;
 }
 
 interface PreviousWorkoutFeedback {
@@ -32,6 +30,14 @@ interface PreviousWorkoutFeedback {
   exercise: string;
   muscle_group: string;
   workout: string;
+}
+
+interface ExerciseSet {
+  id: string,
+  exercise: string,
+  reps: number,
+  weight: number,
+  set_performance: number
 }
 
 /**
@@ -176,43 +182,50 @@ export async function exerciseSFR(
  */
 export async function calculateMuscleGroupMetrics(
   currentWorkoutId: string,
-  workoutIds: { muscleGroup: string; workoutId: string }[],
+  muscleGroup: string,
+  pastWorkoutId: string,
 ) {
-  const { data: currentWorkoutFeedback } = await supabase
-    .from("workout_feedback")
-    .select(
-      `
-      question_type,
-      value,
-      exercise,
-      muscle_group,
-      workout
-    `,
-    )
-    .eq("workout", currentWorkoutId)
-    .in("question_type", ["ex_soreness", "mg_pump", "mg_difficulty"]);
+  const currentWorkoutFeedback = await prisma.workout_feedback.findMany({
+    where: {
+      workout: currentWorkoutId,
+      question_type: {
+        in: ["ex_soreness", "mg_pump", "mg_difficulty"],
+      },
+    },
+    select: {
+      question_type: true,
+      value: true,
+      exercise: true,
+      muscle_group: true,
+      workout: true,
+    }
+  });
 
   let previousWorkoutFeedback: PreviousWorkoutFeedback[] = [];
 
   let exercises: Exercise[] = [];
-
-  for (const workout of workoutIds) {
-    const { data: exerciseData } = await supabase
-      .from("workout_set")
-      .select(
-        `
-        workouts!inner(
-          id,
-          mesocycle
-        ),
-        exercises!inner(
-          id,
-          muscle_group
-      )
-      `,
-      )
-      .eq("workout", workout.workoutId)
-      .eq("exercises.muscle_group", workout.muscleGroup);
+  const exerciseData = await prisma.workout_set.findMany({
+    where: {
+      workout: pastWorkoutId,
+      exercises: {
+          muscle_group: muscleGroup
+      }
+    },
+    select: {
+      workouts: {
+        select: {
+          id: true,
+          mesocycle: true,
+        }
+      },
+      exercises: {
+        select: {
+          id: true,
+          muscle_group: true
+        }
+      }
+    }
+  });
 
     if (exerciseData) {
       exerciseData.forEach((exercise) => {
@@ -248,7 +261,6 @@ export async function calculateMuscleGroupMetrics(
     if (feedback) {
       previousWorkoutFeedback.push(...feedback);
     }
-  }
 
   let exerciseMetrics: Map<
     string,
@@ -314,6 +326,7 @@ export async function calculateMuscleGroupMetrics(
 export async function calculateExerciseMetrics(
   exerciseData,
   currentWorkoutFeedback,
+  muscleGroup:string,
   mesocycleId: string,
   workoutId: string,
 ) {
@@ -329,36 +342,29 @@ export async function calculateExerciseMetrics(
   if (exerciseData) {
     // for each exercise, calculate the metrics for that exercise
     for (const item of exerciseData) {
-      const exerciseId = item.exercises.id;
       const feedback = currentWorkoutFeedback?.filter(
-        (f) => f.exercise === exerciseId,
+        (f) => f.muscle_group === muscleGroup,
       );
 
-      if (!exerciseMetrics.has(exerciseId)) {
-        exerciseMetrics.set(exerciseId, {
+      if (!exerciseMetrics.has(item.exercise)) {
+        exerciseMetrics.set(item.exercise, {
           totalReps: 0,
           averageReps: 0,
           averageWeight: 0,
           totalWeight: 0,
           repStdDev: 0,
           weightStdDev: 0,
-          repDiff: 0,
-          weightDiff: 0,
           performanceScore: 0,
           exerciseSets: [],
           feedback: feedback,
           mesocycle: mesocycleId,
           num_sets: 0,
-          weight_step: item.exercises.weight_step,
         });
       }
-      exerciseMetrics.get(exerciseId).exerciseSets.push(item);
-      exerciseMetrics.get(exerciseId).totalReps += item.reps;
-      exerciseMetrics.get(exerciseId).totalWeight += item.weight;
-      exerciseMetrics.get(exerciseId).num_sets++;
-      exerciseMetrics.get(exerciseId).repDiff += item.target_reps - item.reps;
-      exerciseMetrics.get(exerciseId).weightDiff +=
-        item.target_weight - item.weight;
+      exerciseMetrics.get(item.exercise).exerciseSets.push(item);
+      exerciseMetrics.get(item.exercise).totalReps += item.reps;
+      exerciseMetrics.get(item.exercise).totalWeight += item.weight;
+      exerciseMetrics.get(item.exercise).num_sets++;
     }
     for (const [, exerciseObject] of exerciseMetrics) {
       const {
@@ -387,31 +393,12 @@ export async function calculateExerciseMetrics(
       exerciseObject.weightStdDev = Math.sqrt(
         weightSquares / (repsAndWeights.length - 1),
       );
-
-      // Calculate performance score
-      const repDiff = exerciseObject.repDiff / repsAndWeights.length;
-      let weightDiff = exerciseObject.weightDiff / repsAndWeights.length;
-      if (exerciseObject.weight_step !== 0) {
-        weightDiff = weightDiff / exerciseObject.weight_step;
-      }
-      let exercisePerformance = (repDiff + weightDiff) / 2;
-
-      if (exercisePerformance < 0) {
-        exerciseObject.performanceScore = 0;
-      } else if (exercisePerformance == 0) {
-        const workload = exerciseObject.feedback.find(
-          (entry) => entry.question_type === "mg_difficulty",
-        );
-        if (workload) {
-          if (workload.value < 2) {
-            exerciseObject.performanceScore = 1;
-          } else {
-            exerciseObject.performanceScore = 2;
-          }
-        }
-      } else {
-        exerciseObject.performanceScore = 3;
-      }
+      const feedback = exerciseObject.feedback[0];
+      // Calculate performance score by combining the performance scores of the sets with the mg_difficulty score for the muscle group then bounding the result between 0 and 3
+      const avgSetPerformanceScore = weightedAverageScore(exerciseObject.exerciseSets);
+      const normalizedScore = normalizePerformanceScore(avgSetPerformanceScore, exerciseObject.num_sets);
+      exerciseObject.performanceScore = calculateCompositeScore(normalizedScore, feedback.value);
+      
     }
     exerciseMetrics.forEach((exercise, key) => {
       userExerciseMetrics.push({
@@ -464,11 +451,40 @@ export async function calculateExerciseMetrics(
         workout: workoutId,
       });
     });
-    const { error } = await supabase
-      .from("user_exercise_metrics")
-      .insert(userExerciseMetrics);
-    if (error) {
-      console.log(error);
-    }
+    const asInserted = await prisma.user_exercise_metrics.createManyAndReturn({
+      data: userExerciseMetrics,
+    });
+    return asInserted;
   }
+}
+
+function weightedAverageScore(sets: ExerciseSet[]) {
+  let weightedSum = 0;
+  let totalWeight = 0;
+  const numSets = sets.length;
+
+  sets.forEach((set, index) => {
+    const weight = (numSets - index) / numSets;
+    weightedSum += set.set_performance * weight;
+    totalWeight += weight;
+  });
+
+  return weightedSum / totalWeight;
+
+}
+
+function normalizePerformanceScore(weightedAveragePerformanceScore: number, numSets: number) {
+  const minPerformance = -2 * numSets;
+  const maxPerformance = 2 * numSets;
+
+  const modifiedSigmoid = (x: number) => 1 / (1 + Math.exp(4 * -x));
+  const transformedScore = modifiedSigmoid(weightedAveragePerformanceScore);
+  const normalizedScore = 3 * (transformedScore - modifiedSigmoid(minPerformance)) / (modifiedSigmoid(maxPerformance) - modifiedSigmoid(minPerformance));
+  return normalizedScore;
+
+}
+
+function calculateCompositeScore(normalizedScore: number, feedback: number, performanceWeight: number = 0.5, difficultyWeight: number = 0.5){
+  const compositeScore = performanceWeight * normalizedScore + difficultyWeight * feedback;
+  return Math.round(Math.min(3, Math.max(0, compositeScore)));
 }

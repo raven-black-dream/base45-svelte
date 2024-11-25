@@ -87,21 +87,21 @@
                     <WorkoutRow {set} {i} len={data.existing_sets.get(exerciseName).length - 1} recovery={ data.muscleGroupRecovery.get(set.exercises.muscle_group)}/>
             {/each}
             <div class='p-4'>
-                <div class='btn-group preset-outlined-surface-100-900 flex-row w- p-2'>
+                <nav class='btn-group preset-outlined-surface-200-800 flex-row w-32 p-2'>
                     <form method='post' use:enhance action='?/addSet'>
-                        <button class='btn-icon preset-tonal-primary preset-outlined-primary-200-800'>
+                        <button class='btn preset-tonal-primary preset-outlined-primary-200-800'>
                             <input type='hidden' name='exercise' value={exerciseName}/>
                             <Icon icon="fa6-solid:plus" />
                         </button>
                     </form>
                     <form method='post' use:enhance action='?/removeSet'>
                         <input type='hidden' name='exercise' value={exerciseName}/>
-                        <button class='btn-icon preset-tonal-primary preset-outlined-primary-200-800'>
+                        <button class='btn preset-tonal-primary preset-outlined-primary-200-800'>
                             <Icon icon="fa6-solid:minus" />
                         </button>
 
                     </form>
-                </div>
+                </nav>
             </div>
             <hr class="solid">
         {/each}

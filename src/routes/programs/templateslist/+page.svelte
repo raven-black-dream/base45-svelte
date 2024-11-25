@@ -55,7 +55,7 @@
 
                         <nav class="btn-group preset-outlined-surface-200-800 flex-col p-2 md:flex-row">
                             {#if data.mesocycles[program.id]}
-                            <form>
+                            <form method='post' action="?/duplicate">
                                 <input type='hidden' name='mesoId' value={data.mesocycles[program.id]}>
                                 <button type="submit" class="btn preset-filled-primary-500">Duplicate Last Meso</button>
                             </form>

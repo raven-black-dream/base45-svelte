@@ -479,8 +479,6 @@ export const actions = {
       redirect(303, "/");
     }
 
-    await calculateMetrics(params.slug);
-
     // mark the workout complete and set the date of the workout to the date it was completed (today)
     const { error } = await supabase
       .from("workouts")
@@ -508,7 +506,7 @@ export const actions = {
     redirect(303, "/landing");
   },
 
-  recordSet: async ({ locals: { supabase, getSession }, params, request }) => {
+  recordSet: async ({ locals: { supabase }, params, request }) => {
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -516,22 +514,155 @@ export const actions = {
       redirect(303, "/");
     }
     const data = await request.formData();
+    let performanceValue = 0;
+    const previousWorkoutId = data.get('previousWorkoutId')?.toString() ?? '';
+    const muscleGroup = data.get('muscle_group')?.toString() ?? '';
+    const exercise = data.get('exercise_id')?.toString() ?? '';
+
+    if (data.get('targetReps') !== '' ){
+      const setPerformance = (Number(data.get('actualReps')) * Number(data.get('actualWeight'))) - (Number(data.get('targetReps')) * Number(data.get('targetWeight')))
+      performanceValue = setPerformance === 0 ? 0 : (Math.sign(setPerformance) * -1);
+    }
+    else {
+      performanceValue = 0;
+    }
+
+    if (data.get('mg_soreness')) {
+
+      const mgSoreness = await prisma.workout_feedback.findFirst({
+        where: {
+            workout: previousWorkoutId,
+            question_type: 'mg_soreness',
+            muscle_group: muscleGroup
+        }
+      })
+
+      if (mgSoreness) {
+        await prisma.workout_feedback.update({
+          where: {
+            id: mgSoreness.id
+          },
+          data: {
+            value: Number(data.get('mg_soreness')) - 1
+          }
+        })
+      }
+
+    }
+
+    let keysToCheck = ['mg_pump', 'ex_mmc', 'ex_soreness', 'mg_difficulty'];
+
+    if (keysToCheck.some(key => data.has(key))) {
+      let feedback = null;
+      if(!data.has('mg_difficulty')) {
+        feedback = await prisma.workout_feedback.findMany({
+        where: {
+          workout: params.slug,
+          exercise: exercise,
+          question_type: {
+            in: keysToCheck
+          }
+        }
+      })
+
+      }
+      else {
+        feedback = await prisma.workout_feedback.findMany({
+        where: {
+          workout: params.slug,
+          muscle_group: muscleGroup,
+          question_type: {
+            in: keysToCheck
+          }
+        }
+      })
+
+      }
+      feedback = feedback.filter(entry => data.has(entry.question_type))
+      feedback.forEach(entry => {
+        if (data.get(entry.question_type)) {
+        entry.value = Number(data.get(entry.question_type)) - 1;
+        }
+        else {
+          entry.value = 0;
+        }
+      })
+
+      const results = await Promise.all(
+        feedback.map(entry => prisma.workout_feedback.update({
+          where: {
+            id: entry.id
+          },
+          data: entry
+        }))
+      )
+    }
 
     const set = {
       workout: params.slug,
-      reps: Number(data.get("actualreps")),
-      weight: Number(data.get("actualweight")),
+      reps: Number(data.get("actualReps")),
+      weight: Number(data.get("actualWeight")),
       completed: true,
+      set_performance: performanceValue
     };
 
-    const { error } = await supabase
-      .from("workout_set")
-      .update(set)
-      .eq("id", data.get("set_id"));
+    const updatedSet = await prisma.workout_set.update({
+      where: {
+        id: Number(data.get("set_id")),
+      },
+      data: set,
+    })
 
-    if (error) {
-      console.log(error);
-    }
+    if (data.has('mg_difficulty') && updatedSet) {
+      const metricData = await prisma.workouts.findFirst({
+        where: {
+          id: params.slug
+        },
+        select: {
+          mesocycle: true,
+          workout_set:{
+            where: {
+              exercises:{
+                muscle_group: muscleGroup
+              }
+            },
+            select: {
+              id: true,
+              exercise: true,
+              reps: true,
+              weight: true,
+              set_performance: true
+            }
+          },
+          workout_feedback: {
+            where: {
+              question_type: 'mg_difficulty',
+              muscle_group: muscleGroup
+            },
+            select: {
+              id: true,
+              muscle_group: true,
+              question_type: true,
+              value: true
+            }
+          }
+        }
+      })
+
+      if (metricData){
+
+        const exerciseMetrics = await calculateExerciseMetrics(
+          metricData.workout_set,
+          metricData.workout_feedback,
+          muscleGroup,
+          metricData.mesocycle,
+          params.slug
+        )
+
+        console.log(exerciseMetrics)
+        
+      }
+    } 
   },
 
   removeSet: async ({ locals: { supabase, getSession }, params, request }) => {
@@ -588,76 +719,6 @@ export const actions = {
       }
     }
   },
-
-  feedback: async ({ locals: { supabase, getSession }, request }) => {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) {
-      redirect(303, "/");
-    }
-    const data = await request.formData();
-
-    const workout = data.get("workout")?.toString() ?? "";
-    const exercise = data.get("exercise")?.toString() ?? "";
-    const muscleGroup = data.get("muscle_group")?.toString() ?? "";
-    const currentWorkout = data.get("current_workout")?.toString() ?? "";
-
-    data.delete("workout");
-    data.delete("exercise");
-    data.delete("muscle_group");
-    data.delete("current_workout");
-
-    if (data.has("mg_soreness")) {
-      const { data: soreness } = await supabase
-        .from("workout_feedback")
-        .select("*")
-        .eq("workout", currentWorkout)
-        .eq("question_type", "mg_soreness")
-        .eq("muscle_group", muscleGroup)
-        .limit(1)
-        .single();
-
-      if (soreness) {
-        soreness.value = data.get("mg_soreness") - 1;
-        const { data: temp, error } = await supabase
-          .from("workout_feedback")
-          .upsert(soreness)
-          .select();
-        if (error) {
-          console.log(error);
-        }
-      }
-    }
-
-    data.delete("mg_soreness");
-    const feedbackTypes = [];
-
-    data.forEach((value, key) => {
-      feedbackTypes.push(key);
-    });
-
-    const { data: feedbackData } = await supabase
-      .from("workout_feedback")
-      .select("*")
-      .eq("workout", workout)
-      .eq("exercise", exercise);
-
-    for (const feedbackType of feedbackTypes) {
-      let entry = feedbackData.filter(
-        (entry) => entry.question_type === feedbackType,
-      );
-      entry = entry[0];
-      entry.value = data.get(feedbackType) - 1;
-      const { data: temp, error } = await supabase
-        .from("workout_feedback")
-        .upsert(entry)
-        .select();
-      if (error) {
-        console.log(error);
-      }
-    }
-  },
 };
 
 async function calculateMetrics(workoutId: string) {
@@ -676,6 +737,7 @@ async function calculateMetrics(workoutId: string) {
           target_reps: true,
           weight: true,
           target_weight: true,
+          set_performance: true
         },
       },
       workout_feedback: {

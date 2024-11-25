@@ -2,7 +2,6 @@ import { join } from "path";
 import type { Config } from "tailwindcss";
 import forms from "@tailwindcss/forms";
 import { skeleton, contentPath } from '@skeletonlabs/skeleton/plugin';
-import * as themes from '@skeletonlabs/skeleton/themes';
 import Base45Slytherin  from "./src/base45Slytherin";
 
 export default {

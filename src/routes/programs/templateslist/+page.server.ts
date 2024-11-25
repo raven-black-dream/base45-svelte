@@ -155,5 +155,6 @@ export const actions = {
         day.meso_day_name
       );
     }
+    redirect(303, "/landing");
   },
 };
