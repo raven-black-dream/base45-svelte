@@ -8,6 +8,15 @@
     let { data } = $props();
 
     let exerciseNames = $state(Array.from(data.existing_sets.keys()));
+    let allSetsCompleted = $derived(
+        exerciseNames.every((exerciseName) => {
+            return data.existing_sets.get(exerciseName).every((set) => {
+                return set.completed;
+            });
+        })
+    )
+
+    $inspect(allSetsCompleted);
 
     let openState: Map<string, boolean> = exerciseNames.reduce((map, key) => {
         map[key] = false;
@@ -109,7 +118,11 @@
     <form method="post" action="?/complete">
 		<div class="p-4">
             <!-- This currently does exactly "Mark Workout Complete" - it doesn't log any unlogged sets -->
-			<button class="btn variant-ghost-primary">Mark Workout Complete</button>
+			{#if allSetsCompleted}
+            <button class="btn preset-tonal-primary preset-outlined-primary-200-800">Mark Workout Complete</button>
+            {:else}
+            <button class="btn preset-tonal-secondary preset-outlined-warning-200-800">Mark Workout Complete?</button>
+            {/if}
 		</div>
 	</form>
 {:else}

@@ -1,7 +1,5 @@
-import { supabase } from "$lib/supabaseClient";
 import  prisma  from "$lib/server/prisma";
-import { Prisma } from "@prisma/client";
-import { sum, multiply, matrix } from "mathjs";
+
 
 interface Exercise {
   id: string;
@@ -33,7 +31,7 @@ interface PreviousWorkoutFeedback {
 }
 
 interface ExerciseSet {
-  id: string,
+  id: bigint,
   exercise: string,
   reps: number,
   weight: number,
@@ -42,8 +40,8 @@ interface ExerciseSet {
 
 /**
  *
- * @param exercises - array of exercises
- * @param previousWorkoutFeedback - array of feedback objects
+ * @param workoutSets - array of workout sets
+ * @param workoutFeedback - array of feedback objects
  * @returns Map of exercise Metrics with the exercise id as the key and the metrics:
  * rawStimulusMagnitude, fatigueScore, stimulusToFatigueRatio as the value
  *
@@ -66,106 +64,70 @@ interface ExerciseSet {
  *
  */
 
-export async function exerciseSFR(
-  exercises: Exercise[],
-  previousWorkoutFeedback: PreviousWorkoutFeedback[],
-) {
-  let exerciseMetrics = new Map();
-
-  for (const exercise of exercises) {
-    const exerciseFeedback = previousWorkoutFeedback.filter(
-      (feedback) => feedback.exercise === exercise.id,
-    );
-
-    // calculate the raw stimulus magnitude for the exercise
-    let rawStimulusMagnitude = 0;
-    exerciseFeedback.forEach((feedback) => {
-      if (
-        ["mg_pump", "ex_mmc", "mg_soreness"].includes(feedback.question_type)
-      ) {
-        rawStimulusMagnitude += feedback.value;
-      }
-    });
-
-    // calculate the fatigue score for the exercise
-    let fatigueScore = 0;
-    exerciseFeedback.forEach((feedback) => {
-      if (["ex_soreness", "mg_difficulty"].includes(feedback.question_type)) {
-        fatigueScore += feedback.value;
-      }
-    });
-
-    // Get the performance score for the following exercise
-    const { data: exerciseData } = await supabase
-      .from("workout_set")
-      .select(`id, exercises!inner(id, muscle_group)`)
-      .eq("workout", exercise.workout)
-      .order("id", { ascending: true });
-
-    const exerciseOrder = {};
-    let index = 0;
-
-    for (const item of exerciseData) {
-      const exerciseId = item.exercises.id;
-      const muscleGroup = item.exercises.muscle_group;
-
-      if (!exerciseOrder[exerciseId]) {
-        exerciseOrder[exerciseId] = {
-          muscle_group: muscleGroup,
-          index: index,
-        };
-        index++;
-      }
+export function exerciseSFR(
+  muscleGroup: string,
+  workoutSets: ExerciseSet[],
+  workoutFeedback: PreviousWorkoutFeedback[]
+): Map<string, {
+  muscleGroup: string;
+  rawStimulusMagnitude: number;
+  fatigueScore: number;
+  stimulusToFatigueRatio: number;
+}> {
+  const exerciseMetrics = new Map();
+  
+  // Group sets by exercise
+  const exerciseGroups = workoutSets.reduce((groups, set) => {
+    if (!groups[set.exercise]) {
+      groups[set.exercise] = [];
     }
+    groups[set.exercise].push(set);
+    return groups;
+  }, {} as Record<string, ExerciseSet[]>);
 
-    let exerciseWeights: Array<Number> = Array(
-      Object.keys(exerciseOrder).length,
-    ).fill(0);
-    let exerciseIndex = exerciseOrder[exercise.id].index;
+  // Process each exercise
+  for (const [exerciseId, sets] of Object.entries(exerciseGroups)) {
 
-    for (let i = 0; i < exerciseWeights.length; i++) {
-      if (
-        i > exerciseIndex &&
-        exercise.muscle_group != Object.keys(exerciseOrder)[i].muscle_group
-      ) {
-        exerciseWeights[i] = 1;
-      } else if (
-        i > exerciseIndex &&
-        exercise.muscle_group == Object.keys(exerciseOrder)[i].muscle_group
-      ) {
-        exerciseWeights[i] = 0.5;
+    // Calculate raw stimulus magnitude (positive adaptations)
+    const rawStimulusMagnitude = workoutFeedback.reduce((sum, feedback) => {
+      if (["mg_pump", "mg_soreness"].includes(feedback.question_type)) {
+        return sum + feedback.value;
       }
-    }
+      else if ('ex_mmc' === feedback.question_type && feedback.exercise === exerciseId) {
+        return sum + feedback.value;
+      }
+      return sum;
+    }, 0);
 
-    // Get performance data for the workout
-    const { data: exercisePerformanceData } = await supabase
-      .from("user_exercise_metrics")
-      .select(`value`)
-      .eq("workout", exerciseFeedback[0].workout)
-      .eq("metric_name", "performance_score");
+    // Calculate fatigue score (negative impacts)
+    let fatigueScore = workoutFeedback.reduce((sum, feedback) => {
+      if (["mg_difficulty"].includes(feedback.question_type)) {
+        return sum + feedback.value;
+      }
+      else if ('ex_soreness' === feedback.question_type && feedback.exercise === exerciseId) {
+        return sum + feedback.value;
+      }
+      return sum;
+    }, 0);
 
-    let performanceScore = 0;
-    if (exercisePerformanceData) {
-      let exercisePerformance: Array<number> = exercisePerformanceData.map(
-        ({ value }) => {
-          return value;
-        },
-      );
+    // Add performance-based fatigue
+    const setPerformances = sets.map(set => set.set_performance || 0);
+    const averagePerformance = setPerformances.length > 0 
+      ? setPerformances.reduce((a, b) => a + b, 0) / setPerformances.length 
+      : 0;
+    
+    fatigueScore += Math.max(0, averagePerformance); // Only add positive performance values to fatigue
 
-      performanceScore = sum(
-        multiply(matrix(exercisePerformance), matrix(exerciseWeights)),
-      );
-    }
+    // Calculate stimulus to fatigue ratio
+    // Adding 1 to both numerator and denominator to avoid division by zero
+    const stimulusToFatigueRatio = (rawStimulusMagnitude + 1) / (fatigueScore + 1);
 
-    fatigueScore += performanceScore;
-    const stimulusToFatigueRatio =
-      (rawStimulusMagnitude + 1) / (fatigueScore + 1);
-
-    exerciseMetrics.set(exercise.id, {
-      muscleGroup: exercise.muscle_group,
-      rawStimulusMagnitude: rawStimulusMagnitude,
-      fatigueScore: fatigueScore,
-      stimulusToFatigueRatio: stimulusToFatigueRatio,
+    // Store metrics for this exercise
+    exerciseMetrics.set(exerciseId, {
+      muscleGroup: muscleGroup || '',
+      rawStimulusMagnitude,
+      fatigueScore,
+      stimulusToFatigueRatio
     });
   }
 
@@ -174,93 +136,21 @@ export async function exerciseSFR(
 
 /**
  *
- * @param currentWorkoutId Workout id for the current workout
- * @param workoutIds workout ids for previous workouts where a particular muscle group was worked
+ * @param muscleGroup Muscle Group to calculate metrics for
+ * @param pastWorkoutSets Array of past workout sets
+ * @param pastWorkoutFeedback Array of past workout feedback 
  *
  * This function prepares the data for the exerciseSFR function by querying the workout_feedback table for feedback on the current workout
  *
  */
 export async function calculateMuscleGroupMetrics(
-  currentWorkoutId: string,
   muscleGroup: string,
-  pastWorkoutId: string,
+  pastWorkoutSets: ExerciseSet[],
+  pastWorkoutFeedback: PreviousWorkoutFeedback[],
+  mesocycle: string,
+  workout: string
 ) {
-  const currentWorkoutFeedback = await prisma.workout_feedback.findMany({
-    where: {
-      workout: currentWorkoutId,
-      question_type: {
-        in: ["ex_soreness", "mg_pump", "mg_difficulty"],
-      },
-    },
-    select: {
-      question_type: true,
-      value: true,
-      exercise: true,
-      muscle_group: true,
-      workout: true,
-    }
-  });
-
-  let previousWorkoutFeedback: PreviousWorkoutFeedback[] = [];
-
-  let exercises: Exercise[] = [];
-  const exerciseData = await prisma.workout_set.findMany({
-    where: {
-      workout: pastWorkoutId,
-      exercises: {
-          muscle_group: muscleGroup
-      }
-    },
-    select: {
-      workouts: {
-        select: {
-          id: true,
-          mesocycle: true,
-        }
-      },
-      exercises: {
-        select: {
-          id: true,
-          muscle_group: true
-        }
-      }
-    }
-  });
-
-    if (exerciseData) {
-      exerciseData.forEach((exercise) => {
-        if (!exercises.find((obj) => obj.id === exercise.exercises.id)) {
-          exercises.push({
-            id: exercise.exercises.id,
-            workout: exercise.workouts.id,
-            muscle_group: workout.muscleGroup,
-            mesocycle: exercise.workouts.mesocycle,
-          });
-        }
-      });
-    }
-
-    const relevantExercises = exercises.map((exercise) => exercise.id);
-
-    const { data: feedback } = await supabase
-      .from("workout_feedback")
-      .select(
-        `
-        question_type,
-        value,
-        exercise,
-        muscle_group,
-        workout
-      `,
-      )
-      .eq("workout", workout.workoutId)
-      .eq("muscle_group", workout.muscleGroup)
-      .in("exercise", relevantExercises)
-      .in("question_type", ["mg_soreness", "mg_pump", "ex_mmc"]);
-
-    if (feedback) {
-      previousWorkoutFeedback.push(...feedback);
-    }
+  
 
   let exerciseMetrics: Map<
     string,
@@ -270,12 +160,11 @@ export async function calculateMuscleGroupMetrics(
       fatigueScore: number;
       stimulusToFatigueRatio: number;
     }
-  > = await exerciseSFR(exercises, previousWorkoutFeedback);
+  > = exerciseSFR(muscleGroup, pastWorkoutSets, pastWorkoutFeedback);
 
   // calculate exercise Raw Stimulus Magnitude, Fatigue Score, and Stimulus to Fatigue Ratio -> requires previous workout feedback and previous workout metrics (specifically the performance score for the exercise following a given exercise)
   for (const [key, exercise] of exerciseMetrics.entries()) {
-    const workoutId = exercises.find((obj) => obj.id === key).workout;
-    const mesocycle = exercises.find((obj) => obj.id === key).mesocycle;
+    const workoutId = workout;
 
     const insertData = [
       {
@@ -302,7 +191,9 @@ export async function calculateMuscleGroupMetrics(
     ];
 
     // Use await to wait for the insert operation
-    await supabase.from("user_exercise_metrics").insert(insertData);
+    await prisma.user_exercise_metrics.createMany({
+      data: insertData,
+    });
   }
 }
 
@@ -342,9 +233,7 @@ export async function calculateExerciseMetrics(
   if (exerciseData) {
     // for each exercise, calculate the metrics for that exercise
     for (const item of exerciseData) {
-      const feedback = currentWorkoutFeedback?.filter(
-        (f) => f.muscle_group === muscleGroup,
-      );
+
 
       if (!exerciseMetrics.has(item.exercise)) {
         exerciseMetrics.set(item.exercise, {
@@ -356,7 +245,7 @@ export async function calculateExerciseMetrics(
           weightStdDev: 0,
           performanceScore: 0,
           exerciseSets: [],
-          feedback: feedback,
+          feedback: currentWorkoutFeedback,
           mesocycle: mesocycleId,
           num_sets: 0,
         });
@@ -397,7 +286,7 @@ export async function calculateExerciseMetrics(
       // Calculate performance score by combining the performance scores of the sets with the mg_difficulty score for the muscle group then bounding the result between 0 and 3
       const avgSetPerformanceScore = weightedAverageScore(exerciseObject.exerciseSets);
       const normalizedScore = normalizePerformanceScore(avgSetPerformanceScore, exerciseObject.num_sets);
-      exerciseObject.performanceScore = calculateCompositeScore(normalizedScore, feedback.value);
+      exerciseObject.performanceScore = calculateCompositeScore(normalizedScore, currentWorkoutFeedback.value);
       
     }
     exerciseMetrics.forEach((exercise, key) => {

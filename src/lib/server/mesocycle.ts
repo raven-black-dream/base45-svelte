@@ -1,5 +1,7 @@
+import prisma from "$lib/server/prisma";
+import { Prisma } from "@prisma/client";
+
 export async function createWorkouts(
-  conn: any,
   user_id: string,
   start_date: Date,
   end_date: Date,
@@ -9,16 +11,7 @@ export async function createWorkouts(
   day: string,
   day_name: string,
 ) {
-  let workouts: {
-    user: string;
-    mesocycle: string;
-    meso_day: string;
-    day_name: string;
-    date: Date;
-    target_rir: number;
-    deload: boolean;
-    complete: boolean;
-  }[] = calculateWorkoutCreation(
+  let workouts: Prisma.workoutsCreateManyInput[] = calculateWorkoutCreation(
     user_id,
     start_date,
     end_date,
@@ -29,14 +22,11 @@ export async function createWorkouts(
     day_name,
   );
 
-  const {} = await conn.from("workouts").insert(workouts);
+  const workouts_data = await prisma.workouts.createManyAndReturn({
+    data: workouts,
+  });
 
-  const { data: workouts_data } = await conn
-    .from("workouts")
-    .select("id, meso_day")
-    .eq("meso_day", meso_day_id);
-
-  await createSets(conn, workouts_data);
+  await createSets(workouts_data);
 }
 
 export function calculateWorkoutCreation(
@@ -57,6 +47,7 @@ export function calculateWorkoutCreation(
     date: Date;
     target_rir: number;
     deload: boolean;
+    week_number: number;
     complete: boolean;
   }[] = [];
   let current = new Date(start_date.getTime());
@@ -83,6 +74,7 @@ export function calculateWorkoutCreation(
         date: new Date(current),
         target_rir: weeks - currentWeek,
         deload: weeks - currentWeek >= 0 ? false : true,
+        week_number: currentWeek,
         complete: false,
       });
     }
@@ -92,7 +84,7 @@ export function calculateWorkoutCreation(
   return workouts;
 }
 
-export async function createSets(conn: any, workoutData: any) {
+export async function createSets(workoutData: any) {
   // create a set record for each exercise in the workout record
 
   for (const workout of workoutData) {
@@ -103,26 +95,24 @@ export async function createSets(conn: any, workoutData: any) {
       is_first: boolean;
       is_last: boolean;
     }[] = [];
-    const { data: exercises } = await conn
-      .from("meso_exercise")
-      .select(
-        `
-        exercise (
-          id,
-          muscle_group
-        ),
-        num_sets,
-        sort_order
-        `,
-      )
-      .eq("meso_day", workout.meso_day)
-      .order("sort_order");
+
+    const exercises = await prisma.meso_exercise.findMany({
+      where: {
+        meso_day: workout.meso_day,
+      },
+      orderBy: {
+        sort_order: "asc",
+      },
+      include: {
+        exercises: true,
+      },
+    });
 
     const muscleGroupSets = new Map();
 
     for (const exercise of exercises) {
-      const muscleGroup = exercise.exercise.muscle_group;
-      const numSets = exercise.num_sets;
+      const muscleGroup = exercise.exercises.muscle_group;
+      const numSets: number = Number(exercise.num_sets) ?? 1;
 
       if (!muscleGroupSets.has(muscleGroup)) {
         muscleGroupSets.set(muscleGroup, { totalSets: 0, currentSets: 0 });
@@ -131,12 +121,8 @@ export async function createSets(conn: any, workoutData: any) {
     }
 
     exercises.forEach(
-      (exercise: {
-        exercise: { id: string; muscle_group: string };
-        num_sets: number;
-        sort_order: number;
-      }) => {
-        const exerciseMuscleGroup = exercise.exercise.muscle_group;
+      (exercise) => {
+        const exerciseMuscleGroup = exercise.exercises.muscle_group;
         for (let i = 0; i < exercise.num_sets; i++) {
           const isFirst =
             muscleGroupSets.get(exerciseMuscleGroup).currentSets == 0;
@@ -145,7 +131,7 @@ export async function createSets(conn: any, workoutData: any) {
             muscleGroupSets.get(exerciseMuscleGroup).totalSets - 1;
           sets.push({
             workout: workout.id,
-            exercise: exercise.exercise.id,
+            exercise: exercise.exercise,
             set_num: i,
             is_first: isFirst,
             is_last: isLast,
@@ -154,6 +140,8 @@ export async function createSets(conn: any, workoutData: any) {
         }
       },
     );
-    const {} = await conn.from("workout_set").insert(sets);
+    const {} = await prisma.workout_set.createMany({
+      data: sets,
+    });
   }
 }

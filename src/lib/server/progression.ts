@@ -120,10 +120,9 @@ export async function modifySetNumber(
  * 3. If the workout is in the last week of the mesocycle, do not run the progression algorithm.
  */
 export async function shouldDoProgression(
-  workoutId: string,
+  workout, muscleGroups
 ): Promise<Map<string, boolean>> {
-  const weekNumber: number = await getWeekNumber(workoutId);
-  const muscleGroups: string[] = await getMuscleGroups(workoutId);
+  const weekNumber: number = workout.week_number;
   let progressMuscleGroups: Map<string, boolean> = new Map();
 
   for (const muscleGroup of muscleGroups) {

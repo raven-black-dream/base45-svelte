@@ -1,5 +1,20 @@
 import { supabase } from "$lib/supabaseClient";
+import prisma from "./prisma";
 import { getSorenessAndPerformance } from "./progression";
+
+interface Workout{
+    mesocycle: string | null;
+    id: string;
+    deload: boolean | null;
+    created_at: Date;
+    user: string | null;
+    day_name: string | null;
+    date: Date | null;
+    complete: boolean | null;
+    meso_day: string | null;
+    target_rir: number | null;
+    week_number: number | null;
+}
 
 /**
  *
@@ -48,31 +63,30 @@ export async function getMesoId(workoutId: string) {
  * @param muscleGroup the muscle group to get the next workout for.
  * @returns The workout id for the next workout
  */
-export async function getNextWorkoutId(mesoId: string, muscleGroup: string) {
+export async function getNextWorkout(mesoId: string, muscleGroup: string) {
   const today = new Date().toISOString();
-  const { data: workoutData } = await supabase
-    .from("workouts")
-    .select(
-      `
-    id,
-    date,
-    mesocycle,
-    workout_set!inner(
-      exercises!inner(
-        muscle_group
-      )
-    )
 
-      `,
-    )
-    .gt("date", today)
-    .eq("mesocycle", mesoId)
-    .eq("workout_set.exercises.muscle_group", muscleGroup)
-    .eq("complete", false)
-    .order("date", { ascending: true })
-    .limit(1);
-
-  return workoutData[0].id;
+  const workoutData = await prisma.workouts.findFirst({
+    where: {
+      mesocycle: mesoId,
+      complete: false,
+      date: {
+        gt: today
+      },
+      workout_set: {
+        some: {
+          exercises: {
+              muscle_group: muscleGroup
+          }
+        }
+      }
+    },
+    orderBy: {
+      date: "asc"
+    }
+  }); 
+  
+  return workoutData;
 }
 
 /**
@@ -82,59 +96,49 @@ export async function getNextWorkoutId(mesoId: string, muscleGroup: string) {
  * @param mesoDay (optional) The mesocycle day for determining the previous workout used for getting the previous workout for a specific day
  * @returns The workout id for the previous workout
  */
-export async function getPreviousWorkoutId(
-  workoutId: string,
+export async function getPreviousWorkout(
+  workout: Workout,
   muscleGroup: string,
   mesoDay: string = "",
-) {
+): Promise<Workout | null> {
   const today = new Date().toISOString();
-  const mesoId = await getMesoId(workoutId);
 
   if (mesoDay === "") {
-    const { data: workoutData } = await supabase
-      .from("workouts")
-      .select(
-        `
-      id,
-      date,
-      mesocycle,
-      workout_set!inner(
-        exercises!inner(
-          muscle_group
-        )
-      )
-    `,
-      )
-      .lt("date", today)
-      .eq("mesocycle", mesoId)
-      .eq("workout_set.exercises.muscle_group", muscleGroup)
-      .eq("complete", true)
-      .order("date", { ascending: false })
-      .limit(1);
-
-    return workoutData[0].id;
+    const workoutData = await prisma.workouts.findFirst({
+      where: {
+        date: {
+          lt: today
+        },
+        mesocycle: workout.mesocycle,
+        complete: true,
+        workout_set: {
+          some: {
+            exercises: {
+              muscle_group: muscleGroup
+            }
+          }
+        }
+      },
+      orderBy: {
+        date: "desc"
+      }
+    });
+    if (!workoutData) return null;
+    else return workoutData;
   } else {
-    console.log();
-    const { data: workoutData } = await supabase
-      .from("workouts")
-      .select(
-        `
-      id,
-      date,
-      mesocycle,
-      meso_day
-    )
-    `,
-      )
-      .lt("date", today)
-      .eq("mesocycle", mesoId)
-      .eq("complete", true)
-      .eq("meso_day", mesoDay)
-      .order("date", { ascending: false })
-      .limit(1);
 
-    console.log(workoutData);
-    return workoutData[0].id;
+    const workoutData = await prisma.workouts.findFirst({
+      where: {
+        date: {
+          lt: today
+        },
+        mesocycle: workout.mesocycle,
+        meso_day: mesoDay,
+        complete: true,
+      }
+    });
+
+    return workoutData;
   }
 }
 
@@ -169,10 +173,10 @@ export async function checkNextWorkoutWeek(
 ) {
   const mesoId = await getMesoId(workoutId);
 
-  const nextWorkoutId: string = await getNextWorkoutId(mesoId, muscleGroup);
+  const nextWorkout = await getNextWorkout(mesoId, muscleGroup);
 
-  if (nextWorkoutId) {
-    const weekNumber = await getWeekNumber(nextWorkoutId);
+  if (nextWorkout) {
+    const weekNumber = nextWorkout.week_number ?? 0;
     if (weekNumber > 0) {
       return true;
     }

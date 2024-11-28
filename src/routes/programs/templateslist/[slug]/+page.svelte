@@ -61,7 +61,7 @@
             </div>
         </div>
     {/each}
-    <button class="btn variant-ghost-primary" type="submit">
+    <button class="btn preset-tonal-primary preset-outlined-primary-200-800" type="submit">
         Save Mesocycle
     </button>
 </form>

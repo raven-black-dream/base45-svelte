@@ -1,6 +1,6 @@
 generator client {
   provider        = "prisma-client-js"
-  previewFeatures = ["relationJoins"]
+  previewFeatures = ["views", "relationJoins"]
 }
 
 datasource db {
@@ -217,11 +217,33 @@ model workouts {
   meso_day                                String?                 @db.Uuid
   target_rir                              Int?                    @db.SmallInt
   deload                                  Boolean?                @default(false)
+  week_number                             Int?                    @default(0) @db.SmallInt
   exercise_comments                       exercise_comments[]
   user_exercise_metrics                   user_exercise_metrics[]
   workout_feedback                        workout_feedback[]
   workout_set                             workout_set[]
-  meso_day_workouts_meso_dayTomeso_day    meso_day?               @relation("workouts_meso_dayTomeso_day", fields: [meso_day], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  meso_day_workouts_meso_dayTomeso_day    meso_day?               @relation("workouts_meso_dayTomeso_day", fields: [meso_day], references: [id], onDelete: Cascade, onUpdate: NoAction)
   mesocycle_workouts_mesocycleTomesocycle mesocycle?              @relation("workouts_mesocycleTomesocycle", fields: [mesocycle], references: [id], onDelete: Cascade, onUpdate: NoAction)
   users                                   users?                  @relation(fields: [user], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+/// The underlying view does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+view recent_workout_id {
+  mesocycle_id           String? @db.Uuid
+  muscle_group           String?
+  most_recent_workout_id String? @db.Uuid
+
+  @@ignore
+}
+
+/// The underlying view does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+view user_muscle_group_metrics {
+  workout_date DateTime? @db.Timestamptz(6)
+  mesocycle    String?   @db.Uuid
+  workout      String?   @db.Uuid
+  muscle_group String?
+  metric_name  String?
+  average      Float?
+
+  @@ignore
 }
