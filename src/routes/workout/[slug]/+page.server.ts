@@ -407,7 +407,7 @@ export const actions = {
     }
 
     // mark the workout complete and set the date of the workout to the date it was completed (today)
-    const workout = await prisma.workouts.update({
+    const workout: CompleteWorkout = await prisma.workouts.update({
       where: {
         id: params.slug,
       },

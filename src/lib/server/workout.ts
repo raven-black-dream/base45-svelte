@@ -25,21 +25,18 @@ interface Workout{
  * This function checks if the next workout is a deload workout. If the next workout is a deload workout, the function returns true.
  */
 
-export async function checkDeload(workoutId: string, muscleGroup: string) {
-  const mesoId = await getMesoId(workoutId);
-  const nextWorkoutId: string = await getNextWorkoutId(mesoId, muscleGroup);
+export async function checkDeload(workout: CompleteWorkout, muscleGroup: string) {
+  const mesoId = workout.mesocycle;
+  const nextWorkout = await getNextWorkout(mesoId, muscleGroup);
 
-  const { data: deload } = await supabase
-    .from("workouts")
-    .select(`deload`)
-    .eq("id", nextWorkoutId)
-    .single();
-
-  if (!deload) {
+  if (!nextWorkout){
+    return false
+  }
+  if (!nextWorkout.deload) {
     return true;
   }
 
-  return deload.deload;
+  return nextWorkout.deload;
 }
 
 /**
@@ -168,10 +165,10 @@ export async function getMesoDay(workoutId: string) {
  * @returns Boolean value indicating whether the next workout is in week 1
  */
 export async function checkNextWorkoutWeek(
-  workoutId: string,
+  workout,
   muscleGroup: string,
 ) {
-  const mesoId = await getMesoId(workoutId);
+  const mesoId = workout.mesocycle;
 
   const nextWorkout = await getNextWorkout(mesoId, muscleGroup);
 
