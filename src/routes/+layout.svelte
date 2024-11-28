@@ -4,7 +4,8 @@
 	import { invalidate } from '$app/navigation'
 	import { onMount } from 'svelte'
 	import { computePosition, autoUpdate, offset, shift, flip, arrow } from '@floating-ui/dom';
-			
+	import  Icon  from '@iconify/svelte';
+
 	let { data, children } = $props();
 	let { supabase, session } = $derived(data)
 
@@ -19,13 +20,17 @@
 	})
 
 	let drawerState = $state(false);
+	let infoModalState = $state(false);
 
 	function drawerClose() {
 		drawerState = false;
 	}
+	function infoModalClose() {
+		infoModalState = false;
+	}
 
 </script>
-<header>
+<header class='sticky top-0 z-10 flex justify-between items-center preset-filled-surface-50-950'>
 	{#if session}
 		<Modal bind:open={drawerState}
 		triggerBase='btn'
@@ -66,10 +71,63 @@
 	{:else}
 		<button class="text-xl font-extrabold uppercase" disabled>Base45</button>
 	{/if}
+	<div class='flex p-2'>
 
+	<a class='btn btn-icon' href="https://github.com/raven-black-dream/base45-svelte">
+		<Icon icon="fa6-brands:github" height='1.5em'/>
+	</a>
+
+	<Modal
+		bind:open={infoModalState}
+		triggerBase='btn btn-icon preset-tonal'
+		contentBase='card bg-surface-100-900 p-4 space-y-4 shadow-xl'
+		backdropClasses='backtrop-blur-sm'
+		>
+
+		{#snippet trigger()}
+			<Icon icon="fa6-solid:circle-info" height='1.5em'/>
+		{/snippet}
+
+		{#snippet content()}
+			<div class="container mx-auto px-4 py-8">
+				<h1 class="text-3xl font-bold mb-6">Acknowledgements</h1>
+				
+				<div class="prose max-w-none">
+					<p class="mb-4">
+						This workout application's training methodologies are based on the research and principles outlined in:
+					</p>
+					
+					<div class="preset-filled-surface-100-900 p-6 rounded-lg mb-6">
+						<p class="font-semibold mb-2">Scientific Principles of Hypertrophy Training</p>
+						<p class="mb-1">Authors:</p>
+						<ul class="list-disc ml-6 mb-4">
+							<li>Dr. Mike Israetel</li>
+							<li>Dr. James Hoffman</li>
+							<li>Dr. Melissa Davis</li>
+							<li>Jared Feather, IFBB Pro</li>
+						</ul>
+						<p class="text-sm">Published: February 21, 2021</p>
+						<p class="text-sm text-gray-600">Publisher: Renaissance Periodization</p>
+					</div>
+
+					<p class="text-sm">
+						We extend our gratitude to the authors for their significant contributions to the field of 
+						hypertrophy training and exercise science. Their research and methodologies form the 
+						foundation of the training principles implemented in this application.
+					</p>
+				</div>
+			</div>
+			<footer class='flex justify-end gap-4'>
+				<button type="button" class="btn preset-tonal" onclick={infoModalClose}>Cancel</button>
+				<button type="button" class="btn preset-filled" onclick={infoModalClose}>Confirm</button>
+			</footer>
+
+		{/snippet}
+
+	</Modal>
+</div>
 
 </header>
 <main>
 	{@render children?.()}
 </main>
-
