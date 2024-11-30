@@ -21,7 +21,7 @@
     "@types/node": "^20.10.6",
     "autoprefixer": "10.4.16",
     "postcss": "8.4.32",
-    "prisma": "^5.19.1",
+    "prisma": "^6.0.0",
     "supabase": "^1.192.5",
     "svelte": "^5.0.0",
     "svelte-check": "^4.0.0",
@@ -35,7 +35,7 @@
   "type": "module",
   "dependencies": {
     "@floating-ui/dom": "^1.6.7",
-    "@prisma/client": "^5.19.1",
+    "@prisma/client": "^6.0.0",
     "@sentry/sveltekit": "^8.33.1",
     "@supabase/auth-ui-shared": "^0.1.8",
     "@supabase/ssr": "^0.5.1",
