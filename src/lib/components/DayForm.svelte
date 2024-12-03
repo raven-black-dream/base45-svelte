@@ -22,7 +22,7 @@
 
 </script>
 
-<div class="card p-4 variant-ghost-primary space-y-2">
+<div class="card p-4 preset-filled-primary-100-900 space-y-2">
     <label class='p-4'>
         <span>Day Name</span>
         <input type="text" placeholder="Name" name='name' class='input' bind:value={day.name}/>
@@ -30,15 +30,15 @@
   {#each day.muscle_groups as muscleGroup, i (i)}
   <label class='p-2'>
     <span>{"Muscle Group " + (i + 1) }</span>
-    <MuscleGroupInput bind:muscleGroup on:remove={() => removeMuscleGroup(i)}/>
+    <MuscleGroupInput bind:muscleGroup={day.muscle_groups[i]} on:remove={() => removeMuscleGroup(i)}/>
   </label>
   
   {/each}
-  <button class='btn-icon variant-ghost-secondary' type='button' onclick={addMuscleGroup}>
+  <button class='btn-icon preset-tonal-secondary' type='button' onclick={addMuscleGroup}>
     <Icon icon="fa6-solid:plus" />
   </button>
 
-  <button class='btn-icon variant-ghost-primary float-right' type='button' onclick={() => dispatch('remove')}>
+  <button class='btn-icon preset-tonal-primary preset-outlined-primary-200-800 float-right' type='button' onclick={() => dispatch('remove')}>
     <Icon icon="fa6-solid:minus" /> 
   </button>
 
