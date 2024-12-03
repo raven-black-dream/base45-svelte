@@ -144,7 +144,6 @@ export const actions = {
 
     for (const day of newMesoDays) {
       createWorkouts(
-        supabase,
         user.id,
         new Date(newMesoData.start_date),
         new Date(newMesoData.end_date),
@@ -155,5 +154,6 @@ export const actions = {
         day.meso_day_name
       );
     }
+    redirect(303, "/landing");
   },
 };

@@ -1,8 +1,10 @@
 <script lang="ts">
-    import { getModalStore } from '@skeletonlabs/skeleton';
-    import type { ModalSettings, ModalComponent } from '@skeletonlabs/skeleton';
-    import ExerciseModal from '$lib/components/ExerciseModal.svelte';
+    import {  Modal, ProgressRing } from '@skeletonlabs/skeleton-svelte';
+    import { SvelteMap } from 'svelte/reactivity';
+    import Icon from '@iconify/svelte';
     import { enhance } from '$app/forms';
+    import { Rating } from '@skeletonlabs/skeleton-svelte';
+    import { en } from '@supabase/auth-ui-shared';
 
     interface Props {
         set: {id: number, workout: string, exercises: {id: string, exercise_name:string, weighted: boolean, weight_step:number, muscle_group:string}, 
@@ -16,143 +18,219 @@
         set,
         i,
         len,
-        recovery
+        recovery,
     }: Props = $props();
-    // modalStore needs to be where the trigger will be
-    const modalStore = getModalStore();
 
-    // TODO: over here you could have logic about if a modal is to be shown or not, or
-    // simply trigger it as below
-    function askForFeedback() {
-        let questions:string[] = [];
+    function generateQuestions(isFirst: boolean, isLast:boolean, completed: boolean, i: number, len: number) {
+        let questions = {};
+        const recovery = "When did your " + set.exercises.muscle_group +  " recover after your last workout? (1: didn't get sore - 4: still sore)";
+        const joints = "How sore did your joints get doing " + set.exercises.exercise_name + "? (1: not sore - 4: incredibly sore)";
+        const burn = "How much of a burn did you feel in your " + set.exercises.muscle_group + " doing " + set.exercises.exercise_name + "? (1: didn't get a burn - 4: crazy burn)";
+        const pump = "How much of a pump did you get working your " + set.exercises.muscle_group + "? (1: didn't get a pump - 4: ridiculous pump)";
+        const difficulty = "How hard, on average, did you find working your " + set.exercises.muscle_group + "? (1: the exercise was easy - 4: too hard)";
+        if (isFirst && completed) {
 
-        if (set.is_first) {
-            if (recovery.completed === true){
-                questions.push("When did your " + set.exercises.muscle_group +  " recover after your last workout? (1: didn't get sore - 4: still sore)")
-            }
-            
-        }
-        if (i == len) {
-            questions.push("How sore did your joints get doing " + set.exercises.exercise_name + "?");
-            questions.push("How much of a burn did you feel in your " + set.exercises.muscle_group + " doing " + set.exercises.exercise_name + "?")
+            questions[recovery] = 0;  
         }
 
-        if (set.is_last){
-            questions.push("How much of a pump did you get working your " + set.exercises.muscle_group + "?")
-            questions.push("How hard, on average, did you find working your " + set.exercises.muscle_group + "?")
+        if (i === len) {
+            questions[joints] = 0;
+            questions[burn]= 0;
+        }
+        if (isLast){
+            questions[pump]= 0
+            questions[difficulty]= 0
         }
 
-        console.log("questions: ", questions)
-        console.log("length", questions.length)
-        
-        if (questions.length > 0 && questions[0] !== "") {
-            // TODO: Trigger modal. Get question response from the modal. Update the workout_feedback table with the response.
-            const modalComponent: ModalComponent = { ref: ExerciseModal, props: {questions: questions}};
+        return questions;
 
-            new Promise<Map<string, number>>((resolve) => {
-
-                const modal: ModalSettings = {
-                    type: 'component',
-                    component: modalComponent,
-                    title: 'Feedback',
-                    body: "Please assign a value between 1 (minimal) and 4 (extreme) regarding the following: ",
-                    response: (response: Map<string, number>) => {
-                        resolve(response);
-                    }
-                };
-                modalStore.trigger(modal);
-            }).then((response) => {
-                // <exasperated sigh at skeleton> It appears that a form can not be submitted from a skeleton modal because
-                // if the modal is destroyed, the form action never gets submitted. It works if you just don't clear the modal...
-                // but we want it to go away. So, here we are in fact just making an entirely new form, and then we can submit the
-                // new form with the response from the modal <eyeroll> does this feel hacky? Yes. Yay flavour comments!
-                // Here are the docs for the HTMLFormElement: https://developer.mozilla.org/en-US/docs/Web/API/HTMLFormElement
-                const f = document.createElement("form"); // Create a form
-                document.body.appendChild(f); // Add it to the document body
-                f.action = "?/feedback"; // Add action and method attributes
-                f.method = "POST";
-                // register an event listener for form data
-                // formdata info can be added through the listener
-                f.addEventListener("formdata", (e) => {
-                    const formData = e.formData;
-                    console.log(typeof response)
-                    for (const question in response) {
-                        const typeOjb = {
-                            "after": "mg_soreness",
-                            "joints": "ex_soreness",
-                            "burn": "ex_mmc",
-                            "pump": "mg_pump",
-                            "hard": "mg_difficulty"
-                        }
-                        let key = "";
-                        if (question.includes("after")){
-                            key = typeOjb["after"];
-                        }
-                        else if (question.includes("joints")){
-                            key = typeOjb["joints"];
-                        }
-                        else if (question.includes("burn")){
-                            key = typeOjb["burn"];
-                        }
-                        else if (question.includes("pump")){
-                            key = typeOjb["pump"];
-                        }
-                        else if (question.includes("hard")){
-                            key = typeOjb["hard"];
-                        }
-                        formData.append(key, response[question]);
-                        formData.append("exercise", set.exercises.id);
-                        if (set.is_first && recovery.completed === true){
-                            formData.append("workout", recovery.workout);
-                            formData.append("current_workout", set.workout)
-                        }
-                        else {
-                            formData.append("workout", set.workout);
-                        }
-                        formData.append("muscle_group", set.exercises.muscle_group);
-                    }
-                });
-            f.requestSubmit(); // Call the form's submit() method
-            modalStore.clear()
-        }).catch((error) => {
-            console.error(error);
-        });
-        }
     }
+
+    function generateKeys(questions: Object) {
+        let keys = new Map<string, string>();
+
+        Object.entries(questions).forEach(([key, value]) => {
+            if (key.includes("recover")) {
+                keys.set(key, 'mg_soreness');
+
+            }
+            else if (key.includes("joints")) {
+                keys.set(key, 'ex_soreness');
+            }
+            else if (key.includes("burn")) {
+                keys.set(key, 'ex_mmc');
+            }
+            else if (key.includes("pump")) {
+                keys.set(key,'mg_pump');
+            }
+            else if (key.includes("hard")) {
+                keys.set(key,'mg_difficulty');
+            }
+        });
+
+        return keys
+    }
+
+    function calculateVolume(reps : number, weight : number) {
+        if (!reps) {
+            reps = 0;
+        }
+        if (!weight) {
+            weight = 0;
+        }
+        return reps * weight
+    }
+
+    function areAllQuestionsAnsered(){
+        return Object.values(questions).every(value => value > 0);
+
+    }
+
+    function calculateTargetRepChange(percentage: number) {
+        const upperBound = setTargetVolume * (percentage + 1);
+        const lowerBound = setTargetVolume * (percentage - 1);
+
+        const currentVolume = targetReps * weight;
+
+        let changedReps = 0;
+
+        if (currentVolume < lowerBound) {
+            changedReps = Math.round((lowerBound - currentVolume) / weight);
+        } else if (currentVolume > upperBound) {
+            changedReps = Math.round((upperBound - currentVolume) / weight);
+        }
+
+        targetReps = changedReps;
+    }
+
+    let reps: number = $state(set.reps);
+    let weight: number = $state(set.weight? set.weight: set.target_weight);
+    let targetReps: number = $state(set.target_reps);
+    const questions: Object = $state(generateQuestions(set.is_first, set.is_last, recovery.completed, i, len));
+    let setTargetVolume: number = $derived(calculateVolume(set.target_reps, set.target_weight))
+    let actualVolume: number = $derived(calculateVolume(reps, weight))
+    const questionKeys: Map<string, string> = $state(generateKeys(questions));
+    let allQuestionsAnswered: boolean = $derived(areAllQuestionsAnsered());
+    let loading: boolean = $state(false);
+
+    let openState = $state(false);
+    function modalClose() {
+        openState = false;
+    }
+
 </script>
-
+{#if loading}
+    <div class="flex flex-col items-center justify-center h-full">
+        <ProgressRing value={null} size="size-14" meterStroke="stroke-primary-600-400" trackStroke="stroke-primary-50-950" />
+    </div>
+{:else}
 <!-- use:enhance keeps the page from reloading on form submission; reloading also clears any modals -->
-<form class="p-4" method="post" use:enhance action="?/recordSet">
-    <div class="input-group input-group-divider grid-cols-[1fr_1fr_auto]">
-        <input type="hidden" name="set_id" value={set.id}/>
-        <input type="hidden" name="exercise_id" value={set.exercises.id}/>
-        <input type="hidden" name="exercise_name" value={set.exercises.exercise_name}/>
-        <input type="hidden" name="muscle_group" value={set.exercises.muscle_group}/>
-        <input 
-            class="input" 
-            type="number" name="actualreps" 
-            value="{set.reps? set.reps: set.target_reps}"
+    <form class="p-4" method="post" id='set_{set.id}' use:enhance={
+        () => {
+            loading = true;
+            return async ({ update }) => {
+                await update();
+                modalClose();
+                loading = false;
+            }
+        }
+    } action="?/recordSet">
+    <input type="hidden" name="set_id" value={set.id}/>
+    <input type="hidden" name="exercise_id" value={set.exercises.id}/>
+    <input type="hidden" name="exercise_name" value={set.exercises.exercise_name}/>
+    <input type="hidden" name="muscle_group" value={set.exercises.muscle_group}/>
+    <input type="hidden" name="is_first" value={set.is_first} />
+    <input type="hidden" name="is_last" value={set.is_last} />
+    <input type="hidden" name="is_last_set" value={i === len}>
+    <input type="hidden" name="targetReps" value={targetReps}/>
+    <input type="hidden" name="targetWeight" value={weight}/>
+    <div class="input-group divide-surface-200-800 grid-cols-[1fr_1fr_auto_auto] divide-x">
+        <input
+            type="number" name="actualReps" 
+            bind:value={reps}
+            placeholder="{!targetReps? "" : targetReps.toString()}"
         />
         <input 
-            class="input" 
             type="number" 
-            name="actualweight"
+            name="actualWeight"
             step="0.5"
-            value="{set.weight? set.weight: set.target_weight}"
+            bind:value={weight}
+            placeholder="{!weight? "" : weight.toString()}"
         />
-        <input type="hidden" name="is_first" value={set.is_first} />
-        <input type="hidden" name="is_last" value={set.is_last} />
-        <input type="hidden" name="is_last_set" value={i === len}>
-        {#if !set.completed}
-            <button class="btn variant-ghost-primary" type="submit" onclick={askForFeedback} >
-
-                Log Set
-            </button>                    
+        <div class='input-group-cell preset-tonal-primary'>
+            {#if setTargetVolume != 0 && actualVolume != 0}
+                {#if actualVolume > setTargetVolume}
+                    <Icon icon='fa6-solid:angles-up'></Icon>
+                {:else if actualVolume === setTargetVolume}
+                    <Icon icon='fa6-solid:check'></Icon>
+                {:else}
+                    <Icon icon='fa6-solid:angles-down'></Icon>
+                {/if}
+            {/if}
+            
+        </div>
+        {#if Object.keys(questions).length > 0}
+            <Modal
+                bind:open={openState}
+                triggerBase='btn preset-tonal-secondary preset-outlined-secondary-200-800'
+                contentBase='bg-surface-100-900 p-4 space-y-4 shadow-xl max-w-.25 h-.25'
+                backdropClasses='backtrop-blur-md'
+                >
+                {#snippet trigger()}
+                    {#if !set.completed}
+                        <p class='font-extrabold text-lg'>Log Set</p>
+                    {:else}
+                        <p class='font-extrabold text-lg'>Edit Set</p>
+                    {/if}
+                {/snippet}
+                {#snippet content()}
+                    <div class="modal-example-form">
+                        <header>Exercise Feedback</header>
+                        <article>Please assign a value between 1 (minimal) and 4 (extreme) regarding the following: </article>
+                        <!-- Enable for debugging: -->
+                        <div class="modal-form card p-4 w-modal shadow-xl space-y-4">
+                            {#each Object.entries(questions) as [question, ], i}
+                                <div>
+                                <p>{question}</p>
+                                <Rating bind:value={questions[question]} name={questionKeys.get(question)} form="set_{set.id}" count={4} allowHalf required>
+                                    {#snippet iconEmpty()}
+                                                                <Icon icon="fa6-regular:star" height='2.5em' />
+                                                            {/snippet}
+                                    {#snippet iconHalf()}
+                                                                <Icon icon="fa6-regular:star" height='2.5em'/>
+                                                            {/snippet}
+                                    {#snippet iconFull()}
+                                                                <Icon icon="fa6-solid:star" height='2.5em'/>
+                                                            {/snippet}
+                                </Rating>
+                            </div>
+                            {/each}
+                            <input type="hidden" name="previousWorkoutId" form="set_{set.id}" value={recovery.workout}>
+                        </div>
+                        <!-- prettier-ignore -->
+                        <footer class="modal-footer {parent.regionFooter}">
+                            <button class="btn" onclick={modalClose}>Cancel</button>
+                            {#if allQuestionsAnswered}
+                            <button class="btn preset-tonal-primary preset-outlined-primary-200-800" type="submit" form="set_{set.id}">Submit Form</button>
+                            {:else}
+                           <button class="btn preset-tonal-primary preset-outlined-primary-200-800" type="submit" form="set_{set.id}" disabled>Submit Form</button> 
+                            {/if}
+                        </footer>
+	                </div>
+                {/snippet}
+            </Modal>     
         {:else }
-            <button class="btn variant-ghost-secondary" type="submit">
-                Edit Set
-            </button>
+            {#if !set.completed}
+                <button class="btn preset-tonal-secondary preset-outlined-secondary-200-800" type="submit">
+                    <p class='font-extrabold text-lg'>Log Set</p>
+                </button>
+            {:else}
+                <button class="btn preset-tonal-secondary preset-outlined-secondary-200-800" type="submit">
+                    <p class='font-extrabold text-lg'>Edit Set</p>
+                </button>
+            {/if}
+
         {/if}
     </div>
 </form>                
-
+{/if}

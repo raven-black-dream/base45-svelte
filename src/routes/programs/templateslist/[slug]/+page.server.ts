@@ -193,7 +193,7 @@ export const actions = {
       }
 
       await createWorkouts(
-        supabase,
+
         user.id,
         start_date,
         end_date,

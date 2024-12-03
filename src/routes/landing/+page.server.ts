@@ -2,6 +2,7 @@
 
 import { redirect } from "@sveltejs/kit";
 import prisma from "$lib/server/prisma";
+import { nonProgression } from "$lib/server/progression";
 
 interface MetricData {
   metric_name: string;
@@ -29,18 +30,20 @@ export const load = async ({ locals: { supabase } }) => {
     select: {
       id: true,
       start_date: true,
-      workouts_workouts_mesocycleTomesocycle: {
+      workouts: {
         select: {
           id: true,
           day_name: true,
           date: true,
           complete: true,
+          skipped: true,
+          deload: true
         },
         orderBy: {
           date: "asc",
         },
       },
-      meso_day_meso_day_mesocycleTomesocycle: true,
+      meso_days: true,
     },
   });
   if (!mesocycle) {
@@ -48,9 +51,9 @@ export const load = async ({ locals: { supabase } }) => {
     return { user, workouts: [], numberOfDays: 0 };
   }
 
-  const workouts = mesocycle.workouts_workouts_mesocycleTomesocycle;
+  const workouts = mesocycle.workouts;
 
-  const mesoDay = mesocycle.meso_day_meso_day_mesocycleTomesocycle;
+  const mesoDay = mesocycle.meso_days;
 
   // turn a mesocycle into a list of calendar calendar_items
   // ({ title: string; className: string; date: Date; len: number;
@@ -59,7 +62,7 @@ export const load = async ({ locals: { supabase } }) => {
   let numberOfDays = mesoDay?.length || 0;
 
   const nextWorkouts = workouts
-    .filter((workout) => !workout.complete)
+    .filter((workout) => !workout.complete && !workout.skipped)
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
     .slice(0, numberOfDays);
 
@@ -313,3 +316,67 @@ function filterMetricsByDateRange(
       metric.workouts?.date?.getTime() <= endDate.getTime(),
   );
 }
+
+export const actions = {
+  skipWorkout: async ({ request, locals: { supabase } }) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      redirect(303, "/");
+    }
+    const data = await request.formData();
+    const workout_id = data.get("workoutId")?.toString();
+
+    if (!workout_id) {
+      return { success: false, error: "No workout ID provided" };
+    }
+
+    // Mark the workout as skipped
+    const workout: CompleteWorkout = await prisma.workouts.update({
+      where: {
+        id: workout_id,
+      },
+      data: {
+        skipped: true
+      },
+      include: {
+        workout_set: {
+          include: {
+            exercises: true
+          }
+        },
+        workout_feedback: true,
+      }
+    });
+
+    await prisma.workout_set.updateMany({
+      where: {
+        workout: workout_id
+      },
+      data: {
+        skipped: true
+      }
+    })
+
+    const mesocycle: ProgressionMesocycle = await prisma.mesocycle.findUnique({
+      where: {
+        id: workout.mesocycle,
+      },
+      include: {
+        meso_days: true
+      }
+    });
+
+    const muscleGroups = new Set(
+      workout.workout_set.map(
+        (set: any) => set.exercises.muscle_group
+      )
+    );
+
+    // For skipped workouts, we always use nonProgression
+    for (const muscleGroup of muscleGroups) {
+      await nonProgression(workout, mesocycle, muscleGroup, true);
+    }
+
+    redirect(303, "/landing");
+  }
+};

@@ -1,7 +1,7 @@
 <script lang="ts">
   import WorkoutHistoryBlock from '../../../lib/components/WorkoutHistoryBlock.svelte';
 
-    import { Accordion, AccordionItem } from '@skeletonlabs/skeleton';
+    import { Accordion} from '@skeletonlabs/skeleton-svelte';
     import type { PageData } from './$types';
     import { enhance } from '$app/forms';
     import Icon, { iconLoaded } from '@iconify/svelte';
@@ -12,6 +12,7 @@
   }
 
   let { data }: Props = $props();
+  const value = $state('profile');
 
 </script>
 
@@ -23,59 +24,58 @@
     <div class='placeholder animate-pulse'></div>
 {:else}
 
-<div class='card p-4 variant-glass-primary'>
+<div class='card p-4 preset-tonal-primary'>
     <header class="card-header text-xl font-extrabold">Hello {data.profile?.display_name}!</header>
-    <section class='p-4'>
-        <Accordion >
-            <AccordionItem open>
-                {#snippet summary()}
-                  
+    <section class='p-4 space-y-4'>
+        <Accordion {value} multiple>
+            <Accordion.Item value='profile'>
+                {#snippet control()}
                       Profile Details
-                  
                   {/snippet}
-                {#snippet content()}
-                  
-                      <div class='p-4'>
+                {#snippet panel()}
+                    <div class='p-4 space-y-4'>
+                      <div class='card space-y-2 p-4 preset-filled-surface-50-950'>
                       <p>Display Name: {data.profile?.display_name}</p>
                       <p>Date of Birth: {data.profile?.date_of_birth} </p>
                       <p>Gender: {data.profile?.gender}</p>
                       </div>
-                      <a href="/" class="btn btn-sm variant-ghost-secondary" data-sveltekit-preload-data="hover">Edit Profile</a>
-
+                      <a href="/" class="btn btn-sm preset-tonal-secondary preset-outlined-secondary-200-800" data-sveltekit-preload-data="hover">Edit Profile</a>
+                    </div>
                   
                   {/snippet}
-            </AccordionItem>
-            <AccordionItem>
-                {#snippet summary()}
-                  
+            </Accordion.Item>
+            <Accordion.Item value='weightHistory'>
+                {#snippet control()}
                       Weight History
-                  
                   {/snippet}
-                {#snippet content()}
+                {#snippet panel()}
+
+                <div class='card p-4'>
                   
                       {#if !data.weightHistoryData}
-                          <div class='placeholder'></div>
+                          <div class='placeholder preset-filled-surface-300-700'></div>
                       {:else}
                           <LinePlot data={data.weightHistoryData}/>
                       {/if}
+                    
+                        <form class='mx-auto w-full max-w-md space-y-2' method="post" use:enhance action='?/addWeight'>
+                            <div class='input-group divide-surface-200-800 grid-cols-[1fr_1fr_3fr_1fr] divide-x'>
+                                <input class='input' name='value' type='number' step=0.1 placeholder="Weight">
+                                <select name='unit' value='lbs'>
+                                    <option value='kg'>kg</option>
+                                    <option value='lbs'>lbs</option>
+                                </select>
+                                <input name='date' type='date'>
+                                <button class='btn preset-tonal' type='submit'>
+                                    <Icon icon='fa6-solid:plus' />
+                                </button>
+                            </div>
 
-                      <form class='p-4' method="post" use:enhance action='?/addWeight'>
-                          <div class='input-group input-group-divider grid-cols-[1fr_1fr_3fr_1fr]'>
-                              <input class='input' name='value' type='number' step=0.1 placeholder="Weight">
-                              <select name='unit' value='lbs'>
-                                  <option value='kg'>kg</option>
-                                  <option value='lbs'>lbs</option>
-                              </select>
-                              <input name='date' type='date'>
-                              <button class='btn btn-sm variant-filled-primary' type='submit'>
-                                  <Icon icon='fa6-solid:plus' />
-                              </button>
-                          </div>
-
-                      </form>
+                        </form>
+                </div>
                   
                   {/snippet}
-            </AccordionItem>
+            </Accordion.Item>
         </Accordion>
     </section>
     <footer class='card-footer'></footer>

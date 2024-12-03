@@ -80,7 +80,7 @@ export function repProgressionAlgorithm(
     } else if (performance_score == 2 || soreness >= 2) {
       return 0;
     } else {
-      return 2 - Math.floor(soreness + performance_score);
+      return 3 - Math.floor(soreness + performance_score);
     }
   }
 }
@@ -104,7 +104,7 @@ export function loadProgressionAlgorithm(
     } else if (performance_score == 2 || soreness >= 2) {
       return 0;
     } else {
-      return 2 - Math.ceil(soreness + performance_score);
+      return 3 - Math.ceil(soreness + performance_score);
     }
   }
 }

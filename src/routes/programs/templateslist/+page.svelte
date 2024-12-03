@@ -1,20 +1,11 @@
 <!-- src/routes/programs/templateslist/+page.svelte -->
 
 <script lang="ts">
-    import { createBubbler, stopPropagation } from 'svelte/legacy';
-
-    const bubble = createBubbler();
-    import { Accordion, AccordionItem } from '@skeletonlabs/skeleton';
-    import type { PopupSettings } from '@skeletonlabs/skeleton';
-    import { popup } from '@skeletonlabs/skeleton';
+    import { Accordion } from '@skeletonlabs/skeleton-svelte';
     import Icon from '@iconify/svelte';
     let { data } = $props();
 
-    const mesoPopup: PopupSettings = {
-        event: 'click',
-        target: 'meso-menu',
-        placement: 'right',
-    }
+    let value = $state(data.programs[0].id);
 
     const onClick = () => {
 
@@ -28,53 +19,14 @@
 </svelte:head>
 
 <ul>
-	{#each data.programs as program, i}
-        <Accordion class="py-2">
-            <AccordionItem class="card variant-glass-primary">
-                {#snippet lead()}
-                            
-                        {#if data.mesocycles[program.id]}
-                        <button class='btn-icon' use:popup={
-                            {
-                                event: 'click',
-                                target: 'meso-menu-' + i,
-                                placement: 'right'
-
-                            }
-                        } onclick={stopPropagation(bubble('click'))}><Icon icon='fa6-solid:ellipsis-vertical'/></button>
-                            <div class='z-10 card p-4' data-popup="meso-menu-{i}">
-                                <ul>
-                                    <li class='p-2'>
-                                        <a class="btn btn-sm variant-ghost-primary" href="/programs/templateslist/{program.id}">
-                                            Create a new Mesocycle
-                                        </a>
-                                    </li>
-                                    <li class='p-2'>
-                                        <form method='POST' action='?/duplicate'>
-                                            <input type='hidden' name='mesoId' value={data.mesocycles[program.id]}>
-                                            <button class='btn btn-sm variant-ghost-primary' type='submit'>
-                                                Duplicate Last Meso
-                                            </button>
-
-                                        </form>
-                                    </li>
-                                
-                                </ul>
-                                
-                            </div>
-                        {:else}    
-
-                        <a class="btn btn-sm variant-ghost-secondary" href="/programs/templateslist/{program.id}" onclick={stopPropagation(bubble('click'))}>
-                            Create a Mesocycle
-                        </a>    
-
-                        {/if}
-                    
-                            {/snippet}
-                {#snippet summary()}
+    <Accordion class="py-2" {value} collapsible>
+	    {#each data.programs as program, i}
+        
+            <Accordion.Item class="card preset-filled-surface-300-700" value={program.id}>
+                {#snippet control()}
                                 {program.template_name}
                             {/snippet}
-                {#snippet content()}
+                {#snippet panel()}
                             
                         <div class="table-container">
                             <table class="table table-hover">
@@ -100,11 +52,22 @@
                                 </tbody>
                             </table>
                         </div>
-                    
-                            {/snippet}
-        </AccordionItem>
-    </Accordion>
-	{/each}
 
-    <a href='/programs/create' class='btn variant-ghost-primary float-right'>Create New Template</a>
+                        <nav class="btn-group preset-outlined-surface-200-800 flex-col p-2 md:flex-row">
+                            {#if data.mesocycles[program.id]}
+                            <form method='post' action="?/duplicate">
+                                <input type='hidden' name='mesoId' value={data.mesocycles[program.id]}>
+                                <button type="submit" class="btn preset-filled-primary-500">Duplicate Last Meso</button>
+                            </form>
+                            
+                            {/if}
+                            <a class="btn preset-tonal-primary" href='/programs/templateslist/{program.id}'>Create Mesocycle</a>
+                        </nav>
+                    
+                    {/snippet}
+        </Accordion.Item>
+    {/each}
+</Accordion>
+	
+    <a href='/programs/create' class='btn preset-tonal-primary float-right'>Create New Template</a>
 </ul>
