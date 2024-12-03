@@ -125,16 +125,16 @@
     </div>
 {:else}
 <!-- use:enhance keeps the page from reloading on form submission; reloading also clears any modals -->
-<form class="p-4" method="post" id='set_{set.id}' use:enhance={
-    () => {
-        loading = true;
-        return async ({ update }) => {
-            await update();
-            modalClose();
-            loading = false;
+    <form class="p-4" method="post" id='set_{set.id}' use:enhance={
+        () => {
+            loading = true;
+            return async ({ update }) => {
+                await update();
+                modalClose();
+                loading = false;
+            }
         }
-    }
-} action="?/recordSet">
+    } action="?/recordSet">
     <input type="hidden" name="set_id" value={set.id}/>
     <input type="hidden" name="exercise_id" value={set.exercises.id}/>
     <input type="hidden" name="exercise_name" value={set.exercises.exercise_name}/>

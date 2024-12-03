@@ -40,6 +40,14 @@ export async function getNextWorkout(workout: CompleteWorkout, muscleGroup: stri
         }
       }
     },
+    include: {
+      workout_set: {
+        include: {
+          exercises: true
+        }
+      },
+      workout_feedback: true
+    },
     orderBy: {
       date: "asc"
     }
@@ -85,7 +93,7 @@ export async function getPreviousWorkout(
         workout_set: {
           include: {
             exercises: true
-          }
+          },
         },
         workout_feedback: true,
       },

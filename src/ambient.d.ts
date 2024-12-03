@@ -3,6 +3,7 @@ type Workout = {
   day_name: string;
   date: Date;
   complete: boolean;
+  skipped: boolean;
 };
 
 type CompleteWorkout = {
@@ -15,6 +16,7 @@ type CompleteWorkout = {
   target_rir: number | null;
   deload: boolean | null;
   complete: boolean;
+  skipped: boolean;
   week_number: number | null;
   workout_set: Array<{
     id: string;
@@ -28,6 +30,7 @@ type CompleteWorkout = {
     is_first: boolean;
     is_last: boolean;
     completed: boolean;
+    skipped: boolean
     exercises: {
       id: string;
       exercise_name: string;
@@ -61,6 +64,7 @@ type WorkoutSet = {
     is_first: boolean;
     is_last: boolean;
     completed: boolean;
+    skipped: boolean;
     exercises: {
       id: string;
       exercise_name: string;

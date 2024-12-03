@@ -3,6 +3,7 @@
 <script lang="ts">
     import WorkoutRow from './WorkoutRow.svelte';
     import { Popover } from '@skeletonlabs/skeleton-svelte';
+    import {ProgressRing} from '@skeletonlabs/skeleton-svelte';
     import Icon from '@iconify/svelte';
     import { enhance } from '$app/forms';
     let { data } = $props();
@@ -16,12 +17,12 @@
         })
     )
 
-    $inspect(allSetsCompleted);
-
     let openState: Map<string, boolean> = exerciseNames.reduce((map, key) => {
         map[key] = false;
         return map
     }, {})
+
+    let submitting = $state(false);
     
     function popoverClose(key:string) {
         openState.set(key, false);
@@ -60,7 +61,7 @@
                                     <span>Continue for the rest of the meso?</span>
                                     <input class='checkbox accent-primary-500' type='checkbox' name='continue'/>
                                 </label>
-                                <button class='btn preset-tonal-primary preset-outlined-primary-200-800' type='submit'>Submit</button>
+                                <button class='btn preset-tonal-primary preset-outlined-primary-200-800' type='submit' onclick={(e) => popoverClose(exerciseName)}>Submit</button>
                             </form>
                             {/snippet}
                         </Popover>
@@ -115,13 +116,27 @@
             <hr class="solid">
         {/each}
     </ul>
-    <form method="post" action="?/complete">
+    <form method="post" action="?/complete" use:enhance={
+        ({formElement, formData, action, cancel}) => {
+            submitting = true;
+            return async ({result, update}) => {
+                await update();
+                submitting = false;
+            };
+        }
+    }>
 		<div class="p-4">
             <!-- This currently does exactly "Mark Workout Complete" - it doesn't log any unlogged sets -->
-			{#if allSetsCompleted}
-            <button class="btn preset-tonal-primary preset-outlined-primary-200-800">Mark Workout Complete</button>
+			{#if submitting === false}
+                {#if allSetsCompleted}
+                <button class="btn preset-tonal-primary preset-outlined-primary-200-800">Mark Workout Complete</button>
+                {:else}
+                <button class="btn preset-tonal-secondary preset-outlined-warning-200-800">Mark Workout Complete?</button>
+                {/if}
             {:else}
-            <button class="btn preset-tonal-secondary preset-outlined-warning-200-800">Mark Workout Complete?</button>
+                <button class="btn preset-tonal-primary preset-outlined-primary-200-800" type="button" disabled>
+                    <ProgressRing value={null} size="size-10" meterStroke="stroke-primary-600-400" trackStroke="stroke-primary-50-950" />
+                </button>
             {/if}
 		</div>
 	</form>

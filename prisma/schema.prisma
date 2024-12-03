@@ -1,6 +1,6 @@
 generator client {
   provider        = "prisma-client-js"
-  previewFeatures = ["views", "typedSql", "relationJoins"]
+  previewFeatures = ["views", "relationJoins", "typedSql"]
 }
 
 datasource db {
@@ -11,16 +11,16 @@ datasource db {
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model exercise_comments {
-  id                                               String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  created_at                                       DateTime   @default(now()) @db.Timestamptz(6)
-  mesocycle                                        String     @db.Uuid
-  workout                                          String     @db.Uuid
-  text                                             String
-  continue                                         Boolean?
-  exercise                                         String?    @db.Uuid
-  exercises                                        exercises? @relation(fields: [exercise], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  mesocycle_info                                   mesocycle? @relation("exercise_comments_mesocycleTomesocycle", fields: [mesocycle], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  workouts                                         workouts   @relation(fields: [workout], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  id             String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  created_at     DateTime   @default(now()) @db.Timestamptz(6)
+  mesocycle      String     @db.Uuid
+  workout        String     @db.Uuid
+  text           String
+  continue       Boolean?
+  exercise       String?    @db.Uuid
+  exercises      exercises? @relation(fields: [exercise], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  mesocycle_info mesocycle  @relation("exercise_comments_mesocycleTomesocycle", fields: [mesocycle], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  workouts       workouts   @relation(fields: [workout], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
@@ -46,27 +46,27 @@ model exercises {
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model meso_day {
-  id                                             String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  created_at                                     DateTime        @default(now()) @db.Timestamptz(6)
-  meso_day_name                                  String?
-  day_of_week                                    String?
-  mesocycle                                      String?         @db.Uuid
-  mesocycle_info        mesocycle?      @relation("meso_day_mesocycleTomesocycle", fields: [mesocycle], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  id             String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  created_at     DateTime        @default(now()) @db.Timestamptz(6)
+  meso_day_name  String?
+  day_of_week    String?
+  mesocycle      String?         @db.Uuid
+  mesocycle_info mesocycle?      @relation("meso_day_mesocycleTomesocycle", fields: [mesocycle], references: [id], onDelete: Cascade, onUpdate: NoAction)
   meso_exercises meso_exercise[] @relation("meso_exercise_meso_dayTomeso_day")
-  workouts           workouts[]      @relation("workouts_meso_dayTomeso_day")
+  workouts       workouts[]      @relation("workouts_meso_dayTomeso_day")
 
   @@index([mesocycle])
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model meso_exercise {
-  id                                        String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  created_at                                DateTime   @default(now()) @db.Timestamptz(6)
-  exercise                                  String?    @db.Uuid
-  num_sets                                  Decimal?   @db.Decimal
-  meso_day                                  String?    @db.Uuid
-  sort_order                                Int?
-  exercises                                 exercises? @relation(fields: [exercise], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  id            String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  created_at    DateTime   @default(now()) @db.Timestamptz(6)
+  exercise      String?    @db.Uuid
+  num_sets      Decimal?   @db.Decimal
+  meso_day      String?    @db.Uuid
+  sort_order    Int?
+  exercises     exercises? @relation(fields: [exercise], references: [id], onDelete: Restrict, onUpdate: NoAction)
   meso_day_info meso_day?  @relation("meso_exercise_meso_dayTomeso_day", fields: [meso_day], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "public_meso_exercise_meso_day_fkey")
 
   @@index([exercise, meso_day])
@@ -74,21 +74,21 @@ model meso_exercise {
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model mesocycle {
-  id                                                               String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  created_at                                                       DateTime                @default(now()) @db.Timestamptz(6)
-  user                                                             String?                 @db.Uuid
-  meso_name                                                        String?
-  enhanced                                                         Boolean?                @default(false)
-  template                                                         String?                 @db.Uuid
-  start_date                                                       DateTime?               @db.Date
-  end_date                                                         DateTime?               @db.Date
-  current                                                          Boolean?
-  exercise_comments_exercise_comments_mesocycleTomesocycle         exercise_comments[]     @relation("exercise_comments_mesocycleTomesocycle")
-  meso_days                           meso_day[]              @relation("meso_day_mesocycleTomesocycle")
-  program_templates                                                program_templates?      @relation(fields: [template], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  users                                                            users?                  @relation(fields: [user], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  user_exercise_metrics user_exercise_metrics[] @relation("user_exercise_metrics_mesocycleTomesocycle")
-  workouts                           workouts[]              @relation("workouts_mesocycleTomesocycle")
+  id                                                       String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  created_at                                               DateTime                @default(now()) @db.Timestamptz(6)
+  user                                                     String?                 @db.Uuid
+  meso_name                                                String?
+  enhanced                                                 Boolean?                @default(false)
+  template                                                 String?                 @db.Uuid
+  start_date                                               DateTime?               @db.Date
+  end_date                                                 DateTime?               @db.Date
+  current                                                  Boolean?
+  exercise_comments_exercise_comments_mesocycleTomesocycle exercise_comments[]     @relation("exercise_comments_mesocycleTomesocycle")
+  meso_days                                                meso_day[]              @relation("meso_day_mesocycleTomesocycle")
+  program_templates                                        program_templates?      @relation(fields: [template], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users                                                    users?                  @relation(fields: [user], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  user_exercise_metrics                                    user_exercise_metrics[] @relation("user_exercise_metrics_mesocycleTomesocycle")
+  workouts                                                 workouts[]              @relation("workouts_mesocycleTomesocycle")
 
   @@index([template])
 }
@@ -109,11 +109,11 @@ model program_templates {
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model template_day {
-  created_at                                                             DateTime                @default(now()) @db.Timestamptz(6)
-  template_day_name                                                      String?
-  template                                                               String?                 @db.Uuid
-  id                                                                     String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  program_templates                                                      program_templates?      @relation(fields: [template], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  created_at             DateTime                @default(now()) @db.Timestamptz(6)
+  template_day_name      String?
+  template               String?                 @db.Uuid
+  id                     String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  program_templates      program_templates?      @relation(fields: [template], references: [id], onDelete: Cascade, onUpdate: NoAction)
   template_muscle_groups template_muscle_group[] @relation("template_muscle_group_template_dayTotemplate_day")
 
   @@index([template])
@@ -121,11 +121,11 @@ model template_day {
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model template_muscle_group {
-  id                                                            BigInt        @id @unique @default(autoincrement())
-  created_at                                                    DateTime      @default(now()) @db.Timestamptz(6)
-  muscle_group                                                  String?
-  sets                                                          Decimal?      @db.Decimal
-  template_day                                                  String?       @db.Uuid
+  id                BigInt        @id @unique @default(autoincrement())
+  created_at        DateTime      @default(now()) @db.Timestamptz(6)
+  muscle_group      String?
+  sets              Decimal?      @db.Decimal
+  template_day      String?       @db.Uuid
   template_day_info template_day? @relation("template_muscle_group_template_dayTotemplate_day", fields: [template_day], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([muscle_group, template_day])
@@ -133,16 +133,16 @@ model template_muscle_group {
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model user_exercise_metrics {
-  created_at                                           DateTime  @default(now()) @db.Timestamptz(6)
-  mesocycle                                            String    @db.Uuid
-  exercise                                             String    @db.Uuid
-  metric_name                                          String
-  value                                                Float?    @db.Real
-  workout                                              String    @db.Uuid
-  id                                                   String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  exercises                                            exercises @relation(fields: [exercise], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  mesocycles mesocycle @relation("user_exercise_metrics_mesocycleTomesocycle", fields: [mesocycle], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  workouts                                             workouts  @relation(fields: [workout], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  created_at  DateTime  @default(now()) @db.Timestamptz(6)
+  mesocycle   String    @db.Uuid
+  exercise    String    @db.Uuid
+  metric_name String
+  value       Float?    @db.Real
+  workout     String    @db.Uuid
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  exercises   exercises @relation(fields: [exercise], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  mesocycles  mesocycle @relation("user_exercise_metrics_mesocycleTomesocycle", fields: [mesocycle], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  workouts    workouts  @relation(fields: [workout], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
@@ -201,30 +201,32 @@ model workout_set {
   is_last         Boolean    @default(false)
   completed       Boolean?   @default(false)
   set_performance Int        @default(0) @db.SmallInt
+  skipped         Boolean    @default(false)
   exercises       exercises? @relation(fields: [exercise], references: [id], onDelete: Restrict)
   workouts        workouts?  @relation(fields: [workout], references: [id], onDelete: Cascade)
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model workouts {
-  created_at                              DateTime                @default(now()) @db.Timestamptz(6)
-  user                                    String?                 @db.Uuid
-  mesocycle                               String?                 @db.Uuid
-  day_name                                String?
-  date                                    DateTime?               @db.Timestamptz(6)
-  id                                      String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  complete                                Boolean?                @default(false)
-  meso_day                                String?                 @db.Uuid
-  target_rir                              Int?                    @db.SmallInt
-  deload                                  Boolean?                @default(false)
-  week_number                             Int?                    @default(0) @db.SmallInt
-  exercise_comments                       exercise_comments[]
-  user_exercise_metrics                   user_exercise_metrics[]
-  workout_feedback                        workout_feedback[]
-  workout_set                             workout_set[]
-  meso_day_workouts_meso_dayTomeso_day    meso_day?               @relation("workouts_meso_dayTomeso_day", fields: [meso_day], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  mesocycle_workouts_mesocycleTomesocycle mesocycle?              @relation("workouts_mesocycleTomesocycle", fields: [mesocycle], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  users                                   users?                  @relation(fields: [user], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  created_at            DateTime                @default(now()) @db.Timestamptz(6)
+  user                  String?                 @db.Uuid
+  mesocycle             String?                 @db.Uuid
+  day_name              String?
+  date                  DateTime?               @db.Timestamptz(6)
+  id                    String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  complete              Boolean?                @default(false)
+  meso_day              String?                 @db.Uuid
+  target_rir            Int?                    @db.SmallInt
+  deload                Boolean?                @default(false)
+  week_number           Int?                    @default(0) @db.SmallInt
+  skipped               Boolean                 @default(false)
+  exercise_comments     exercise_comments[]
+  user_exercise_metrics user_exercise_metrics[]
+  workout_feedback      workout_feedback[]
+  workout_set           workout_set[]
+  meso_days             meso_day?               @relation("workouts_meso_dayTomeso_day", fields: [meso_day], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  mesocycle_info        mesocycle?              @relation("workouts_mesocycleTomesocycle", fields: [mesocycle], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users                 users?                  @relation(fields: [user], references: [id], onDelete: Cascade, onUpdate: NoAction)
 }
 
 /// The underlying view does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.

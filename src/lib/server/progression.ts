@@ -1,7 +1,5 @@
 import { supabase } from "$lib/supabaseClient";
 import prisma from '$lib/server/prisma';
-import { getUserMuscleGroupMetrics } from '@prisma/client/sql';
-import { checkWorkoutData } from "./workout";
 import {
   getNextWorkout,
   getPreviousWorkout,
@@ -18,7 +16,7 @@ import {
  */
 export function modifySetNumber(
   nextWorkoutSets: WorkoutSet[],
-  exercise: string,
+  exercise:string,
   numSets: number,
 ): WorkoutSet[] {
   if (nextWorkoutSets.length === 0) {
@@ -30,7 +28,7 @@ export function modifySetNumber(
   const maxSet = Math.max(...nextWorkoutSets.map(set => set.set_num));
   const workoutId = nextWorkoutSets[0].workout;
   
-  if (numSets > 0) {
+  if (numSets >= 0) {
     // Check if any existing set is marked as last
     const hasLastSet = nextWorkoutSets.some(set => set.is_last);
     
@@ -53,7 +51,7 @@ export function modifySetNumber(
         reps: null, // Initialize reps as null
         weight: null, // Initialize weight as null
         completed: false, // Initialize as not completed
-        exercises: nextWorkoutSets[nextWorkoutSets.length - 1].exercises
+        exercises: nextWorkoutSets.filter(set => set.exercise === exercise)[0].exercises
       });
     }
   } else {
@@ -104,7 +102,9 @@ export async function shouldDoProgression(
 
     const previousWorkout: CompleteWorkout | null = await getPreviousWorkout(
       workout,
-      muscleGroup);
+      muscleGroup,
+      nextWorkout.meso_day
+    );
 
     const performanceData = await prisma.$queryRawUnsafe(
       `select * from user_muscle_group_metrics where workout = '${workout.id}' and muscle_group = '${muscleGroup}' and metric_name = 'performance_score'`
@@ -116,7 +116,7 @@ export async function shouldDoProgression(
     }
 
     const hasSoreness = previousWorkout.workout_feedback.some(
-        feedback => feedback.muscle_group === muscleGroup && feedback.feedback_type == 'mg_soreness'
+        feedback => feedback.muscle_group === muscleGroup && feedback.question_type == 'mg_soreness'
       );
     const dataIsComplete: boolean = performanceData && hasSoreness;
     
@@ -144,60 +144,6 @@ export async function shouldDoProgression(
   return progressMuscleGroups;
 }
 
-/**
- *
- * @param workoutId The workout id for the workout from which to get the rep values
- * @param exercise The exercise to get the rep values for
- */
-export async function getWorkoutSets(
-  workoutId: string,
-  exercise: string,
-): Promise<
-  {
-    id: string;
-    workout: string;
-    exercise: string;
-    set_num: number;
-    reps: number;
-    weight: number;
-  }[]
-> {
-  const { data: workoutData } = await supabase
-    .from("workout_set")
-    .select(`*`)
-    .eq("workout", workoutId)
-    .eq("exercise", exercise)
-    .order("set_num", { ascending: true });
-
-  if (!workoutData) {
-    return [];
-  }
-
-  return workoutData;
-}
-
-/**
- *
- * @param exercise The exercise to get the weight step for
- */
-export async function getWeightStep(exercise: string): Promise<number> {
-  const { data: exerciseData } = await supabase
-    .from("exercises")
-    .select(
-      `
-        id,
-        weight_step
-        `,
-    )
-    .eq("id", exercise)
-    .single();
-
-  if (!exerciseData) {
-    return 0;
-  }
-
-  return exerciseData.weight_step;
-}
 
 /**
  *
@@ -320,4 +266,111 @@ export async function getSorenessAndPerformance(
     .single();
 
   return { performance, soreness };
+}
+
+/**
+ * Handle non-progression cases for workouts, such as deload weeks or when progression is not needed.
+ * This function modifies the next workout's sets based on whether it's a deload week and the day's position in the week.
+ */
+export async function nonProgression(workout: CompleteWorkout, mesocycle: ProgressionMesocycle, muscleGroup: string, skipped: boolean = false) {
+  let currentWeek = workout.week_number;
+  if (currentWeek === 0 && !skipped) {
+    return;
+  }
+  const nextWorkout: CompleteWorkout = await getNextWorkout(workout, muscleGroup);
+  const previousWorkout: CompleteWorkout = await getPreviousWorkout(workout, muscleGroup, nextWorkout.meso_day);
+  if (!nextWorkout || !previousWorkout) {
+    return;
+  }
+  const isDeload = nextWorkout.deload;
+  const mesoDay = nextWorkout.meso_day;
+  
+  const dayOfWeek = mesocycle.meso_days.find(
+    (day) => day.id == mesoDay
+  ).day_of_week;
+  const mesoDays = mesocycle.meso_days;
+  const countOfDays = mesoDays.length;
+  const firstDay = mesoDays.reduce((a, b) => {
+    if (a.day_of_week == 0) {
+      a.day_of_week = 7;
+    }
+    if (b.day_of_week == 0) {
+      b.day_of_week = 7;
+    }
+    return a.day_of_week < b.day_of_week ? a : b;
+  });
+  const midpoint = Number(firstDay.day_of_week) + Math.ceil(countOfDays / 2);
+
+  // Get the exercises for the muscle group from the next workout
+  const exerciseSets = new Map();
+  for (const set of nextWorkout.workout_set) {
+    if (set.exercises.muscle_group === muscleGroup) {
+      if (!exerciseSets.has(set.exercises.id)) {
+        exerciseSets.set(set.exercises.id, 1);
+      } else {
+        exerciseSets.set(
+          set.exercises.id,
+          exerciseSets.get(set.exercises.id) + 1
+        );
+      }
+    }
+  }
+
+  let setsToAdd = [];
+  if (!isDeload) {
+    for (const [key] of exerciseSets) {
+      let workoutSets = nextWorkout.workout_set.filter(
+        (set: any) => set.exercises.id == key
+      );
+      let previousWorkoutSets = previousWorkout.workout_set.filter(
+        (set: any) => set.exercises.id == key
+      );
+      workoutSets = modifyRepNumber(workoutSets, previousWorkoutSets, 0);
+      workoutSets = modifyLoad(workoutSets, previousWorkoutSets, 0);
+      setsToAdd = setsToAdd.concat(workoutSets);
+    }
+  } else {
+    for (const [key] of exerciseSets) {
+      let workoutSets = nextWorkout.workout_set.filter(
+        (set: any) => set.exercises.id == key
+      );
+      let previousWorkoutSets = previousWorkout.workout_set.filter(
+        (set: any) => set.exercises.id == key
+      );
+      if (dayOfWeek < midpoint) {
+        workoutSets = modifyRepNumber(workoutSets, previousWorkoutSets, 0.5);
+        workoutSets = modifyLoad(workoutSets, previousWorkoutSets, 0.9);
+      } else {
+        workoutSets = modifyRepNumber(workoutSets, previousWorkoutSets, 0.5);
+        workoutSets = modifyLoad(workoutSets, previousWorkoutSets, 0.5);
+      }
+      setsToAdd = setsToAdd.concat(workoutSets);
+    }
+  }
+
+  // Upsert the sets to the next workout
+  await Promise.all(
+    setsToAdd.map(async (set: any) => {
+      return await prisma.workout_set.upsert({
+        where: {
+          id: set.id,
+        },
+        update: {
+          target_reps: set.target_reps,
+          target_weight: set.target_weight,
+          is_last: set.is_last,
+        },
+        create: {
+          workout: set.workout,
+          exercise: set.exercise,
+          set_num: set.set_num,
+          target_reps: set.target_reps,
+          target_weight: set.target_weight,
+          is_last: set.is_last,
+          completed: false,
+          set_performance: 0
+        },
+      });
+    })
+  );
 }

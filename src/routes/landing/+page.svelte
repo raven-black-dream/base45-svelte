@@ -4,14 +4,21 @@
 <!-- TODO: events aren't changing when the month changes -->
 
 <script lang="ts">
-import { Progress } from "@skeletonlabs/skeleton-svelte";
+import { Progress, ProgressRing } from "@skeletonlabs/skeleton-svelte";
+import { SvelteMap } from "svelte/reactivity";
 import WeeklyGrid from "$lib/components/WeeklyGrid.svelte";
 import WorkoutCard from "$lib/components/WorkoutCard.svelte";
 import Indicator from "$lib/components/Indicator.svelte";
+import { enhance } from '$app/forms';
 
   let { data } = $props();
 
 let weeklyProgress = $derived(data.numComplete/data.numberOfDays * 100);
+let workoutLoading = $state(data.nextWorkouts.reduce((map, workout) => {
+        map[workout.id] = false;
+        return map;
+    }, {} as Record<string, boolean>));
+$inspect(workoutLoading)
 
 
 </script>
@@ -39,7 +46,7 @@ let weeklyProgress = $derived(data.numComplete/data.numberOfDays * 100);
     <header class='card-header'>Weekly Progress - Week {data.currentWeek}</header>
     <section class='p-4 justify-center space-y-4'>
       <p class="text-xl font-bold">{data.numComplete}/{data.numberOfDays} Workouts Completed this Week</p>
-      <Progress value={weeklyProgress} max={100} height="h-4" meterBg="bg-primary-500" trackBg='bg-surface-900'/>
+      <Progress value={weeklyProgress} max={100} height="h-4" meterBg="bg-primary-200-800" trackBg='bg-surface-900'/>
     </section>
 	</div>
 
@@ -61,7 +68,27 @@ let weeklyProgress = $derived(data.numComplete/data.numberOfDays * 100);
     <section class='p-4'>
       <div class="snap-x scroll-px-4 snap-mandatory scroll-smooth flex gap-4 overflow-x-auto px-4 py-10">
         {#each data.nextWorkouts as workout, index}
-          <WorkoutCard {workout} />
+          <form method="post" action="?/skipWorkout" id='workout_{workout.id}' use:enhance={({ formElement, formData, action, cancel }) => {
+            // Optional: Add custom form submission handling
+            workoutLoading[workout.id] = true;
+            return async ({ result, update }) => {
+              // Optional: Handle the result after form submission
+              await update();
+              workoutLoading[workout.id] = false;
+            };
+          }}>
+            <input type="hidden" name="workoutId" value={workout.id} />
+            {#if workoutLoading[workout.id]}
+            <div class="card preset-filled-surface-100-900 border-[1px] border-surface-200-800 w-full max-w-md p-4 text-center">
+              <h2 class="text-lg font-semibold mb-2">{workout.day_name}</h2>
+              <ProgressRing value={null} size="size-14" meterStroke="stroke-tertiary-600-400" trackStroke="stroke-tertiary-50-950" />
+            </div>
+              
+            {:else}
+            <WorkoutCard {workout} />
+            {/if}
+          </form>
+          
         {/each}
       </div>
 
