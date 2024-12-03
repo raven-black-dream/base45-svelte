@@ -51,14 +51,14 @@
         </label>
         <div class='p-4 space-y-4'>
             {#each days as day, index (index)}
-            <DayForm bind:day on:remove={() => removeDay(index)}/>
+            <DayForm bind:day={days[index]} on:remove={() => removeDay(index)}/>
             {/each}
 
-            <button class='btn-icon variant-ghost-primary' type='button' onclick={addDay}>
+            <button class='btn-icon preset-tonal-primary preset-outlined-primary-200-800' type='button' onclick={addDay}>
             <Icon icon="fa6-solid:plus" />
             </button>
         </div>
         <input type="hidden" name='days' value={JSON.stringify(days)}/> 
-        <button class='btn variant-ghost-primary' type='submit'>Create Program Template</button>
+        <button class='btn preset-tonal-primary' type='submit'>Create Program Template</button>
     </form>
 </div>

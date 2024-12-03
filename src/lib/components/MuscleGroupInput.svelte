@@ -25,7 +25,7 @@
 
 <input type='number' class='input' placeholder='Number of sets' bind:value={muscleGroup.numSets}/>  
 
-<button class='btn-icon variant-ghost-secondary' type='button' onclick={() => dispatch('remove')}><Icon icon="fa6-solid:minus" /></button>
+<button class='btn-icon preset-tonal-secondary' type='button' onclick={() => dispatch('remove')}><Icon icon="fa6-solid:minus" /></button>
 
 </div>
 
