@@ -51,7 +51,7 @@
         </label>
         <div class='p-4 space-y-4'>
             {#each days as day, index (index)}
-            <DayForm bind:day on:remove={() => removeDay(index)}/>
+            <DayForm bind:day={days[index]} on:remove={() => removeDay(index)}/>
             {/each}
 
             <button class='btn-icon variant-ghost-primary' type='button' onclick={addDay}>
