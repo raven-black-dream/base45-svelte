@@ -694,8 +694,9 @@ async function progression(workout: CompleteWorkout, mesocycle: ProgressionMesoc
   console.log(muscleGroup);
 
   let nextWorkout: CompleteWorkout = await getNextWorkout(workout, muscleGroup);
-  let workoutSets = nextWorkout.workout_set.filter(set => set.exercises.muscle_group === muscleGroup);
   let previousWorkout: CompleteWorkout = await getPreviousWorkout(workout, muscleGroup);
+  const previousWorkoutMesoDay = await getPreviousWorkout(workout, muscleGroup, nextWorkout.meso_day);
+  let workoutSets = previousWorkoutMesoDay.workout_set.filter(set => set.exercises.muscle_group === muscleGroup);
   // Get the exercises for the muscleGroup next workout
   const exerciseSets = new Map();
   for (const set of workoutSets) {
@@ -714,8 +715,7 @@ async function progression(workout: CompleteWorkout, mesocycle: ProgressionMesoc
     )
     let soreness = previousWorkout.workout_feedback.find(entry => entry.question_type === 'mg_soreness' && entry.muscle_group === muscleGroup)
     performance = performance[0].average;
-    soreness = soreness.value;
-  
+    soreness = soreness.value
 
   if (currentWeek === 0) {
     // If the workout is in the first week of the mesocycle, use the RP MEV Estimator to determine the number of sets to add or remove from the next week's workout.
@@ -731,7 +731,7 @@ async function progression(workout: CompleteWorkout, mesocycle: ProgressionMesoc
     workoutSets = await loadAndRepProgression(
       exerciseSets,
       workout,
-      nextWorkout.meso_day,
+      previousWorkoutMesoDay,
       muscleGroup,
       performance,
       soreness,
@@ -748,7 +748,7 @@ async function progression(workout: CompleteWorkout, mesocycle: ProgressionMesoc
     workoutSets = await loadAndRepProgression(
       exerciseSets,
       workout,
-      nextWorkout.meso_day,
+      previousWorkoutMesoDay,
       muscleGroup,
       performance,
       soreness,
@@ -786,28 +786,32 @@ function setProgression(
   workoutSets: WorkoutSet[],
   sets: number,
 ) {
+  let newSets: WorkoutSet[] = []
   if (exerciseSets.size == 1) {
     const [key] = exerciseSets.entries().next().value;
-    workoutSets = modifySetNumber(workoutSets, key, sets);
+    newSets = modifySetNumber(workoutSets, key, sets);
   } else {
     for (const [key, value] of exerciseSets) {
+      let relevantSets = workoutSets.filter(set => set.exercise == key);
       if (Math.abs(sets) < 2 && value < 5) {
-        workoutSets = modifySetNumber(workoutSets, key, sets);
+        let temp = modifySetNumber(relevantSets, key, sets);
+        newSets.push(...temp);
+        newSets.push(...workoutSets.filter(set => set.exercise != key));
         break;
       } else {
-        workoutSets = modifySetNumber(workoutSets, key, 1);
-        
+        relevantSets = modifySetNumber(relevantSets, key, 1);
+        newSets.push(...relevantSets);
       }
       sets += sets > 0 ? -1 : 1;
     }
   }
-  return workoutSets;
+  return newSets;
 }
 
 async function loadAndRepProgression(
   exerciseSets: Map<string, number>,
   workout: CompleteWorkout,
-  nextWorkoutMesoDay: string,
+  previousWorkoutMesoDay: CompleteWorkout,
   muscleGroup: string,
   performance: number,
   soreness: number,
@@ -848,13 +852,7 @@ async function loadAndRepProgression(
           );
         }
       }
-      // Before running each of these need to get the previous workout id for the same meso day.
-        let previousWorkoutMesoDayId = await getPreviousWorkout(
-          workout,
-          muscleGroup,
-          nextWorkoutMesoDay,
-        );
-        let previousRelevantSets: WorkoutSet[] = previousWorkoutMesoDayId.workout_set.filter(set => set.exercises.id == key);
+      let previousRelevantSets: WorkoutSet[] = previousWorkoutMesoDay.workout_set.filter(set => set.exercises.id == key);
       if (repsToAdd !== null) {
         let temp = modifyRepNumber(
           relevantSets,
