@@ -25,7 +25,7 @@ export const load = async ({ locals: { supabase }, params }) => {
         select: {
           id: true,
           template_day_name: true,
-          template_muscle_group_template_muscle_group_template_dayTotemplate_day:
+          template_muscle_groups:
             {
               select: {
                 id: true,
