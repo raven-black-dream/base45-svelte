@@ -21,6 +21,7 @@ export const load = async ({ locals: { supabase } }) => {
   }
 
   let { firstDay, lastDay } = getCurrentWeek();
+  
 
   const mesocycle = await prisma.mesocycle.findFirst({
     where: {
@@ -37,7 +38,8 @@ export const load = async ({ locals: { supabase } }) => {
           date: true,
           complete: true,
           skipped: true,
-          deload: true
+          deload: true,
+          week_number: true
         },
         orderBy: {
           date: "asc",
@@ -54,6 +56,7 @@ export const load = async ({ locals: { supabase } }) => {
   const workouts = mesocycle.workouts;
 
   const mesoDay = mesocycle.meso_days;
+  const currentWeek = calculateWeekNumber(mesocycle.start_date, new Date(Date.now()));
 
   // turn a mesocycle into a list of calendar calendar_items
   // ({ title: string; className: string; date: Date; len: number;
@@ -68,26 +71,13 @@ export const load = async ({ locals: { supabase } }) => {
 
   let numComplete = 0;
   workouts.forEach((workout) => {
-    const workoutDate = new Date(workout.date);
-    let firstDayDate = new Date(firstDay);
-    let lastDayDate = new Date(lastDay);
     if (
       workout.complete &&
-      workoutDate >= firstDayDate &&
-      workoutDate <= lastDayDate
+      workout.week_number == currentWeek - 1
     ) {
       numComplete++;
     }
   });
-
-  const lastCompletedWorkout = workouts
-    .filter((workout) => workout.complete)
-    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-    .pop();
-
-  const ref_date = lastCompletedWorkout?.date ?? new Date(Date.now());
-
-  const currentWeek = calculateWeekNumber(mesocycle.start_date, ref_date);
 
   const metricData = await prisma.user_exercise_metrics.findMany({
     where: {
