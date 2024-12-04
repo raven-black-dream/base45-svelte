@@ -32,7 +32,7 @@
 	<input class="input" type="number" value=5 name="mesocycle_length" />
     {#each data.program.template_day as day}
         <div class="py-4">
-            <div class="card preset-filled-surface-200-800 preset-outlined-primary-100-900">
+            <div class="card preset-tonal-primary preset-outlined-primary-200-800">
                 <header class="card-header">{day.template_day_name}</header>
                 <section class="p-4">        
                     Day of the Week
@@ -45,7 +45,7 @@
                         <option value="6">Saturday</option>
                         <option value="0">Sunday</option>
                     </select>
-                    <SortableList list={day.template_muscle_group_template_muscle_group_template_dayTotemplate_day} on:sort={event => sortExercises(event, day.id)}  >
+                    <SortableList list={day.template_muscle_groups} on:sort={event => sortExercises(event, day.id)}  >
                         {#snippet children({ item, index })}
                                                 {item.muscle_group}
                             <select class="select" name="{day.id}_{item.id}">
