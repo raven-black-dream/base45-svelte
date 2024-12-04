@@ -7,7 +7,7 @@ import { nonProgression } from "$lib/server/progression";
 interface MetricData {
   metric_name: string;
   value: number;
-  workouts: { date: Date };
+  workouts: { weekNumber: Number, date: Date };
   exercises: { exercise_name: string; muscle_group: string };
 }
 
@@ -104,7 +104,8 @@ export const load = async ({ locals: { supabase } }) => {
       },
       workouts: {
         select: {
-          date: true,
+          week_number: true,
+          date: true
         },
       },
     },
@@ -125,28 +126,20 @@ export const load = async ({ locals: { supabase } }) => {
     currentTotalLoad = 0;
     previousTotalLoad = 0;
   }
-  const { currentWeekStart, lastWeekStart, lastWeekEnd } =
-    calculateDateRanges(firstDay);
   const caluclatedMetrics = {
     fatigue: calculateMetric(
       metricData,
       "fatigue_score",
-      currentWeekStart,
-      lastWeekStart,
-      lastWeekEnd,
+      currentWeek - 1
     ),
     stimulus: calculateMetric(
       metricData,
       "raw_stimulus_magnitude",
-      currentWeekStart,
-      lastWeekStart,
-      lastWeekEnd,
+      currentWeek - 1
     ),
     totalLoad: calculateTotalLoad(
       metricData,
-      currentWeekStart,
-      lastWeekStart,
-      lastWeekEnd,
+      currentWeek - 1
     ),
   };
 
@@ -226,21 +219,10 @@ function calculateWeekNumber(start_date: Date, reference_date: Date) {
   return weeks;
 }
 
-function calculateDateRanges(firstDay: Date) {
-  const currentWeekStart = firstDay;
-  const currentDate = new Date();
-  const lastWeekStart = new Date(firstDay.getTime() - 7 * 24 * 60 * 60 * 1000);
-  const lastWeekEnd = new Date(currentDate.getTime() - 7 * 24 * 60 * 60 * 1000);
-
-  return { currentWeekStart, lastWeekStart, lastWeekEnd };
-}
-
 function calculateMetric(
   metricData: MetricData[],
   metricName: string,
-  currentWeekStart: Date,
-  lastWeekStart: Date,
-  lastWeekEnd: Date,
+  week: number
 ) {
   const relevantMetrics = metricData
     .filter((metric) => metric.metric_name === metricName)
@@ -248,13 +230,11 @@ function calculateMetric(
 
   const current = calculateAverageForDateRange(
     relevantMetrics,
-    currentWeekStart,
-    new Date(),
+    week
   );
   const previous = calculateAverageForDateRange(
     relevantMetrics,
-    lastWeekStart,
-    lastWeekEnd,
+    week === 0 ? 0 : week - 1
   );
 
   return { current, previous };
@@ -262,9 +242,7 @@ function calculateMetric(
 
 function calculateTotalLoad(
   metricData: MetricData[],
-  currentWeekStart: Date,
-  lastWeekStart: Date,
-  lastWeekEnd: Date,
+  week: number
 ) {
   const totalLoads = metricData.filter(
     (metric) => metric.metric_name === "total_weight",
@@ -272,13 +250,11 @@ function calculateTotalLoad(
 
   const current = calculateSumForDateRange(
     totalLoads,
-    currentWeekStart,
-    new Date(),
+    week
   );
   const previous = calculateSumForDateRange(
     totalLoads,
-    lastWeekStart,
-    lastWeekEnd,
+    week === 0 ? 0 : week - 1
   );
 
   return { current, previous };
@@ -286,10 +262,9 @@ function calculateTotalLoad(
 
 function calculateAverageForDateRange(
   metrics: MetricData[],
-  startDate: Date,
-  endDate: Date,
+  weekNumber: Number,
 ): number {
-  const filteredMetrics = filterMetricsByDateRange(metrics, startDate, endDate);
+  const filteredMetrics = filterMetricsByDateRange(metrics, weekNumber);
   const n = filteredMetrics.length;
   return filteredMetrics.length > 0
     ? filteredMetrics.reduce((sum, metric) => sum + metric.value, 0) / n
@@ -298,22 +273,18 @@ function calculateAverageForDateRange(
 
 function calculateSumForDateRange(
   metrics: MetricData[],
-  startDate: Date,
-  endDate: Date,
+  weekNumber: Number
 ): number {
-  const filteredMetrics = filterMetricsByDateRange(metrics, startDate, endDate);
+  const filteredMetrics = filterMetricsByDateRange(metrics, weekNumber);
   return filteredMetrics.reduce((sum, metric) => sum + metric.value, 0);
 }
 
 function filterMetricsByDateRange(
   metrics: MetricData[],
-  startDate: Date,
-  endDate: Date,
+  weekNumber: Number
 ): MetricData[] {
   return metrics.filter(
-    (metric) =>
-      metric.workouts?.date?.getTime() >= startDate.getTime() &&
-      metric.workouts?.date?.getTime() <= endDate.getTime(),
+    (metric) => metric.workouts?.week_number == weekNumber,
   );
 }
 
