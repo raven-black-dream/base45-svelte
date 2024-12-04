@@ -6,10 +6,10 @@ import { defineConfig } from "vite";
 export default defineConfig({
   plugins: [
     sentrySvelteKit({
-      sourceMapsUploadOptions: {
-        org: "evan-harley",
-        project: "base45-svelte",
-      },
+      //sourceMapsUploadOptions: {
+      //  org: "evan-harley",
+      //  project: "base45-svelte",
+      //},
     }),
     sveltekit(),
     purgeCss(),
