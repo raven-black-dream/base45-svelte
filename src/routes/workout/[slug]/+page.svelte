@@ -61,7 +61,7 @@
                                     <span>Continue for the rest of the meso?</span>
                                     <input class='checkbox accent-primary-500' type='checkbox' name='continue'/>
                                 </label>
-                                <button class='btn preset-tonal-primary preset-outlined-primary-200-800' type='submit' onclick={(e) => popoverClose(exerciseName)}>Submit</button>
+                                <button class='btn preset-tonal-primary preset-outlined-primary-200-800' type='submit' onclick={() => popoverClose(exerciseName)}>Submit</button>
                             </form>
                             {/snippet}
                         </Popover>
