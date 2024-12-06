@@ -79,6 +79,7 @@ async function loadWorkoutData(workoutId: string) {
     where: { id: workoutId },
     select: {
       mesocycle: true,
+      target_rir: true,
       meso_days: {
         select:{
           id: true,
