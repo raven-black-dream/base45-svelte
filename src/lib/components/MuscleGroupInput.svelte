@@ -10,7 +10,9 @@
 
   <select class='select'  bind:value={muscleGroup.muscleGroup}>
     <option value=''>Select a muscle group</option>
+    <option value='Abductors'>Abductors</option>
     <option value='Abs'>Abs</option>
+    <option value='Adductors'>Adductors</option>
     <option value='Back'>Back</option>
     <option value='Biceps'>Biceps</option>
     <option value='Calves'>Calves</option>
