@@ -20,8 +20,8 @@
             <label class='label'>
                 <span>Muscle Group</span>
                 <select class='select' name='muscleGroup' required>
-                    <option value='Abs'>Abs</option>
                     <option value='Abductors'>Abductors</option>
+                    <option value='Abs'>Abs</option>
                     <option value='Adductors'>Adductors</option>
                     <option value='Back'>Back</option>
                     <option value='Biceps'>Biceps</option>
