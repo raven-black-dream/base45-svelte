@@ -1,8 +1,8 @@
 {
   "name": "Base45 Performance",
   "description": "Workout Application which handles the progression of hypertrophy training",
-  "theme_color": "#FF3E00",
-  "background_color": "#FF3E00",
+  "theme_color": "#092d0a",
+  "background_color": "#092d0a",
   "display": "standalone",
   "start_url": "/",
   "icons": [
