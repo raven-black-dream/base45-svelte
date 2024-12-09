@@ -697,7 +697,7 @@ async function progression(workout: CompleteWorkout, mesocycle: ProgressionMesoc
   let nextWorkout: CompleteWorkout = await getNextWorkout(workout, muscleGroup);
   let previousWorkout: CompleteWorkout = await getPreviousWorkout(workout, muscleGroup);
   const previousWorkoutMesoDay = await getPreviousWorkout(workout, muscleGroup, nextWorkout.meso_day);
-  let workoutSets = previousWorkoutMesoDay.workout_set.filter(set => set.exercises.muscle_group === muscleGroup);
+  let workoutSets = nextWorkout.workout_set.filter(set => set.exercises.muscle_group === muscleGroup);
   // Get the exercises for the muscleGroup next workout
   const exerciseSets = new Map();
   for (const set of workoutSets) {
@@ -874,5 +874,5 @@ async function loadAndRepProgression(
       }
     }
   }
-  return nextWorkoutSets;
+  return setsToAdd;
 }
