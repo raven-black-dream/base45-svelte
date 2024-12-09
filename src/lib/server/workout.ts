@@ -110,6 +110,9 @@ export async function getPreviousWorkout(
         date: {
           lt: today
         },
+        id: {
+          not: workout.id
+        },
         mesocycle: workout.mesocycle,
         meso_day: mesoDay,
         complete: true,
