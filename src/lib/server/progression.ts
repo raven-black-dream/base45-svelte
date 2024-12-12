@@ -32,10 +32,12 @@ export function modifySetNumber(
     // Check if any existing set is marked as last
     const hasLastSet = nextWorkoutSets.some(set => set.is_last);
     
+    if (numSets > 0) {
     // First, ensure no sets are marked as last
     nextWorkoutSets.forEach(set => {
       set.is_last = false;
     });
+  }
 
     // Add new sets
     for (let i = 0; i < numSets; i++) {
@@ -51,7 +53,8 @@ export function modifySetNumber(
         reps: null, // Initialize reps as null
         weight: null, // Initialize weight as null
         completed: false, // Initialize as not completed
-        exercises: nextWorkoutSets.filter(set => set.exercise === exercise)[0].exercises
+        exercises: nextWorkoutSets.filter(set => set.exercise === exercise)[0].exercises,
+        skipped: false
       });
     }
   } else {
