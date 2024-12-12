@@ -14,11 +14,12 @@ import { enhance } from '$app/forms';
   let { data } = $props();
 
 let weeklyProgress = $derived(data.numComplete/data.numberOfDays * 100);
-let workoutLoading = $state(data.nextWorkouts.reduce((map, workout) => {
-        map[workout.id] = false;
-        return map;
-    }, {} as Record<string, boolean>));
-$inspect(workoutLoading)
+if (data.nextWorkouts) {
+  let workoutLoading = $state(data.nextWorkouts.reduce((map, workout) => {
+          map[workout.id] = false;
+          return map;
+      }, {} as Record<string, boolean>));
+    }
 
 
 </script>

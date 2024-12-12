@@ -5,6 +5,7 @@
 	import { onMount } from 'svelte';
 	import { computePosition, autoUpdate, offset, shift, flip, arrow } from '@floating-ui/dom';
 	import  Icon  from '@iconify/svelte';
+	import { goto } from '$app/navigation';
 
 	let { data, children } = $props();
 	let { supabase, session } = $derived(data)
@@ -28,6 +29,11 @@
 		infoModalState = false;
 	}
 
+	async function handleLogout() {
+		await supabase.auth.signOut();
+		drawerClose();
+		goto('/');
+	}
 </script>
 <header class='sticky top-0 z-10 flex justify-between items-center preset-filled-surface-50-950'>
 	{#if session}
@@ -42,8 +48,8 @@
 		>
 		{#snippet trigger()}<p class='uppercase font-extrabold text-lg'>Base45</p>{/snippet}
 		{#snippet content()}
-			<nav class="list-nav">
-				<ul>
+			<nav class="list-nav h-full flex flex-col">
+				<ul class="flex-grow">
 					<li>
 						<a class="btn preset-tonal-primary preset-outlined-primary-200-800" href="/account/view" onclick={drawerClose}>Account</a>
 					</li>
@@ -63,7 +69,12 @@
 						<a class="btn preset-tonal-primary preset-outlined-primary-200-800" href="/account/workout-history" onclick={drawerClose}>Workout History</a>
 					</li>
 				</ul>
-
+				<div class="mt-auto pb-4">
+					<button class="btn variant-filled-error w-full" onclick={handleLogout}>
+						<Icon icon="fa6-solid:right-from-bracket" class="mr-2" />
+						Log Out
+					</button>
+				</div>
 			</nav>
 		{/snippet}
 	</Modal>

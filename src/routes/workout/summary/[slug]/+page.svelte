@@ -1,6 +1,6 @@
 <script lang="ts">
 import type { PageData } from './$types';
-import { Rating } from '@skeletonlabs/skeleton-svelte';
+import { Accordion, Rating } from '@skeletonlabs/skeleton-svelte';
 import Icon from '@iconify/svelte';
     
     interface Props {
@@ -56,7 +56,7 @@ import Icon from '@iconify/svelte';
                             {#each Object.entries(datum) as [key, value]}
                             <li>
                             <p>{key}:</p> 
-                            <Rating value={value + 1} max=4>
+                            <Rating value={value + 1} count={4} allowHalf>
                                 {#snippet empty()}
                                                                                         <Icon icon="fa6-regular:star" height='1.5em' />
                                                                                     {/snippet}
