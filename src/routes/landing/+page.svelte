@@ -15,7 +15,6 @@ import { enhance } from '$app/forms';
 
 let weeklyProgress = $derived(data.numComplete/data.numberOfDays * 100);
 let workoutLoading = $state(setWorkoutLoading())
-$inspect(workoutLoading)
 
 function setWorkoutLoading(){
   if (data.nextWorkouts){

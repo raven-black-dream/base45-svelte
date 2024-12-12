@@ -234,18 +234,39 @@ function calculateTotalLoad(
   metricData: MetricData[],
   week: number
 ) {
-  const totalLoads = metricData.filter(
+  const totalWeights = metricData.filter(
     (metric) => metric.metric_name === "total_weight",
   );
 
-  const current = calculateSumForDateRange(
-    totalLoads,
-    week
+  const totalReps = metricData.filter(
+    (metric) => metric.metric_name === "total_reps",
   );
-  const previous = calculateSumForDateRange(
-    totalLoads,
-    week === 0 ? 0 : week - 1
-  );
+
+  // Helper function to calculate total load for a specific week
+  function calculateWeeklyLoad(weekNumber: number): number {
+    const weekWeights = filterMetricsByDateRange(totalWeights, weekNumber);
+    const weekReps = filterMetricsByDateRange(totalReps, weekNumber);
+    
+    let totalLoad = 0;
+    
+    // Group metrics by exercise name and workout date
+    weekWeights.forEach(weightMetric => {
+      const matchingRep = weekReps.find(
+        repMetric => 
+          repMetric.exercises.exercise_name === weightMetric.exercises.exercise_name &&
+          repMetric.workouts.date.getTime() === weightMetric.workouts.date.getTime()
+      );
+      
+      if (matchingRep) {
+        totalLoad += weightMetric.value * matchingRep.value;
+      }
+    });
+    
+    return totalLoad;
+  }
+
+  const current = calculateWeeklyLoad(week);
+  const previous = calculateWeeklyLoad(week === 0 ? 0 : week - 1);
 
   return { current, previous };
 }
