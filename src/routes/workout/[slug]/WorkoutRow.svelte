@@ -106,6 +106,7 @@
     let reps: number = $state(set.reps);
     let weight: number = $state(set.weight? set.weight: set.target_weight);
     let targetReps: number = $state(set.target_reps);
+    let completed: boolean = $state(set.completed);
     const questions: Object = $state(generateQuestions(set.is_first, set.is_last, recovery.completed, i, len));
     let setTargetVolume: number = $derived(calculateVolume(set.target_reps, set.target_weight))
     let actualVolume: number = $derived(calculateVolume(reps, weight))
@@ -159,17 +160,16 @@
             placeholder="{!weight? "" : weight.toString()}"
         />
         <div class='input-group-cell preset-tonal-primary'>
-            {#if setTargetVolume != 0 && actualVolume != 0}
+            {#if completed}
                 {#if actualVolume > setTargetVolume}
                     <Icon icon='fa6-solid:angles-up'></Icon>
                 {:else if actualVolume === setTargetVolume}
                     <Icon icon='fa6-solid:check'></Icon>
+                {:else if setTargetVolume == 0 && actualVolume != 0}
+                    <Icon icon='fa6-solid:check'></Icon>
                 {:else}
                     <Icon icon='fa6-solid:angles-down'></Icon>
                 {/if}
-            {/if}
-            {#if setTargetVolume == 0 && actualVolume != 0}
-                <Icon icon='fa6-solid:check'></Icon>
             {/if}
             
         </div>
