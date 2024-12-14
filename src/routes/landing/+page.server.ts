@@ -20,9 +20,9 @@ export const load = async ({ locals: { supabase } }) => {
     redirect(303, "/");
   }
 
-  let { firstDay, lastDay } = getCurrentWeek();
-  
+  const currentWeekNumber = calculateWeekNumber(new Date(), new Date(Date.now()));
 
+  // Combine mesocycle and metrics query into a single query
   const mesocycle = await prisma.mesocycle.findFirst({
     where: {
       user: user.id,
@@ -31,6 +31,8 @@ export const load = async ({ locals: { supabase } }) => {
     select: {
       id: true,
       start_date: true,
+      end_date: true,
+      meso_days: true,
       workouts: {
         select: {
           id: true,
@@ -39,83 +41,165 @@ export const load = async ({ locals: { supabase } }) => {
           complete: true,
           skipped: true,
           deload: true,
-          week_number: true
+          week_number: true,
+          user_exercise_metrics: {
+            select: {
+              metric_name: true,
+              value: true,
+              exercises: {
+                select: {
+                  exercise_name: true,
+                  muscle_group: true,
+                }
+              }
+            }
+          }
         },
         orderBy: {
           date: "asc",
         },
       },
-      meso_days: true,
     },
   });
+
   if (!mesocycle) {
     console.log("No mesocycle found for the current user.");
     return { user, workouts: [], numberOfDays: 0 };
   }
 
   const workouts = mesocycle.workouts;
-
-  const mesoDay = mesocycle.meso_days;
+  const numberOfDays = mesocycle.meso_days?.length || 0;
   const currentWeek = calculateWeekNumber(mesocycle.start_date, new Date(Date.now()));
 
-  // turn a mesocycle into a list of calendar calendar_items
-  // ({ title: string; className: string; date: Date; len: number;
-  // isBottom?: boolean; detailHeader?: string; detailContent?: string; vlen?: number;
-  // startCol?: number; startRow?: number;})
-  let numberOfDays = mesoDay?.length || 0;
-
+  // Filter next workouts
   const nextWorkouts = workouts
     .filter((workout) => !workout.complete && !workout.skipped)
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
     .slice(0, numberOfDays);
 
-  let numComplete = 0;
-  workouts.forEach((workout) => {
-    if (
-      workout.complete &&
-      workout.week_number == currentWeek - 1
-    ) {
-      numComplete++;
-    }
-  });
+  // Calculate completed workouts for current week
+  const numComplete = workouts.reduce((count, workout) => 
+    workout.complete && workout.week_number === currentWeek - 1 ? count + 1 : count, 0);
 
-  const metricData = await prisma.user_exercise_metrics.findMany({
-    where: {
-      mesocycle: mesocycle.id,
-    },
-    select: {
-      metric_name: true,
-      value: true,
-      exercises: {
-        select: {
-          exercise_name: true,
-          muscle_group: true,
-        },
-      },
+  // Flatten metrics from workouts for easier processing
+  const metricData = workouts.flatMap(workout => 
+    workout.user_exercise_metrics.map(metric => ({
+      ...metric,
       workouts: {
-        select: {
-          week_number: true,
-          date: true
-        },
+        week_number: workout.week_number,
+        date: workout.date
+      }
+    }))
+  );
+
+  // First aggregate metrics by muscle group and week
+  const intermediateMetrics = metricData.reduce((acc, metric) => {
+    const muscleGroup = metric.exercises.muscle_group;
+    const weekNumber = metric.workouts.week_number;
+    const metricName = metric.metric_name;
+
+    // Initialize muscle group if it doesn't exist
+    if (!acc[muscleGroup]) {
+      acc[muscleGroup] = {};
+    }
+    // Initialize week if it doesn't exist
+    if (!acc[muscleGroup][weekNumber]) {
+      acc[muscleGroup][weekNumber] = {
+        raw_stimulus_magnitude: 0,
+        fatigue_score: 0,
+        rep_std_dev: 0,
+        weight_std_dev: 0,
+        count: 0
+      };
+    }
+
+    // Add metric value to the appropriate category
+    if (['raw_stimulus_magnitude', 'fatigue_score', 'rep_std_dev', 'weight_std_dev'].includes(metricName)) {
+      acc[muscleGroup][weekNumber][metricName] += metric.value;
+      acc[muscleGroup][weekNumber].count++;
+    }
+
+    return acc;
+  }, {} as Record<string, Record<number, {
+    raw_stimulus_magnitude: number;
+    fatigue_score: number;
+    rep_std_dev: number;
+    weight_std_dev: number;
+    count: number;
+  }>>);
+
+  // Transform into the required format for LinePlot
+  const mesocycleMetrics = Object.entries(intermediateMetrics).reduce((acc, [muscleGroup, weekData]) => {
+    // Sort weeks to ensure x values are in order
+    const sortedWeeks = Object.entries(weekData)
+      .sort(([weekA], [weekB]) => Number(weekA) - Number(weekB));
+
+    // Initialize the structure for this muscle group
+    acc[muscleGroup] = {
+      raw_stimulus_magnitude: [{
+        x: [],
+        y: [],
+        type: "scatter",
+        fill: 'tonexty',
+        name: "Raw Stimulus Magnitude",
+        line: {color: "#092d0a" }
+      }],
+      fatigue_score: [{
+        x: [],
+        y: [],
+        type: "scatter",
+        fill: 'tonexty',
+        name: "Fatigue Score",
+        line: {color: "#092d0a" }
+      }],
+      variance: [{
+        x: [],
+        y: [],
+        type: "scatter",
+        fill: 'tonexty',
+        name: "Rep Variance",
+        line: {color: "#092d0a" }
       },
-    },
-  });
+      {
+        x: [],
+        y: [],
+        type: "scatter",
+        fill: 'tozeroy',
+        name: "Weight Variance",
+        line: {color: "#210055" }
+      }
+    ],
+    };
 
-  let currentFatigueScore: number;
-  let previousFatigueScore: number;
-  let currentStimulusScore: number;
-  let previousStimulusScore: number;
-  let currentTotalLoad: number;
-  let previousTotalLoad: number;
+    // Populate the arrays
+    sortedWeeks.forEach(([week, metrics]) => {
+      const count = metrics.count;
+      const weekNum = Number(week);
 
-  if (!metricData) {
-    currentFatigueScore = 0;
-    previousFatigueScore = 0;
-    currentStimulusScore = 0;
-    previousStimulusScore = 0;
-    currentTotalLoad = 0;
-    previousTotalLoad = 0;
-  }
+      // Add data points for each metric
+      Object.entries(metrics).forEach(([metricName, value]) => {
+        if (metricName !== 'count' && acc[muscleGroup][metricName] && !["rep_std_dev", "weight_std_dev"].includes(metricName)) {
+          acc[muscleGroup][metricName][0].x.push(weekNum);
+          acc[muscleGroup][metricName][0].y.push(value / count);
+        }
+        else if (acc[muscleGroup]["variance"] && metricName === "rep_std_dev") {
+          acc[muscleGroup]["variance"][0].x.push(weekNum);
+          acc[muscleGroup]["variance"][0].y.push(value / count);
+        }
+        else if (acc[muscleGroup]["variance"] && metricName === "weight_std_dev") {
+          acc[muscleGroup]["variance"][1].x.push(weekNum);
+          acc[muscleGroup]["variance"][1].y.push(value / count);
+        }
+      });
+    });
+
+    return acc;
+  }, {} as Record<string, {
+    raw_stimulus_magnitude: Array<{ x: number[], y: number[], type: string, fill: string, name: string, line: { color: string } }>,
+    fatigue_score: Array<{ x: number[], y: number[], type: string, fill: string, name: string, line: { color: string } }>,
+    variance: Array<{ x: number[], y: number[], type: string, fill: string, name: string, line: { color: string } }>,
+  }>);
+
   const caluclatedMetrics = {
     fatigue: calculateMetric(
       metricData,
@@ -142,7 +226,7 @@ export const load = async ({ locals: { supabase } }) => {
         number: { font: { size: 40 } },
         delta: {
           reference: caluclatedMetrics.totalLoad.previous,
-          valueformat: ".0f",
+          valueformat: "~s",
           increasing: { color: "#29712d" },
           decreasing: { color: "#730000" },
         },
@@ -181,6 +265,8 @@ export const load = async ({ locals: { supabase } }) => {
     ],
   ];
 
+  const numWeeks = calculateWeekNumber(mesocycle.start_date, mesocycle.end_date)
+
   return {
     user,
     workouts,
@@ -189,6 +275,8 @@ export const load = async ({ locals: { supabase } }) => {
     numComplete,
     currentWeek,
     weeklyMetrics,
+    mesocycleMetrics,
+    numWeeks
   };
 };
 

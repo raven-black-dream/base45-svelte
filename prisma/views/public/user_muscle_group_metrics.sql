@@ -21,6 +21,6 @@ GROUP BY
 HAVING
   (
     uem.metric_name = ANY (
-      ARRAY ['raw_stimulus_magnitude'::text, 'performance_score'::text, 'stimulus_to_fatigue_ratio'::text]
+      ARRAY ['raw_stimulus_magnitude'::text, 'performance_score'::text, 'fatigue_score::text', 'stimulus_to_fatigue_ratio'::text]
     )
   );

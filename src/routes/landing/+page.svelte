@@ -4,17 +4,21 @@
 <!-- TODO: events aren't changing when the month changes -->
 
 <script lang="ts">
-import { Progress, ProgressRing } from "@skeletonlabs/skeleton-svelte";
-import { SvelteMap } from "svelte/reactivity";
+import { Progress, ProgressRing, Tabs } from "@skeletonlabs/skeleton-svelte";
 import WeeklyGrid from "$lib/components/WeeklyGrid.svelte";
 import WorkoutCard from "$lib/components/WorkoutCard.svelte";
 import Indicator from "$lib/components/Indicator.svelte";
 import { enhance } from '$app/forms';
+    import LinePlot from "$lib/components/LinePlot.svelte";
 
   let { data } = $props();
 
 let weeklyProgress = $derived(data.numComplete/data.numberOfDays * 100);
 let workoutLoading = $state(setWorkoutLoading())
+let group = $state('stimulus')
+let muscleGroups = Object.keys(data.mesocycleMetrics).sort()
+let activeMuscleGroup = $state(muscleGroups[0])
+let activeMuscleGroupMetric = $derived(data.mesocycleMetrics[activeMuscleGroup])
 
 function setWorkoutLoading(){
   if (data.nextWorkouts){
@@ -108,6 +112,48 @@ function setWorkoutLoading(){
     <WeeklyGrid workouts={data.workouts} numCols={data.numberOfDays} />
 		</section>
 	</div>
+
+  <div class="card preset-tonal-primary items-center mt-6">
+    <header class="card-header">Mesocycle Metrics</header>
+    <div class='p-4 flex flex-wrap gap-2'>
+    {#each muscleGroups as muscleGroup, index}
+      <button type='button' class={activeMuscleGroup === muscleGroup ? 'chip preset-tonal-secondary' : 'chip preset-tonal-surface'} onclick={() => {activeMuscleGroup = muscleGroup}}>{muscleGroup}</button>
+    {/each}
+    </div>
+
+    <Tabs bind:value={group}>
+      {#snippet list()}
+        <Tabs.Control value="stimulus">Stimulus</Tabs.Control>
+        <Tabs.Control value='variance'>Variance</Tabs.Control>
+        <Tabs.Control value='fatigue'>Fatigue</Tabs.Control>
+      {/snippet}
+
+      {#snippet content()}
+        <Tabs.Panel value="stimulus">
+          <div class='card p-4 preset-filled-surface-200-800'>
+            <header class='card-header text-xl font-extrabold'>Stimulus</header> 
+            <LinePlot data={activeMuscleGroupMetric.raw_stimulus_magnitude} xRange={[0, data.numWeeks-1]}/>
+          </div>  
+        </Tabs.Panel>
+        <Tabs.Panel value="variance">
+          <div class='card p-4 preset-filled-surface-200-800'>
+            <header class='card-header text-xl font-extrabold'>Variance</header> 
+            <LinePlot data={activeMuscleGroupMetric.variance} xRange={[0, data.numWeeks-1]}/>
+          </div>  
+        </Tabs.Panel>
+        <Tabs.Panel value="fatigue">
+          <div class='card p-4 preset-filled-surface-200-800'>
+            <header class='card-header text-xl font-extrabold'>Fatigue</header> 
+            <LinePlot data={activeMuscleGroupMetric.fatigue_score} xRange={[0, data.numWeeks-1]}/>
+          </div>  
+        </Tabs.Panel>
+      {/snippet}
+
+
+    </Tabs>
+
+
+  </div>
 
   
 
