@@ -113,6 +113,7 @@ function setWorkoutLoading(){
 		</section>
 	</div>
 
+  {#if data.mesocycleMetrics}
   <div class="card preset-tonal-primary items-center mt-6">
     <header class="card-header">Mesocycle Metrics</header>
     <div class='p-4 flex flex-wrap gap-2'>
@@ -148,12 +149,9 @@ function setWorkoutLoading(){
           </div>  
         </Tabs.Panel>
       {/snippet}
-
-
     </Tabs>
-
-
   </div>
+  {/if}
 
   
 
