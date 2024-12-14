@@ -78,6 +78,7 @@ async function loadWorkoutData(workoutId: string) {
   const workout = await prisma.workouts.findUnique({
     where: { id: workoutId },
     select: {
+      id:true,
       mesocycle: true,
       target_rir: true,
       meso_days: {
