@@ -17,7 +17,7 @@
         })
     )
 
-    let openState: Map<string, boolean> = exerciseNames.reduce((map, key) => {
+    let openState = exerciseNames.reduce((map, key) => {
         map[key] = false;
         return map
     }, {})
@@ -25,7 +25,7 @@
     let submitting = $state(false);
     
     function popoverClose(key:string) {
-        openState.set(key, false);
+        openState[key] = false;
     }
 
 </script>
