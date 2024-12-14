@@ -29,7 +29,7 @@ export const actions: Actions = {
       options: {
         // set this to false if you do not want the user to be automatically signed up
         shouldCreateUser: true,
-        emailRedirectTo: `${request.url}/landing`,
+        emailRedirectTo: `${new URL(request.url).origin}`,
       },
     });
     if (error) {

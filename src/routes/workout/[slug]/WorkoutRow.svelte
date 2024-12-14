@@ -149,6 +149,7 @@
             type="number" name="actualReps" 
             bind:value={reps}
             placeholder="{!targetReps? "" : targetReps.toString()}"
+            defaultValue={targetReps}
         />
         <input 
             type="number" 
@@ -166,6 +167,9 @@
                 {:else}
                     <Icon icon='fa6-solid:angles-down'></Icon>
                 {/if}
+            {/if}
+            {#if setTargetVolume == 0 && actualVolume != 0}
+                <Icon icon='fa6-solid:check'></Icon>
             {/if}
             
         </div>

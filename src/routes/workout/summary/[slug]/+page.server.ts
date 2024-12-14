@@ -1,4 +1,5 @@
 import type { PageServerLoad } from "./$types";
+import prisma from "$lib/server/prisma";
 import { redirect } from "@sveltejs/kit";
 
 export const load = (async ({ locals: { supabase}, params }) => {
@@ -9,30 +10,23 @@ export const load = (async ({ locals: { supabase}, params }) => {
   if (!user) {
     redirect(303, "/");
   }
-  const { data: workoutData } = await supabase
-    .from("workouts")
-    .select(
-      `
-      id,
-      date,
-      day_name,
-      deload,
-      workout_set!inner(
-        id,
-        reps,
-        weight,
-        exercise!inner(
-        muscle_group,
-        exercise_name
-        )
-      ),
-      workout_feedback!inner(*, exercise!inner(exercise_name))
+  const workoutData = await prisma.workouts.findUnique({
+    where: {
+      id: params.slug,
+    },
+    include: {
+      workout_set: {
+        include: {
+          exercises: true
+        }
+      },
+      workout_feedback: true,
+      user_exercise_metrics: true
+    }
 
-      `,
-    )
-    .eq("id", params.slug)
-    .single();
 
+  })
+  
   if (!workoutData) {
     return { status: 404 };
   }
@@ -47,8 +41,12 @@ export const load = (async ({ locals: { supabase}, params }) => {
   let setData = {};
 
   for (const entry of workoutData.workout_set) {
-    const { exercise, reps, weight } = entry;
-    const { muscle_group: muscleGroup, exercise_name: name } = exercise;
+    const { exercises, reps, weight } = entry;
+    const { muscle_group: muscleGroup, exercise_name: name } = exercises;
+    const metrics = workoutData.user_exercise_metrics.filter(
+      (metric) => metric.exercise === exercises.id
+    );
+
     if (!reps || !weight) {
       continue;
     }
@@ -61,11 +59,22 @@ export const load = (async ({ locals: { supabase}, params }) => {
         numSets: 0,
         reps: "",
         weight: "",
+        metrics: metrics.reduce((acc, metric) => {
+          acc[metric.metric_name] = metric.value;
+          return acc;
+        }, {} as Record<string, number>)
       };
+      setData[muscleGroup][name].metrics['expected_weight'] = 0;
+      setData[muscleGroup][name].metrics['expected_reps'] = 0;
+      
     }
     setData[muscleGroup][name].numSets += 1;
     setData[muscleGroup][name].reps += reps.toString() + ", ";
     setData[muscleGroup][name].weight += weight.toString() + ", ";
+    setData[muscleGroup][name].metrics['expected_weight'] += weight;
+    setData[muscleGroup][name].metrics['expected_reps'] += reps;
+
+
   }
 
   for (const muscleGoup in setData) {
@@ -74,6 +83,10 @@ export const load = (async ({ locals: { supabase}, params }) => {
       const { numSets, reps, weight } = exercises[exercise];
       exercises[exercise].reps = reps.slice(0, -2);
       exercises[exercise].weight = weight.slice(0, -2);
+      exercises[exercise].metrics['expected_average_reps'] =
+        exercises[exercise].metrics['expected_reps'] / numSets;
+      exercises[exercise].metrics['expected_average_weight'] =
+        exercises[exercise].metrics['expected_weight'] / numSets;
     }
   }
 
