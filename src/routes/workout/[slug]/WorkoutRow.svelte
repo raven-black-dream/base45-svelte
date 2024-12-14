@@ -165,12 +165,11 @@
                     <Icon icon='fa6-solid:angles-up'></Icon>
                 {:else if actualVolume === setTargetVolume}
                     <Icon icon='fa6-solid:check'></Icon>
+                {:else if setTargetVolume == 0 && actualVolume != 0}
+                    <Icon icon='fa6-solid:check'></Icon>
                 {:else}
                     <Icon icon='fa6-solid:angles-down'></Icon>
                 {/if}
-            {/if}
-            {#if setTargetVolume == 0 && actualVolume != 0}
-                <Icon icon='fa6-solid:check'></Icon>
             {/if}
             
         </div>
