@@ -133,19 +133,19 @@ function setWorkoutLoading(){
         <Tabs.Panel value="stimulus">
           <div class='card p-4 preset-filled-surface-200-800'>
             <header class='card-header text-xl font-extrabold'>Stimulus</header> 
-            <LinePlot data={activeMuscleGroupMetric.raw_stimulus_magnitude} xRange={[0, data.numWeeks-1]}/>
+            <LinePlot data={activeMuscleGroupMetric.raw_stimulus_magnitude} xRange={[1, data.numWeeks]}/>
           </div>  
         </Tabs.Panel>
         <Tabs.Panel value="variance">
           <div class='card p-4 preset-filled-surface-200-800'>
             <header class='card-header text-xl font-extrabold'>Variance</header> 
-            <LinePlot data={activeMuscleGroupMetric.variance} xRange={[0, data.numWeeks-1]}/>
+            <LinePlot data={activeMuscleGroupMetric.variance} xRange={[1, data.numWeeks]}/>
           </div>  
         </Tabs.Panel>
         <Tabs.Panel value="fatigue">
           <div class='card p-4 preset-filled-surface-200-800'>
             <header class='card-header text-xl font-extrabold'>Fatigue</header> 
-            <LinePlot data={activeMuscleGroupMetric.fatigue_score} xRange={[0, data.numWeeks-1]}/>
+            <LinePlot data={activeMuscleGroupMetric.fatigue_score} xRange={[1, data.numWeeks]}/>
           </div>  
         </Tabs.Panel>
       {/snippet}

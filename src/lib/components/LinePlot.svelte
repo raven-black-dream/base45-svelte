@@ -15,6 +15,7 @@
         font: {color: '#cccccc'}, 
         xaxis: {
             color: '#cccccc',
+            dtick: 1,
             ...(xRange && { range: xRange })
         }, 
         yaxis: {

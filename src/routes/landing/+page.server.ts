@@ -179,15 +179,15 @@ export const load = async ({ locals: { supabase } }) => {
       // Add data points for each metric
       Object.entries(metrics).forEach(([metricName, value]) => {
         if (metricName !== 'count' && acc[muscleGroup][metricName] && !["rep_std_dev", "weight_std_dev"].includes(metricName)) {
-          acc[muscleGroup][metricName][0].x.push(weekNum);
+          acc[muscleGroup][metricName][0].x.push(weekNum + 1);
           acc[muscleGroup][metricName][0].y.push(value / count);
         }
         else if (acc[muscleGroup]["variance"] && metricName === "rep_std_dev") {
-          acc[muscleGroup]["variance"][0].x.push(weekNum);
+          acc[muscleGroup]["variance"][0].x.push(weekNum + 1);
           acc[muscleGroup]["variance"][0].y.push(value / count);
         }
         else if (acc[muscleGroup]["variance"] && metricName === "weight_std_dev") {
-          acc[muscleGroup]["variance"][1].x.push(weekNum);
+          acc[muscleGroup]["variance"][1].x.push(weekNum + 1);
           acc[muscleGroup]["variance"][1].y.push(value / count);
         }
       });
