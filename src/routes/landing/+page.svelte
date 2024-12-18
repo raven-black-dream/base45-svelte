@@ -16,9 +16,9 @@ import { enhance } from '$app/forms';
 let weeklyProgress = $derived(data.numComplete/data.numberOfDays * 100);
 let workoutLoading = $state(setWorkoutLoading())
 let group = $state('stimulus')
-let muscleGroups = Object.keys(data.mesocycleMetrics).sort()
-let activeMuscleGroup = $state(muscleGroups[0])
-let activeMuscleGroupMetric = $derived(data.mesocycleMetrics[activeMuscleGroup])
+let muscleGroups = data.mesocycleMetrics ? Object.keys(data.mesocycleMetrics).sort() : []
+let activeMuscleGroup = $state(muscleGroups.length > 0 ? muscleGroups[0] : '')
+let activeMuscleGroupMetric = $derived(data.mesocycleMetrics ? data.mesocycleMetrics[activeMuscleGroup] : {})
 
 function setWorkoutLoading(){
   if (data.nextWorkouts){
