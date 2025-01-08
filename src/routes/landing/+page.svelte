@@ -113,7 +113,7 @@ function setWorkoutLoading(){
 		</section>
 	</div>
 
-  {#if data.mesocycleMetrics}
+  {#if Object.keys(data.mesocycleMetrics).length > 0}
   <div class="card preset-tonal-primary items-center mt-6">
     <header class="card-header">Mesocycle Metrics</header>
     <div class='p-4 flex flex-wrap gap-2'>

@@ -103,6 +103,11 @@ export async function shouldDoProgression(
       workout,
       muscleGroup);
 
+    if (!nextWorkout) {
+      progressMuscleGroups.set(muscleGroup, {progression: false, deload: false});
+      continue
+    }
+
     const previousWorkout: CompleteWorkout | null = await getPreviousWorkout(
       workout,
       muscleGroup,
@@ -113,7 +118,7 @@ export async function shouldDoProgression(
       `select * from user_muscle_group_metrics where workout = '${workout.id}' and muscle_group = '${muscleGroup}' and metric_name = 'performance_score'`
     )
     
-    if (!nextWorkout || !previousWorkout ||  !performanceData) {
+    if (!previousWorkout ||  !performanceData) {
       progressMuscleGroups.set(muscleGroup, {progression: false, deload: false});
       continue
     }
