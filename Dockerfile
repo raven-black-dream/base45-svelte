@@ -1,4 +1,4 @@
-FROM node:22 AS build
+FROM node:22-slim AS build
 
 WORKDIR /app
 
@@ -9,7 +9,7 @@ RUN npm install
 RUN npm run build
 RUN npm prune --production
 
-FROM node:22 AS base45
+FROM node:22-slim AS base45
 
 ENV NODE_ENV=production
 
