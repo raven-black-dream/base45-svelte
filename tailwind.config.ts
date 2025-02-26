@@ -13,12 +13,6 @@ export default {
         extend: {},
     },
     plugins: [
-        forms,
-        skeleton({
-            // NOTE: each theme included will be added to your CSS bundle
-            themes: [ 
-                Base45Slytherin
-             ]
-        })
+        forms
     ]
 } satisfies Config

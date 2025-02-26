@@ -11,7 +11,6 @@ export default defineConfig({
       //  project: "base45-svelte",
       //},
     }),
-    sveltekit(),
-    purgeCss(),
+    sveltekit()
   ],
 });
