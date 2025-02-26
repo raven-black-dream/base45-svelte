@@ -1,9 +1,8 @@
 <script lang="ts">
-	import '../app.postcss';
+	import '../app.css';
 	import { AppBar, Modal } from '@skeletonlabs/skeleton-svelte';
 	import { invalidate } from '$app/navigation';
 	import { onMount } from 'svelte';
-	import { computePosition, autoUpdate, offset, shift, flip, arrow } from '@floating-ui/dom';
 	import  Icon  from '@iconify/svelte';
 	import { goto } from '$app/navigation';
 
@@ -49,7 +48,7 @@
 		{#snippet trigger()}<p class='uppercase font-extrabold text-lg'>Base45</p>{/snippet}
 		{#snippet content()}
 			<nav class="list-nav h-full flex flex-col">
-				<ul class="grow">
+				<ul class="grow space-y-2">
 					<li>
 						<a class="btn preset-tonal-primary preset-outlined-primary-200-800" href="/account/view" onclick={drawerClose}>Account</a>
 					</li>
@@ -83,13 +82,13 @@
 	{/if}
 	<div class='flex p-2'>
 
-	<a class='btn btn-icon' href="https://github.com/raven-black-dream/base45-svelte">
+	<a class='btn-icon' href="https://github.com/raven-black-dream/base45-svelte">
 		<Icon icon="fa6-brands:github" height='1.5em'/>
 	</a>
 
 	<Modal
 		bind:open={infoModalState}
-		triggerBase='btn btn-icon preset-tonal'
+		triggerBase='btn-icon preset-tonal'
 		contentBase='card bg-surface-100-900 p-4 space-y-4 shadow-xl'
 		backdropClasses='backtrop-blur-sm'
 		>

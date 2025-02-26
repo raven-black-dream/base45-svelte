@@ -144,21 +144,21 @@
     <input type="hidden" name="is_last_set" value={i === len}>
     <input type="hidden" name="targetReps" value={targetReps}/>
     <input type="hidden" name="targetWeight" value={weight}/>
-    <div class="input-group divide-surface-200-800 grid-cols-[1fr_1fr_auto_auto] divide-x">
-        <input
+    <div class="input-group divide-surface-200-800 grid-cols-7 divide-x">
+        <input class='ig-input col-span-2'
             type="number" name="actualReps" 
             bind:value={reps}
             placeholder="{!targetReps? "" : targetReps.toString()}"
             defaultValue={set.reps ?? targetReps}
         />
-        <input 
+        <input class='ig-input col-span-2'
             type="number" 
             name="actualWeight"
             step="0.5"
             bind:value={weight}
             placeholder="{!weight? "" : weight.toString()}"
         />
-        <div class='input-group-cell preset-tonal-primary'>
+        <div class='ig-cell col-span-1 preset-tonal-primary'>
             {#if set.completed}
                 {#if actualVolume > setTargetVolume}
                     <Icon icon='fa6-solid:angles-up'></Icon>
@@ -175,7 +175,7 @@
         {#if Object.keys(questions).length > 0}
             <Modal
                 bind:open={openState}
-                triggerBase='btn preset-tonal-secondary preset-outlined-secondary-200-800'
+                triggerBase='ig-btn col-span-2 preset-tonal-secondary preset-outlined-secondary-200-800'
                 contentBase='bg-surface-100-900 p-4 space-y-4 shadow-xl max-w-.25 h-.25'
                 backdropClasses='backtrop-blur-md'
                 >
@@ -224,11 +224,11 @@
             </Modal>     
         {:else }
             {#if !set.completed}
-                <button class="btn preset-tonal-secondary preset-outlined-secondary-200-800" type="submit">
+                <button class="ig-btn col-span-2 preset-tonal-secondary preset-outlined-secondary-200-800" type="submit">
                     <p class='font-extrabold text-lg'>Log Set</p>
                 </button>
             {:else}
-                <button class="btn preset-tonal-secondary preset-outlined-secondary-200-800" type="submit">
+                <button class="ig-btn col-span-2 preset-tonal-secondary preset-outlined-secondary-200-800" type="submit">
                     <p class='font-extrabold text-lg'>Edit Set</p>
                 </button>
             {/if}

@@ -58,15 +58,15 @@
                           <LinePlot data={data.weightHistoryData}/>
                       {/if}
                     
-                        <form class='mx-auto w-full max-w-md space-y-2' method="post" use:enhance action='?/addWeight'>
-                            <div class='input-group divide-surface-200-800 grid-cols-[1fr_1fr_3fr_1fr] divide-x'>
-                                <input class='input' name='value' type='number' step=0.1 placeholder="Weight">
-                                <select name='unit' value='lbs'>
+                        <form class='mx-auto w-full space-y-2' method="post" use:enhance action='?/addWeight'>
+                            <div class='input-group grid-cols-7'>
+                                <input class='ig-input col-span-2 preset-filled-surface-400-600' name='value' type='number' step=0.1 placeholder="Weight">
+                                <select class='ig-select col-span-2 preset-filled-surface-400-600' name='unit' value='lbs'>
                                     <option value='kg'>kg</option>
                                     <option value='lbs'>lbs</option>
                                 </select>
-                                <input name='date' type='date'>
-                                <button class='btn preset-tonal' type='submit'>
+                                <input class='ig-input col-span-2 preset-filled-surface-400-600' name='date' type='date'>
+                                <button class='ig-button btn-icon preset-tonal col-span-1' type='submit'>
                                     <Icon icon='fa6-solid:plus' />
                                 </button>
                             </div>
