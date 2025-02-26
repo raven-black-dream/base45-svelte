@@ -1,0 +1,12 @@
+@import 'tailwindcss';
+@plugin '@tailwindcss/forms';
+
+@source '../node_modules/@skeletonlabs/skeleton-svelte/dist'; /* <-- set framework */
+
+@import '@skeletonlabs/skeleton';
+@import '@skeletonlabs/skeleton/optional/presets';
+@import '@skeletonlabs/skeleton/themes/cerberus';
+@import './base45';
+
+@layer utilities {
+}
