@@ -49,7 +49,7 @@
 		{#snippet trigger()}<p class='uppercase font-extrabold text-lg'>Base45</p>{/snippet}
 		{#snippet content()}
 			<nav class="list-nav h-full flex flex-col">
-				<ul class="flex-grow">
+				<ul class="grow">
 					<li>
 						<a class="btn preset-tonal-primary preset-outlined-primary-200-800" href="/account/view" onclick={drawerClose}>Account</a>
 					</li>
