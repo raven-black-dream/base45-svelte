@@ -84,6 +84,7 @@
 
 <style>
   .over {
-    @apply border-gray-400 scale-105;
+    border-color: rgba(156, 163, 175, 1);
+    scale: 1.05;
   }
 </style>
