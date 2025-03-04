@@ -1,10 +1,9 @@
 <script lang="ts">
     import {  Modal, ProgressRing } from '@skeletonlabs/skeleton-svelte';
-    import { SvelteMap } from 'svelte/reactivity';
     import Icon from '@iconify/svelte';
     import { enhance } from '$app/forms';
     import { Rating } from '@skeletonlabs/skeleton-svelte';
-    import { en } from '@supabase/auth-ui-shared';
+
 
     interface Props {
         set: {id: number, workout: string, exercises: {id: string, exercise_name:string, weighted: boolean, weight_step:number, muscle_group:string}, 
@@ -175,7 +174,7 @@
         {#if Object.keys(questions).length > 0}
             <Modal
                 bind:open={openState}
-                triggerBase='ig-btn col-span-2 preset-tonal-secondary preset-outlined-secondary-200-800'
+                triggerBase='ig-btn col-span-2 preset-tonal-primary preset-outlined-primary-200-800'
                 contentBase='bg-surface-100-900 p-4 space-y-4 shadow-xl max-w-.25 h-.25'
                 backdropClasses='backtrop-blur-md'
                 >
@@ -200,7 +199,7 @@
                                                                 <Icon icon="fa6-regular:star" height='2.5em' />
                                                             {/snippet}
                                     {#snippet iconHalf()}
-                                                                <Icon icon="fa6-regular:star" height='2.5em'/>
+                                                                <Icon icon="fa6-solid:star-half-stroke" height='2.5em'/>
                                                             {/snippet}
                                     {#snippet iconFull()}
                                                                 <Icon icon="fa6-solid:star" height='2.5em'/>
@@ -224,7 +223,7 @@
             </Modal>     
         {:else }
             {#if !set.completed}
-                <button class="ig-btn col-span-2 preset-tonal-secondary preset-outlined-secondary-200-800" type="submit">
+                <button class="ig-btn col-span-2 preset-tonal-primary preset-outlined-primary-200-800" type="submit">
                     <p class='font-extrabold text-lg'>Log Set</p>
                 </button>
             {:else}
