@@ -171,12 +171,21 @@ async function organiseComments(workout: any) {
       OR: [
         { workout: workout.id },
         { continue: true }
-      ]
+      ],
+      workouts: {
+        meso_day: workout.meso_days.id
+      }
     },
     include: {
       exercises: {
         select: {
           exercise_name: true
+        }
+      },
+      workouts: {
+        select: {
+          id: true,
+          meso_day: true
         }
       }
     }
@@ -322,50 +331,65 @@ export const actions = {
     const exerciseName = data.get("exercise")?.toString() ?? "";
     console.log(data);
 
-    const setData = await prisma.workout_set.findMany({
-      where: {
-        workout: params.slug,
-        exercises: {
-          exercise_name: exerciseName
+    // Use a transaction to ensure all operations complete or none do
+    return await prisma.$transaction(async (tx) => {
+      // Get existing sets for this exercise
+      const setData = await tx.workout_set.findMany({
+        where: {
+          workout: params.slug,
+          exercises: {
+            exercise_name: exerciseName
+          }
+        },
+        select: {
+          set_num: true,
+          is_last: true,
+          exercise: true,
+          target_weight: true
+        },
+        orderBy: {
+          set_num: 'asc'
         }
-      },
-      select: {
-        set_num: true,
-        is_last: true,
-        exercise: true,
-        target_weight: true
+      });
+      
+      if (setData.length === 0) {
+        throw new Error(`No sets found for exercise ${exerciseName}`);
       }
-    });
-    const index = setData.length - 1;
-    const setNum = setData[index].set_num;
-    const isLastSet = setData[index].is_last;
-     await prisma.workout_set.updateMany({
-      where: {
-        workout: params.slug,
-        exercises: {
-          exercise_name: exerciseName
+      
+      // Calculate the next set number
+      const lastSet = setData[setData.length - 1];
+      const nextSetNum = lastSet.set_num + 1;
+      
+      // First, set all existing sets to is_last=false
+      await tx.workout_set.updateMany({
+        where: {
+          workout: params.slug,
+          exercises: {
+            exercise_name: exerciseName
+          }
+        },
+        data: {
+          is_last: false
         }
-      },
-      data: {
-        is_last: false,
-      },
-    });
-
-    const set = {
-      workout: params.slug,
-      exercise: setData[0].exercise,
-      reps: null,
-      weight: null,
-      target_reps: null,
-      target_weight: setData[0].target_weight,
-      is_first: false,
-      is_last: isLastSet,
-      set_num: setNum + 1,
-      completed: false,
-    };
-
-    await prisma.workout_set.create({
-      data: set,
+      });
+      
+      // Create the new set with is_last=true
+      const newSet = await tx.workout_set.create({
+        data: {
+          workout: params.slug,
+          exercise: setData[0].exercise,
+          reps: null,
+          weight: null,
+          target_reps: null,
+          target_weight: lastSet.target_weight,
+          is_first: false,
+          is_last: true,  // New set is always the last
+          set_num: nextSetNum,
+          completed: false
+        }
+      });
+      
+      return newSet;
     });
   },
   complete: async ({ locals: { supabase }, params }) => {

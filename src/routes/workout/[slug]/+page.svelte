@@ -98,7 +98,15 @@
             {/each}
             <div class='p-4'>
                 <nav class='btn-group preset-outlined-surface-200-800 flex-row w-32 p-2'>
-                    <form method='post' use:enhance action='?/addSet'>
+                    <form method='post' use:enhance={
+                        ({formElement, formData, action, cancel}) => {
+                            submitting = true;
+                            return async ({result, update}) => {
+                                await update();
+                                submitting = false;
+                            };
+                        }
+                    } action='?/addSet'>
                         <button class='btn preset-tonal-primary preset-outlined-primary-200-800'>
                             <input type='hidden' name='exercise' value={exerciseName}/>
                             <Icon icon="fa6-solid:plus" />

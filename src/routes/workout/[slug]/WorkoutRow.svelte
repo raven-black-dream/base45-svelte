@@ -20,6 +20,8 @@
         recovery,
     }: Props = $props();
 
+    $inspect(set);
+
     function generateQuestions(isFirst: boolean, isLast:boolean, completed: boolean, i: number, len: number) {
         let questions = {};
         const recovery = "When did your " + set.exercises.muscle_group +  " recover after your last workout? (1: didn't get sore - 4: still sore)";
@@ -112,6 +114,8 @@
     let allQuestionsAnswered: boolean = $derived(areAllQuestionsAnsered());
     let loading: boolean = $state(false);
 
+    let buttonClass = set.completed ? "preset-tonal-secondary preset-outlined-secondary-200-800" : "preset-tonal-primary preset-outlined-primary-200-800";
+
     let openState = $state(false);
     function modalClose() {
         openState = false;
@@ -174,7 +178,7 @@
         {#if Object.keys(questions).length > 0}
             <Modal
                 bind:open={openState}
-                triggerBase='ig-btn col-span-2 preset-tonal-primary preset-outlined-primary-200-800'
+                triggerBase='btn col-span-2 {buttonClass}'
                 contentBase='bg-surface-100-900 p-4 space-y-4 shadow-xl max-w-.25 h-.25'
                 backdropClasses='backtrop-blur-md'
                 >
@@ -223,11 +227,11 @@
             </Modal>     
         {:else }
             {#if !set.completed}
-                <button class="ig-btn col-span-2 preset-tonal-primary preset-outlined-primary-200-800" type="submit">
+                <button class="btn col-span-2 preset-tonal-primary preset-outlined-primary-200-800" type="submit">
                     <p class='font-extrabold text-lg'>Log Set</p>
                 </button>
             {:else}
-                <button class="ig-btn col-span-2 preset-tonal-secondary preset-outlined-secondary-200-800" type="submit">
+                <button class="btn col-span-2 preset-tonal-secondary preset-outlined-secondary-200-800" type="submit">
                     <p class='font-extrabold text-lg'>Edit Set</p>
                 </button>
             {/if}
