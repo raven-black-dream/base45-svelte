@@ -2,7 +2,7 @@
 
 ---
 id: TASK-010
-status: planned
+status: completed
 priority: high
 dependencies: [002]
 assigned: TBD
@@ -12,9 +12,9 @@ assigned: TBD
 Currently, there's an issue with set ordering in progression functions. Sets need to be consistently ordered when applying progression logic to ensure that the sets are ordered correctly in the workout. 
 
 ## Objectives
-- [ ] Audit all progression functions in `src/lib/server/progression.ts` to ensure they maintain set order
-- [ ] Implement consistent sorting mechanism for sets
-- [ ] Ensure set order is preserved during workout completion
+- [x] Audit all progression functions in `src/lib/server/progression.ts` to ensure they maintain set order
+- [x] Implement consistent sorting mechanism for sets
+- [x] Ensure set order is preserved during workout completion
 - [ ] Add unit tests to verify set order consistency
 
 ## Technical Notes
@@ -29,8 +29,10 @@ Currently, there's an issue with set ordering in progression functions. Sets nee
 - [ ] Manual testing with various progression scenarios
 
 ## Progress
-- Started: TBD
-- Updates: TBD
+- Started: 2023-10-31
+- Updates: 
+  - 2023-10-31: Implemented set ordering by `set_num` in `modifyRepNumber`, `nonProgression`, `progression`, and `loadAndRepProgression` functions.
+  - We now sort workout sets consistently by `set_num` before processing to ensure proper workout progression.
 - Completed: TBD
 
 ## Related
