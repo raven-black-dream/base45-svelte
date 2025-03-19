@@ -167,6 +167,10 @@ export function modifyRepNumber(
   previousWorkoutSets: WorkoutSet[],
   numReps: number,
 ) {
+  // Ensure both arrays are sorted by set_num
+  nextWorkoutSets.sort((a, b) => a.set_num - b.set_num);
+  previousWorkoutSets.sort((a, b) => a.set_num - b.set_num);
+  
   if (numReps > 0 && numReps < 1) {
     for (let i = 0; i < nextWorkoutSets.length; i++) {
       nextWorkoutSets[i].target_reps = i < previousWorkoutSets.length
