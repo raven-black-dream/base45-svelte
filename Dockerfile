@@ -13,7 +13,7 @@ RUN npm prune --production
 
 FROM node:22-slim AS base45
 
-ENV NODE_ENV=production
+ENV NODE_ENV=development
 RUN apt-get update && apt-get install -y
 RUN apt-get install -y libssl-dev
 WORKDIR /app

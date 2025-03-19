@@ -38,25 +38,50 @@ export const load = (async ({ locals: { supabase}, params }) => {
     deload: workoutData.deload,
   };
 
-  let setData = {};
+  // Group workout sets by muscle group and exercise
+  const groupedSets = {};
 
+  // First, group all sets by muscle group and exercise name
   for (const entry of workoutData.workout_set) {
-    const { exercises, reps, weight } = entry;
+    const { exercises, reps, weight, set_num } = entry;
+    if (!exercises || !reps || !weight) continue;
+    
     const { muscle_group: muscleGroup, exercise_name: name } = exercises;
-    const metrics = workoutData.user_exercise_metrics.filter(
-      (metric) => metric.exercise === exercises.id
-    );
-
-    if (!reps || !weight) {
-      continue;
+    
+    if (!groupedSets[muscleGroup]) {
+      groupedSets[muscleGroup] = {};
     }
-
-    if (!setData[muscleGroup]) {
-      setData[muscleGroup] = {};
+    if (!groupedSets[muscleGroup][name]) {
+      groupedSets[muscleGroup][name] = [];
     }
-    if (!setData[muscleGroup][name]) {
+    
+    // Add the set to the appropriate group
+    groupedSets[muscleGroup][name].push({
+      reps,
+      weight,
+      set_num,
+      exercise_id: exercises.id
+    });
+  }
+
+  // Process the grouped sets to create the final setData structure
+  let setData = {};
+  
+  for (const muscleGroup in groupedSets) {
+    setData[muscleGroup] = {};
+    
+    for (const name in groupedSets[muscleGroup]) {
+      // Sort the sets by set_num
+      const sortedSets = groupedSets[muscleGroup][name].sort((a, b) => a.set_num - b.set_num);
+      
+      // Get metrics for this exercise
+      const metrics = workoutData.user_exercise_metrics.filter(
+        (metric) => metric.exercise === sortedSets[0].exercise_id
+      );
+      
+      // Initialize exercise data
       setData[muscleGroup][name] = {
-        numSets: 0,
+        numSets: sortedSets.length,
         reps: "",
         weight: "",
         metrics: metrics.reduce((acc, metric) => {
@@ -67,14 +92,14 @@ export const load = (async ({ locals: { supabase}, params }) => {
       setData[muscleGroup][name].metrics['expected_weight'] = 0;
       setData[muscleGroup][name].metrics['expected_reps'] = 0;
       
+      // Build the reps and weight strings in sorted order
+      for (const set of sortedSets) {
+        setData[muscleGroup][name].reps += set.reps.toString() + ", ";
+        setData[muscleGroup][name].weight += set.weight.toString() + ", ";
+        setData[muscleGroup][name].metrics['expected_weight'] += set.weight * set.reps;
+        setData[muscleGroup][name].metrics['expected_reps'] += set.reps;
+      }
     }
-    setData[muscleGroup][name].numSets += 1;
-    setData[muscleGroup][name].reps += reps.toString() + ", ";
-    setData[muscleGroup][name].weight += weight.toString() + ", ";
-    setData[muscleGroup][name].metrics['expected_weight'] += weight;
-    setData[muscleGroup][name].metrics['expected_reps'] += reps;
-
-
   }
 
   for (const muscleGoup in setData) {

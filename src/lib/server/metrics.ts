@@ -252,7 +252,7 @@ export async function calculateExerciseMetrics(
       }
       exerciseMetrics.get(item.exercise).exerciseSets.push(item);
       exerciseMetrics.get(item.exercise).totalReps += item.reps;
-      exerciseMetrics.get(item.exercise).totalWeight += item.weight;
+      exerciseMetrics.get(item.exercise).totalWeight += item.weight * item.reps;
       exerciseMetrics.get(item.exercise).num_sets++;
     }
     for (const [, exerciseObject] of exerciseMetrics) {
