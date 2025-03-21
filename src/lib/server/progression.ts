@@ -290,8 +290,15 @@ export async function nonProgression(workout: CompleteWorkout, mesocycle: Progre
     return;
   }
   const nextWorkout: CompleteWorkout = await getNextWorkout(workout, muscleGroup);
+  
+  // Check for null nextWorkout first - this is likely the end of a mesocycle
+  if (!nextWorkout) {
+    console.log(`No next workout found for muscle group ${muscleGroup}. This may be the end of a mesocycle.`);
+    return;
+  }
+  
   const previousWorkout: CompleteWorkout = await getPreviousWorkout(workout, muscleGroup, nextWorkout.meso_day);
-  if (!nextWorkout || !previousWorkout) {
+  if (!previousWorkout) {
     return;
   }
   const isDeload = nextWorkout.deload;
