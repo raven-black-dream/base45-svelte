@@ -150,8 +150,12 @@ export async function calculateMuscleGroupMetrics(
   mesocycle: string,
   workout: string
 ) {
+  // Early return for empty workout sets - no metrics to calculate
+  if (pastWorkoutSets.length === 0) {
+    return;
+  }
   
-
+  // Calculate exercise metrics
   let exerciseMetrics: Map<
     string,
     {
@@ -162,11 +166,20 @@ export async function calculateMuscleGroupMetrics(
     }
   > = exerciseSFR(muscleGroup, pastWorkoutSets, pastWorkoutFeedback);
 
-  // calculate exercise Raw Stimulus Magnitude, Fatigue Score, and Stimulus to Fatigue Ratio -> requires previous workout feedback and previous workout metrics (specifically the performance score for the exercise following a given exercise)
+  // If no exercise metrics were calculated, return early
+  if (exerciseMetrics.size === 0) {
+    return;
+  }
+
+  // Prepare all metrics data for processing
+  const metricsToProcess = [];
+  
+  // Process each exercise's metrics
   for (const [key, exercise] of exerciseMetrics.entries()) {
     const workoutId = workout;
 
-    const insertData = [
+    // Add all metrics for this exercise to the processing array
+    metricsToProcess.push(
       {
         exercise: key,
         workout: workoutId,
@@ -187,14 +200,62 @@ export async function calculateMuscleGroupMetrics(
         mesocycle,
         metric_name: "stimulus_to_fatigue_ratio",
         value: exercise.stimulusToFatigueRatio,
-      },
-    ];
+      }
+    );
+  }
 
-    // Use await to wait for the insert operation
-    await prisma.user_exercise_metrics.createMany({
-      data: insertData,
+  // Get existing metrics for this workout
+  const existingMetrics = await prisma.user_exercise_metrics.findMany({
+    where: {
+      workout: workout
+    }
+  });
+
+  // Create maps for faster lookups
+  const existingMetricsMap = new Map();
+  existingMetrics.forEach(metric => {
+    const key = `${metric.exercise}_${metric.metric_name}`;
+    existingMetricsMap.set(key, metric);
+  });
+
+  // Separate metrics into updates and creates
+  const metricsToUpdate = [];
+  const metricsToCreate = [];
+
+  if (existingMetrics.length === 0) {
+    metricsToCreate.push(...metricsToProcess);
+  } else {
+    metricsToProcess.forEach(metric => {
+      const key = `${metric.exercise}_${metric.metric_name}`;
+      if (existingMetricsMap.has(key)) {
+        metricsToUpdate.push({
+          id: existingMetricsMap.get(key).id,
+          value: metric.value
+        });
+      } else {
+        metricsToCreate.push(metric);
+      }
     });
   }
+
+  // Execute batch operations
+  const updatePromises = metricsToUpdate.map(metric => 
+    prisma.user_exercise_metrics.update({
+      where: { id: metric.id },
+      data: { value: metric.value }
+    })
+  );
+
+  // Create new metrics in batch if any
+  let createPromise = null;
+  if (metricsToCreate.length > 0) {
+    createPromise = prisma.user_exercise_metrics.createMany({
+      data: metricsToCreate
+    });
+  }
+
+  // Wait for all operations to complete
+  await Promise.all([...updatePromises, createPromise].filter(Boolean));
 }
 
 /**
@@ -221,6 +282,11 @@ export async function calculateExerciseMetrics(
   mesocycleId: string,
   workoutId: string,
 ) {
+  // Early return if no exercise data is provided
+  if (!exerciseData || exerciseData.length === 0) {
+    return [];
+  }
+  
   let exerciseMetrics: Map<string, ExerciseMetric> = new Map();
   let userExerciseMetrics: {
     exercise: string;
@@ -230,122 +296,135 @@ export async function calculateExerciseMetrics(
     workout: string;
   }[] = [];
 
-  if (exerciseData) {
-    // for each exercise, calculate the metrics for that exercise
-    for (const item of exerciseData) {
+  // First, check if there are any existing metrics for this workout
+  let existingMetrics = await prisma.user_exercise_metrics.findMany({
+    where: { 
+      workout: workoutId
+     }
+  });
 
+  // Process exercise data
+  // for each exercise, calculate the metrics for that exercise
+  for (const item of exerciseData) {
+    if (!exerciseMetrics.has(item.exercise)) {
+      exerciseMetrics.set(item.exercise, {
+        totalReps: 0,
+        averageReps: 0,
+        averageWeight: 0,
+        totalWeight: 0,
+        repStdDev: 0,
+        weightStdDev: 0,
+        performanceScore: 0,
+        exerciseSets: [],
+        feedback: currentWorkoutFeedback,
+        mesocycle: mesocycleId,
+        num_sets: 0,
+      });
+    }
+    exerciseMetrics.get(item.exercise).exerciseSets.push(item);
+    exerciseMetrics.get(item.exercise).totalReps += item.reps;
+    exerciseMetrics.get(item.exercise).totalWeight += item.weight * item.reps;
+    exerciseMetrics.get(item.exercise).num_sets++;
+  }
+  for (const [, exerciseObject] of exerciseMetrics) {
+    const {
+      totalReps,
+      totalWeight,
+      exerciseSets: repsAndWeights,
+    } = exerciseObject;
 
-      if (!exerciseMetrics.has(item.exercise)) {
-        exerciseMetrics.set(item.exercise, {
-          totalReps: 0,
-          averageReps: 0,
-          averageWeight: 0,
-          totalWeight: 0,
-          repStdDev: 0,
-          weightStdDev: 0,
-          performanceScore: 0,
-          exerciseSets: [],
-          feedback: currentWorkoutFeedback,
+    exerciseObject.averageReps = totalReps / repsAndWeights.length;
+    exerciseObject.averageWeight = totalWeight / repsAndWeights.length;
+
+    // Calculate standard deviation for reps and weight
+    const repSquares = repsAndWeights.reduce(
+      (acc, cur) => acc + Math.pow(cur.reps - exerciseObject.averageReps, 2),
+      0,
+    );
+    const weightSquares = repsAndWeights.reduce(
+      (acc, cur) =>
+        acc + Math.pow(cur.weight - exerciseObject.averageWeight, 2),
+      0,
+    );
+
+    exerciseObject.repStdDev = Math.sqrt(
+      repSquares / (repsAndWeights.length - 1),
+    );
+    exerciseObject.weightStdDev = Math.sqrt(
+      weightSquares / (repsAndWeights.length - 1),
+    );
+    const feedback = exerciseObject.feedback[0];
+    // Calculate performance score by combining the performance scores of the sets with the mg_difficulty score for the muscle group then bounding the result between 0 and 3
+    const avgSetPerformanceScore = weightedAverageScore(exerciseObject.exerciseSets);
+    const normalizedScore = normalizePerformanceScore(avgSetPerformanceScore, exerciseObject.num_sets);
+    exerciseObject.performanceScore = calculateCompositeScore(normalizedScore, currentWorkoutFeedback.value);
+  }
+
+  // Update existing metrics or create new ones
+  const updatePromises = [];
+  const metricsToCreate = [];
+
+  exerciseMetrics.forEach((exercise, key) => {
+    // Check for existing metrics and update them
+    const metrics = [
+      { name: "average_reps", value: exercise.averageReps },
+      { name: "average_weight", value: exercise.averageWeight },
+      { name: "rep_std_dev", value: exercise.repStdDev },
+      { name: "weight_std_dev", value: exercise.weightStdDev },
+      { name: "total_reps", value: exercise.totalReps },
+      { name: "total_weight", value: exercise.totalWeight },
+      { name: "performance_score", value: exercise.performanceScore }
+    ];
+
+    metrics.forEach(metric => {
+      // Try to find an existing metric
+      if (!existingMetrics) {
+        existingMetrics = [];
+      }
+      const existingMetric = existingMetrics.find(m => 
+        m.exercise === key && 
+        m.metric_name === metric.name && 
+        m.workout === workoutId &&
+        m.mesocycle === mesocycleId
+      );
+
+      if (existingMetric) {
+        // Update existing metric
+        updatePromises.push(
+          prisma.user_exercise_metrics.update({
+            where: { id: existingMetric.id },
+            data: { value: metric.value }
+          })
+        );
+      } else {
+        // Add to list for creation
+        metricsToCreate.push({
+          exercise: key,
           mesocycle: mesocycleId,
-          num_sets: 0,
+          metric_name: metric.name,
+          value: metric.value,
+          workout: workoutId
         });
       }
-      exerciseMetrics.get(item.exercise).exerciseSets.push(item);
-      exerciseMetrics.get(item.exercise).totalReps += item.reps;
-      exerciseMetrics.get(item.exercise).totalWeight += item.weight * item.reps;
-      exerciseMetrics.get(item.exercise).num_sets++;
-    }
-    for (const [, exerciseObject] of exerciseMetrics) {
-      const {
-        totalReps,
-        totalWeight,
-        exerciseSets: repsAndWeights,
-      } = exerciseObject;
-
-      exerciseObject.averageReps = totalReps / repsAndWeights.length;
-      exerciseObject.averageWeight = totalWeight / repsAndWeights.length;
-
-      // Calculate standard deviation for reps and weight
-      const repSquares = repsAndWeights.reduce(
-        (acc, cur) => acc + Math.pow(cur.reps - exerciseObject.averageReps, 2),
-        0,
-      );
-      const weightSquares = repsAndWeights.reduce(
-        (acc, cur) =>
-          acc + Math.pow(cur.weight - exerciseObject.averageWeight, 2),
-        0,
-      );
-
-      exerciseObject.repStdDev = Math.sqrt(
-        repSquares / (repsAndWeights.length - 1),
-      );
-      exerciseObject.weightStdDev = Math.sqrt(
-        weightSquares / (repsAndWeights.length - 1),
-      );
-      const feedback = exerciseObject.feedback[0];
-      // Calculate performance score by combining the performance scores of the sets with the mg_difficulty score for the muscle group then bounding the result between 0 and 3
-      const avgSetPerformanceScore = weightedAverageScore(exerciseObject.exerciseSets);
-      const normalizedScore = normalizePerformanceScore(avgSetPerformanceScore, exerciseObject.num_sets);
-      exerciseObject.performanceScore = calculateCompositeScore(normalizedScore, currentWorkoutFeedback.value);
-      
-    }
-    exerciseMetrics.forEach((exercise, key) => {
-      userExerciseMetrics.push({
-        exercise: key,
-        mesocycle: mesocycleId,
-        metric_name: "average_reps",
-        value: exercise.averageReps,
-        workout: workoutId,
-      });
-      userExerciseMetrics.push({
-        exercise: key,
-        mesocycle: mesocycleId,
-        metric_name: "average_weight",
-        value: exercise.averageWeight,
-        workout: workoutId,
-      });
-      userExerciseMetrics.push({
-        exercise: key,
-        mesocycle: mesocycleId,
-        metric_name: "rep_std_dev",
-        value: exercise.repStdDev,
-        workout: workoutId,
-      });
-      userExerciseMetrics.push({
-        exercise: key,
-        mesocycle: mesocycleId,
-        metric_name: "weight_std_dev",
-        value: exercise.weightStdDev,
-        workout: workoutId,
-      });
-      userExerciseMetrics.push({
-        exercise: key,
-        mesocycle: mesocycleId,
-        metric_name: "total_reps",
-        value: exercise.totalReps,
-        workout: workoutId,
-      });
-      userExerciseMetrics.push({
-        exercise: key,
-        mesocycle: mesocycleId,
-        metric_name: "total_weight",
-        value: exercise.totalWeight,
-        workout: workoutId,
-      });
-      userExerciseMetrics.push({
-        exercise: key,
-        mesocycle: mesocycleId,
-        metric_name: "performance_score",
-        value: exercise.performanceScore,
-        workout: workoutId,
-      });
     });
+  });
+
+  // Execute all updates in parallel
+  if (updatePromises.length > 0) {
+    await Promise.all(updatePromises);
+  }
+
+  // Create new metrics
+  if (metricsToCreate.length > 0) {
     const asInserted = await prisma.user_exercise_metrics.createManyAndReturn({
-      data: userExerciseMetrics,
+      data: metricsToCreate,
     });
     return asInserted;
   }
+  
+  return [];
 }
+
 
 function weightedAverageScore(sets: ExerciseSet[]) {
   let weightedSum = 0;
