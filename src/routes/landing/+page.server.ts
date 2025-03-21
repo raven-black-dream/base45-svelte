@@ -339,15 +339,7 @@ function calculateTotalLoad(
     
     // Group metrics by exercise name and workout date
     weekWeights.forEach(weightMetric => {
-      const matchingRep = weekReps.find(
-        repMetric => 
-          repMetric.exercises.exercise_name === weightMetric.exercises.exercise_name &&
-          repMetric.workouts.date.getTime() === weightMetric.workouts.date.getTime()
-      );
-      
-      if (matchingRep) {
-        totalLoad += weightMetric.value * matchingRep.value;
-      }
+      totalLoad += weightMetric.value;
     });
     
     return totalLoad;
