@@ -13,8 +13,8 @@ The application currently doesn't handle the last workouts in a mesocycle optima
 user getting an error when submitting the last workouts of a mesocycle
 
 ## Objectives
-- [ ] Review current handling of final mesocycle workouts
-- [ ] Implement improved logic for transitioning between mesocycles
+- [x] Review current handling of final mesocycle workouts
+- [x] Implement improved logic for transitioning between mesocycles
 - [ ] Add better indicators for when a mesocycle is ending
 - [ ] Implement user guidance for starting new mesocycles
 - [ ] Ensure proper deload scheduling at mesocycle boundaries

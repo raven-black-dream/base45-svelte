@@ -111,16 +111,16 @@ import Icon from '@iconify/svelte';
                             {#each Object.entries(datum) as [key, value]}
                             <li>
                             <p>{key}:</p> 
-                            <Rating value={value + 1} count={4} allowHalf>
+                            <Rating value={value} count={4} allowHalf>
                                 {#snippet empty()}
-                                                                                        <Icon icon="fa6-regular:star" height='1.5em' />
-                                                                                    {/snippet}
+                                    <Icon icon="fa6-regular:star" height='1.5em' />
+                                {/snippet}
                                 {#snippet half()}
-                                                                                        <Icon icon="fa6-regular:star" height='1.5em'/>
-                                                                                    {/snippet}
+                                    <Icon icon="fa6-solid:star-half-stroke" height='1.5em'/>
+                                {/snippet}
                                 {#snippet full()}
-                                                                                        <Icon icon="fa6-solid:star" height='1.5em'/>
-                                                                                    {/snippet}
+                                    <Icon icon="fa6-solid:star" height='1.5em'/>
+                                {/snippet}
                             </Rating>
                             </li>
                             {/each}
