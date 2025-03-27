@@ -36,7 +36,9 @@
 </script>
 <header class='sticky top-0 z-10 flex justify-between items-center preset-filled-surface-50-950'>
 	{#if session}
-		<Modal bind:open={drawerState}
+		<Modal 
+		open={drawerState}
+		onOpenChange={(e) => (drawerState = e.open)}
 		triggerBase='btn'
 		contentBase='bg-surface-100-900 p-4 space-y-4 shadow-xl max-w-[480px] h-screen'
 		positionerJustify='justify-start'
@@ -87,7 +89,8 @@
 	</a>
 
 	<Modal
-		bind:open={infoModalState}
+		open={infoModalState}
+		onOpenChange={(e) => (infoModalState = e.open)}
 		triggerBase='btn-icon preset-tonal'
 		contentBase='card bg-surface-100-900 p-4 space-y-4 shadow-xl'
 		backdropClasses='backtrop-blur-sm'
