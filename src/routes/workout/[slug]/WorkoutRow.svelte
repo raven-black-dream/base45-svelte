@@ -20,8 +20,6 @@
         recovery,
     }: Props = $props();
 
-    $inspect(set);
-
     function generateQuestions(isFirst: boolean, isLast:boolean, completed: boolean, i: number, len: number) {
         let questions = {};
         const recovery = "When did your " + set.exercises.muscle_group +  " recover after your last workout? (1: didn't get sore - 4: still sore)";
@@ -121,6 +119,7 @@
         openState = false;
     }
 
+
 </script>
 {#if loading}
     <div class="flex flex-col items-center justify-center h-full">
@@ -130,6 +129,7 @@
 <!-- use:enhance keeps the page from reloading on form submission; reloading also clears any modals -->
     <form class="p-4" method="post" id='set_{set.id}' use:enhance={
         () => {
+            console.log('The Form has triggered.')
             loading = true;
             return async ({ update }) => {
                 await update();
@@ -163,12 +163,12 @@
         />
         <div class='ig-cell col-span-1 preset-tonal-primary'>
             {#if set.completed}
-                {#if actualVolume > setTargetVolume}
-                    <Icon icon='fa6-solid:angles-up'></Icon>
+                {#if setTargetVolume == 0 && actualVolume != 0}
+                    <Icon icon='fa6-solid:check'></Icon>
                 {:else if actualVolume === setTargetVolume}
                     <Icon icon='fa6-solid:check'></Icon>
-                {:else if setTargetVolume == 0 && actualVolume != 0}
-                    <Icon icon='fa6-solid:check'></Icon>
+                {:else if actualVolume > setTargetVolume}
+                    <Icon icon='fa6-solid:angles-up'></Icon>
                 {:else}
                     <Icon icon='fa6-solid:angles-down'></Icon>
                 {/if}
@@ -177,7 +177,8 @@
         </div>
         {#if Object.keys(questions).length > 0}
             <Modal
-                bind:open={openState}
+                open={openState}
+                onOpenChange={(e) => (openState = e.open)}
                 triggerBase='btn col-span-2 {buttonClass}'
                 contentBase='bg-surface-100-900 p-4 space-y-4 shadow-xl max-w-.25 h-.25'
                 backdropClasses='backtrop-blur-md'
@@ -198,16 +199,16 @@
                             {#each Object.entries(questions) as [question, ], i}
                                 <div>
                                 <p>{question}</p>
-                                <Rating bind:value={questions[question]} name={questionKeys.get(question)} form="set_{set.id}" count={4} allowHalf required>
+                                <Rating value={questions[question]} onValueChange={(e) => (questions[question] = e.value)} name={questionKeys.get(question)} form="set_{set.id}" count={4} allowHalf required>
                                     {#snippet iconEmpty()}
-                                                                <Icon icon="fa6-regular:star" height='2.5em' />
-                                                            {/snippet}
+                                        <Icon icon="fa6-regular:star" height='2.5em' />
+                                    {/snippet}
                                     {#snippet iconHalf()}
-                                                                <Icon icon="fa6-solid:star-half-stroke" height='2.5em'/>
-                                                            {/snippet}
+                                        <Icon icon="fa6-solid:star-half-stroke" height='2.5em'/>
+                                    {/snippet}
                                     {#snippet iconFull()}
-                                                                <Icon icon="fa6-solid:star" height='2.5em'/>
-                                                            {/snippet}
+                                        <Icon icon="fa6-solid:star" height='2.5em'/>
+                                    {/snippet}
                                 </Rating>
                             </div>
                             {/each}

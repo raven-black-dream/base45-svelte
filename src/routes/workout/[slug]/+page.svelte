@@ -22,6 +22,8 @@
         return map
     }, {})
 
+    $inspect(openState);
+
     let submitting = $state(false);
     
     function popoverClose(key:string) {
@@ -42,11 +44,11 @@
                     <span class="p-4 text-xl font-extrabold">{exerciseName}</span>
                     <div class='flex justify-end'>
                         <Popover
-                            bind:open={openState[exerciseName]}
-                            positioning={{placement: 'bottom-start'}}
+                            open={openState[exerciseName]}
+                            onOpenChange={(e) => (openState[exerciseName] = e.open)}
+                            positioning={{placement: 'top-start'}}
                             triggerBase='btn-icon'
                             contentBase='bg-surface-100-900 p-4 space-y-4 shadow-xl max-w-[480px] h-100'
-                            arrow
                             >
                             {#snippet trigger()}<Icon icon='fa6-solid:comment'/>{/snippet}
                             {#snippet content()}

@@ -641,15 +641,25 @@ export const actions = {
           })
 
           if (pastWorkoutData) {
+            // Extract performance scores from the exercise metrics that were already calculated
+            // The exerciseMetrics returned from calculateExerciseMetrics contains objects with exercise, metric_name, and value
+            const performanceScores = exerciseMetrics
+              ? exerciseMetrics
+                  .filter(metric => metric.metric_name === "performance_score")
+                  .map(metric => ({
+                    exercise: metric.exercise,
+                    value: metric.value
+                  }))
+              : [];
+              
             await calculateMuscleGroupMetrics(
-            muscleGroup,
-            pastWorkoutData.workout_set,
-            pastWorkoutData.workout_feedback,
-            metricData.mesocycle,
-            params.slug
-          )
-
-
+              muscleGroup,
+              pastWorkoutData.workout_set,
+              pastWorkoutData.workout_feedback,
+              metricData.mesocycle,
+              params.slug,
+              performanceScores // Pass the extracted performance scores
+            )
           }
         }
         

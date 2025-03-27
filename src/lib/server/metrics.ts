@@ -67,7 +67,8 @@ interface ExerciseSet {
 export function exerciseSFR(
   muscleGroup: string,
   workoutSets: ExerciseSet[],
-  workoutFeedback: PreviousWorkoutFeedback[]
+  workoutFeedback: PreviousWorkoutFeedback[],
+  performanceScores: Array<{exercise: string, value: number}> = [] // Add optional parameter for performance scores
 ): Map<string, {
   muscleGroup: string;
   rawStimulusMagnitude: number;
@@ -110,13 +111,21 @@ export function exerciseSFR(
       return sum;
     }, 0);
 
-    // Add performance-based fatigue
-    const setPerformances = sets.map(set => set.set_performance || 0);
-    const averagePerformance = setPerformances.length > 0 
-      ? setPerformances.reduce((a, b) => a + b, 0) / setPerformances.length 
-      : 0;
+    // Use performance score from metrics if available, otherwise fallback to set-based calculation
+    const exercisePerformance = performanceScores.find(score => score.exercise === exerciseId);
     
-    fatigueScore += Math.max(0, averagePerformance); // Only add positive performance values to fatigue
+    if (exercisePerformance) {
+      // Use the passed performance score
+      fatigueScore += Math.max(0, exercisePerformance.value); // Only add positive performance values to fatigue
+    } else {
+      // Fall back to set-based calculation if no score provided
+      const setPerformances = sets.map(set => set.set_performance || 0);
+      const averagePerformance = setPerformances.length > 0 
+        ? setPerformances.reduce((a, b) => a + b, 0) / setPerformances.length 
+        : 0;
+      
+      fatigueScore += Math.max(0, averagePerformance); // Only add positive performance values to fatigue
+    }
 
     // Calculate stimulus to fatigue ratio
     // Adding 1 to both numerator and denominator to avoid division by zero
@@ -148,14 +157,38 @@ export async function calculateMuscleGroupMetrics(
   pastWorkoutSets: ExerciseSet[],
   pastWorkoutFeedback: PreviousWorkoutFeedback[],
   mesocycle: string,
-  workout: string
+  workout: string,
+  performanceScores: Array<{exercise: string, value: number}> = [] // Add optional parameter for performance scores
 ) {
   // Early return for empty workout sets - no metrics to calculate
   if (pastWorkoutSets.length === 0) {
     return;
   }
   
-  // Calculate exercise metrics
+  // If no performance scores were passed, fetch them as a fallback
+  let scores = performanceScores;
+  if (scores.length === 0) {
+    // Fetch performance scores if they weren't passed
+    const fetchedScores = await prisma.user_exercise_metrics.findMany({
+      where: {
+        workout: workout,
+        metric_name: "performance_score"
+      },
+      select: {
+        exercise: true,
+        value: true
+      }
+    });
+    // Filter out null values and ensure type safety
+    scores = fetchedScores
+      .filter(score => score.value !== null)
+      .map(score => ({
+        exercise: score.exercise,
+        value: score.value as number // Safe assertion after filtering nulls
+      }));
+  }
+  
+  // Calculate exercise metrics with the performance scores
   let exerciseMetrics: Map<
     string,
     {
@@ -164,7 +197,7 @@ export async function calculateMuscleGroupMetrics(
       fatigueScore: number;
       stimulusToFatigueRatio: number;
     }
-  > = exerciseSFR(muscleGroup, pastWorkoutSets, pastWorkoutFeedback);
+  > = exerciseSFR(muscleGroup, pastWorkoutSets, pastWorkoutFeedback, scores);
 
   // If no exercise metrics were calculated, return early
   if (exerciseMetrics.size === 0) {
