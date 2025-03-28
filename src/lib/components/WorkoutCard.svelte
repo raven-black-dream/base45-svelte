@@ -20,10 +20,11 @@
     <div class="flex justify-between items-center mb-2">
         <h2 class="text-lg font-semibold mb-2">{workout.day_name}</h2>
         <Popover
-        bind:open={openState}
+        open={openState}
+        onOpenChange={(e) => (openState = e.open)}
         positioning={{placement: 'top-end'}}
         triggerBase='btn-icon'
-        contentBase='bg-surface-100-900 p-4 space-y-4 shadow-xl max-w-[480px] h-100'
+        contentBase='bg-surface-100-900 p-4 space-y-4 shadow-xl max-w-[480px] max-h-100'
         arrow
         arrowBackground='bg-surface-100-900'
         >
