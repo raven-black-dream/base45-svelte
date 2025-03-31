@@ -12,7 +12,7 @@
   }
 
   let { data }: Props = $props();
-  const value = $state('profile');
+  let value = $state(['profile']);
 
 </script>
 
@@ -27,7 +27,7 @@
 <div class='card p-4 preset-tonal-primary'>
     <header class="card-header text-xl font-extrabold">Hello {data.profile?.display_name}!</header>
     <section class='p-4 space-y-4'>
-        <Accordion {value} multiple>
+        <Accordion {value} onValueChange={(e) => (value = e.value)} multiple>
             <Accordion.Item value='profile'>
                 {#snippet control()}
                       Profile Details

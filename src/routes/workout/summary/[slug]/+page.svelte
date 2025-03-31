@@ -8,7 +8,7 @@ import Icon from '@iconify/svelte';
     }
 
     let { data }: Props = $props();
-    let value = $state([])
+    let value = $state([''])
 </script>
 
 
@@ -20,7 +20,7 @@ import Icon from '@iconify/svelte';
     <header class='card-header text-xl font-extrabold'>
         {data.workout?.day_name} - {new Date(data.workout?.date).toDateString()}
     </header>
-    <Accordion {value} collapsible>        
+    <Accordion {value} onValueChange={(e) => (value = e.value)} collapsible>        
         <div class='space-y-4'>
             {#each Object.entries(data.setData) as [muscleGroup, exercises]}
             <div class='card p-4 preset-tonal-primary preset-outlined-primary-200-800'>

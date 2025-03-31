@@ -19,7 +19,7 @@
 </svelte:head>
 
 <ul>
-    <Accordion class="py-2" {value} collapsible>
+    <Accordion {value} onValueChange={(e) => value = e.value} collapsible>
 	    {#each data.programs as program, i}
         
             <Accordion.Item class="card preset-filled-surface-300-700" value={program.id}>
