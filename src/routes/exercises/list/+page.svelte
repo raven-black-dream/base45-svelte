@@ -8,12 +8,12 @@
     }
 
     let { data }: Props = $props();
-    const value = $state(data.exerciseData[0].exercise_name);
+    let value = $state([data.exerciseData[0].exercise_name]);
 </script>
 
 <div class='card p-4'>
     <header class='text-xl font-extrabold'>Exercises</header>
-    <Accordion {value} collapsible>
+    <Accordion {value} onValueChange={(e) => (value = e.value)} collapsible>
         {#each data.exerciseData as exercise}
             <Accordion.Item value={exercise.exercise_name}>
                 {#snippet lead()}
