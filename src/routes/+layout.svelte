@@ -84,6 +84,9 @@
 	{/if}
 	<div class='flex p-2'>
 
+	<a href="/how-to" class="btn-icon">
+		<Icon icon="fa6-solid:question" height='1.5em'/>
+	</a>
 	<a class='btn-icon' href="https://github.com/raven-black-dream/base45-svelte">
 		<Icon icon="fa6-brands:github" height='1.5em'/>
 	</a>
