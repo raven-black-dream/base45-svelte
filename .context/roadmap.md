@@ -1,7 +1,7 @@
 # Project Roadmap
 
 ---
-last_updated: 2025-03-31T14:30:58-07:00
+last_updated: 2025-04-01T12:37:58-07:00
 ---
 
 ## Current Focus (Q1 2025)
@@ -13,7 +13,7 @@ last_updated: 2025-03-31T14:30:58-07:00
   - Optimize client-side data management
   - Reduce bundle size through code splitting
 - Enhanced Data Visualization
-  - Integrate interactive workout progress charts
+  - Integrate interactive workout progress charts (Long-Term Analytics page done)
   - Add muscle group activation heatmaps
   - Implement personal records tracking dashboard
 - User Experience Improvements
@@ -37,6 +37,7 @@ last_updated: 2025-03-31T14:30:58-07:00
 - Implement proper error boundaries
 - Migrate to TypeScript strict mode
 - Update deprecated Supabase API calls
+- Resolve remaining TypeScript errors (e.g., in long-term analytics)
 
 ## Future Direction
 
@@ -78,6 +79,7 @@ last_updated: 2025-03-31T14:30:58-07:00
 - Fixed workout progression set ordering (2025 Q1)
 - User documentation (`/how-to` page) updated and enhanced (2025 Q1)
 - Exercise List Enhancements (2025 Q1)
+- Long-Term Analytics Visualization (Core Implementation - 2025 Q1)
 
 ---
 ## Notes
