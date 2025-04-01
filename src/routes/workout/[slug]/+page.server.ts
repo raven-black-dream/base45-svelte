@@ -48,7 +48,7 @@ interface MesoDay {
 }
 
 // @ts-ignore
-export const load = async ({ locals: { supabase }, params }) => {
+  export const load = async ({ locals: { supabase }, params }) => {
   const {
     data: { user },
   } = await supabase.auth.getUser();

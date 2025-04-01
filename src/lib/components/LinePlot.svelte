@@ -15,7 +15,7 @@
         font: {color: '#cccccc'}, 
         xaxis: {
             color: '#cccccc',
-            dtick: 1,
+            // dtick: 1, // Remove this - Plotly handles date ticks better automatically
             ...(xRange && { range: xRange })
         }, 
         yaxis: {
