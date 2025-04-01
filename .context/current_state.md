@@ -1,7 +1,7 @@
 # Current Project State
 
 ---
-last_updated: 2025-03-21T13:25:00-07:00
+last_updated: 2025-04-01T14:30:58-07:00
 current_phase: "Development"
 sprint_status: "In Progress"
 ---
@@ -16,8 +16,14 @@ sprint_status: "In Progress"
 - Account management and user profile features
 - Workout summary and progress tracking
 - Weight history tracking
+- User Documentation (`/how-to` page)
 - Mobile-first responsive design implementation for core components
 - Metrics system optimization (update existing metrics instead of recreating)
+- Exercise List enhancements:
+  - Displays all exercises in an accordion
+  - Conditionally shows an 'Analytics' link for exercises the user has performed
+  - Conditionally highlights performed exercises
+  - Displays a performance summary table within each accordion panel (for performed exercises) showing set count, max weight, latest set (weight x reps), and latest date per rep range
 
 ### In Progress
 - Recent bug fixes and improvements to core functionality
@@ -33,6 +39,8 @@ sprint_status: "In Progress"
   - Core infrastructure planning
 - Weekly Muscle Group Progression Feature (Task 018)
   - Designing implementation approach
+- Improving Mesocycle Completion/Transition Logic (Task 012)
+  - Addressing errors when completing the final workouts of a mesocycle and planning transitions/deloads
 
 ### Upcoming
 - Enhanced data visualization using Plotly.js (Task 003)
@@ -79,6 +87,7 @@ sprint_status: "In Progress"
 - Limited community resources for Svelte 5 specific issues
 
 ## Recent Changes
+- Updated and improved user documentation (`/how-to` page) with new features and mobile responsiveness (Today)
 - Metrics system optimization: update existing metrics instead of recreating (Today)
 - Fixed workout progression for consistent set ordering (Today)
 - UI library update and mobile-responsive component implementation (23 days ago)
@@ -86,15 +95,21 @@ sprint_status: "In Progress"
 - Integration of latest SvelteKit and Prisma versions
 - Enhanced error handling and monitoring with Sentry
 - UI improvements with Skeleton component library
+- Successfully integrated performance statistics into the main exercise list (Today)
+- Implemented Bar Plot for Stimulus vs Rep Range on analytics page (Today)
+- Refactored metrics calculation to update existing records instead of creating duplicates (Today)
+- Added conditional links from exercise list to analytics page (Today)
 
 ## Current Focus
 - Optimizing database queries and performance
 - Enhancing workout tracking and metrics visualization
 - Implementing advanced workout progression features
 - Stabilizing core features and fixing reported issues
+- Improving Mesocycle Completion/Transition Logic (Task 012)
 
 ## Known Technical Debt
 - Need for comprehensive test coverage
 - Performance optimization for large datasets
 - Documentation updates needed for new features
 - Potential database schema optimizations
+- TypeScript errors in `src/routes/workout/[slug]/+page.server.ts` related to potential null values and type mismatches (e.g., `CompleteWorkout`, `ProgressionMesocycle` types)
