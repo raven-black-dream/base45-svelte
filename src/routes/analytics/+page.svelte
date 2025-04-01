@@ -6,40 +6,46 @@
 </script>
 
 <div class="container mx-auto p-4 space-y-6">
-	<h1 class="text-center mb-6">Performance Analytics</h1>
+	<p class="text-center h2 mb-6">Performance Analytics</p>
 
 	<!-- Overall Long-Term Trends Card -->
-	<a href="/analytics/long-term">
-		<div class = 'card p-4 hover:preset-tonal-primary'>
-			<h1 class="mb-2">Overall Long-Term Trends</h1>
-			<p class="mb-3 text-gray-500 dark:text-gray-400 leading-tight">
-				Track your workout volume, fatigue, stimulus-to-fatigue ratio (SFR), and subjective feedback
-				over time across all workouts.
-		</p>
-		<span class="flex items-center text-primary-600 dark:text-primary-500">
-			View Trends <Icon icon="fa6-solid:arrow-right" class="w-3.5 h-3.5 ml-2" />
-		</span>
+	<div class = 'card p-4 preset-filled-surface-100-900 hover:preset-tonal-primary'>
+		<a href="/analytics/long-term">
+			<div class="flex flex-col items-center justify-center">
+				<!-- Linking to /analytics/long-term -->
+				<p class="font-bold mb-2">Overall Long-Term Trends</p>
+				<p class="mb-3 text-gray-500 dark:text-gray-400 leading-tight">
+					Track your workout volume, fatigue, stimulus-to-fatigue ratio (SFR), and subjective feedback
+					over time across all workouts.
+				</p>
+				<span class="flex items-center text-primary-600 dark:text-primary-500">
+					View Trends <Icon icon="fa6-solid:arrow-right" class="w-3.5 h-3.5 ml-2" />
+				</span>
+			</div>
+		</a>
 	</div>
-	</a>
 
 	<!-- Exercise Performance Card -->
-	<a href="/exercises/list">
-		<div class = 'card p-4 hover:preset-tonal-primary'>
-			<!-- Linking to /exercises/list as it contains links to individual analytics -->
-			<h1 class="mb-2">Exercise Performance</h1>
-			<p class="mb-3 text-gray-500 dark:text-gray-400 leading-tight">
-				Dive into specific exercises. See your rep maxes, set counts, latest performance, and links to
-				detailed exercise analytics.
-			</p>
-			<span class="flex items-center text-primary-600 dark:text-primary-500">
-				Analyze Exercises <Icon icon="fa6-solid:arrow-right" class="w-3.5 h-3.5 ml-2" />
-			</span>
-		</div>
-	</a>
+	<div class = 'card p-4 preset-filled-surface-100-900 hover:preset-tonal-primary'>
+		<a href="/exercises/list">
+			<div class="flex flex-col items-center justify-center">
+				<!-- Linking to /exercises/list as it contains links to individual analytics -->
+				<p class="font-bold mb-2">Exercise Performance</p>
+				<p class="mb-3 text-gray-500 dark:text-gray-400 leading-tight">
+					Dive into specific exercises. See your rep maxes, set counts, latest performance, and links to
+					detailed exercise analytics.
+				</p>
+				<span class="flex items-center text-primary-600 dark:text-primary-500">
+					Analyze Exercises <Icon icon="fa6-solid:arrow-right" class="w-3.5 h-3.5 ml-2" />
+				</span>
+			</div>
+		</a>
+	</div>
+
 	<!-- Muscle Group Analysis Card (Placeholder Link) -->
-	<div class = 'card p-4 opacity-70 hover:preset-tonal-secondary' href="/analytics/muscle-group">
+	<div class = 'card p-4 opacity-70 hover:preset-tonal-secondary'>
 		<!-- Using opacity and secondary color to indicate it might be upcoming/different -->
-		<h1 class="mb-2">Muscle Group Analysis</h1>
+		<p class="font-bold mb-2">Muscle Group Analysis</p>
 		<p class="mb-3 text-gray-500 dark:text-gray-400 leading-tight">
 			Analyze training volume, set counts, and recovery trends aggregated by muscle group. (Coming
 			Soon / Requires Setup)

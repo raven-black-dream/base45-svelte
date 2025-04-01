@@ -384,7 +384,7 @@ export const load = (async ({ locals }) => {
     for (const [mesoId, weeklyMap] of mesoWeeklyAggregates.entries()) {
         // Find the mesocycle name for the trace label
         const mesoDetails = mesocyclesData.find(m => m.id === mesoId);
-        const mesoName = mesoDetails?.meso_name || `Meso ${mesoId.substring(0, 4)}`; // Fallback name
+        const mesoDate = mesoDetails?.start_date.toISOString().split('T')[0];
 
         // Prepare data points for this specific mesocycle's traces
         const mesoVolumePoints: { week: number; value: number | null }[] = [];
@@ -427,22 +427,22 @@ export const load = (async ({ locals }) => {
         weeklyVolumeTraces.push({
             x: mesoVolumePoints.map(p => p.week),
             y: mesoVolumePoints.map(p => p.value),
-            type: 'scatter', mode: 'lines+markers', name: `${mesoName} Volume`
+            type: 'scatter', mode: 'lines+markers', name: `${mesoDate} Volume`
         });
         weeklyStimulusTraces.push({
             x: mesoStimulusPoints.map(p => p.week),
             y: mesoStimulusPoints.map(p => p.value),
-            type: 'scatter', mode: 'lines+markers', name: `${mesoName} Stimulus`
+            type: 'scatter', mode: 'lines+markers', name: `${mesoDate} Stimulus`
         });
         weeklyFatigueTraces.push({
             x: mesoFatiguePoints.map(p => p.week),
             y: mesoFatiguePoints.map(p => p.value),
-            type: 'scatter', mode: 'lines+markers', name: `${mesoName} Fatigue`
+            type: 'scatter', mode: 'lines+markers', name: `${mesoDate} Fatigue`
         });
         weeklySfrTraces.push({
             x: mesoSfrPoints.map(p => p.week),
             y: mesoSfrPoints.map(p => p.value),
-            type: 'scatter', mode: 'lines+markers', name: `${mesoName} SFR`
+            type: 'scatter', mode: 'lines+markers', name: `${mesoDate} SFR`
         });
     };
 
