@@ -66,7 +66,9 @@ function setWorkoutLoading(){
       <div class="grid grid-cols-3 gap-2">
 
         {#each data.weeklyMetrics as metric, index}
+          <div>
             <Indicator data={metric} width={120}/>
+          </div>
         {/each}
 
       </div>

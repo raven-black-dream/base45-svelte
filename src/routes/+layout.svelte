@@ -1,6 +1,6 @@
 <script lang="ts">
 	import '../app.css';
-	import { AppBar, Modal } from '@skeletonlabs/skeleton-svelte';
+	import { Modal } from '@skeletonlabs/skeleton-svelte';
 	import { invalidate } from '$app/navigation';
 	import { onMount } from 'svelte';
 	import  Icon  from '@iconify/svelte';
@@ -53,6 +53,9 @@
 				<ul class="grow space-y-2">
 					<li>
 						<a class="btn preset-tonal-primary preset-outlined-primary-200-800" href="/account/view" onclick={drawerClose}>Account</a>
+					</li>
+					<li>
+						<a class="btn preset-tonal-primary preset-outlined-primary-200-800" href="/analytics" onclick={drawerClose}>Analytics</a>
 					</li>
 					<li>
 						<a class="btn preset-tonal-primary preset-outlined-primary-200-800" href="/landing" onclick={drawerClose}>Home</a>
