@@ -38,9 +38,9 @@
             <Popover
                 open={openState}
                 onOpenChange={(e) => (openState = e.open)}
-                positioning={{placement: 'top-start'}}
+                positioning={{placement: 'top-start', flip: true}}
                 triggerBase='btn-icon'
-                contentBase='bg-surface-100-900 p-4 space-y-4 shadow-xl max-w-[480px] h-100'
+                contentBase='bg-surface-100-900 p-4 space-y-4 shadow-xl max-w-[480px] max-h-[200px]'
             >
                 {#snippet trigger()}<Icon icon='fa6-solid:comment'/>{/snippet}
                 {#snippet content()}

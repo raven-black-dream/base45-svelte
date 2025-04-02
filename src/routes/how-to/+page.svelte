@@ -214,7 +214,46 @@
         </p>
     </section>
 
-     <section class="card p-3 md:p-4 preset-filled-warning-300-700">
+    <hr />
+
+    <!-- Analytics and Metrics Section -->
+    <section class="p-4 space-y-4">
+        <h2 class="h2">Analytics and Metrics</h2>
+        <p>
+            The application provides several views to track your progress and analyze your performance over time. You can access these from the main <a href="/analytics" class="anchor">Analytics</a> page.
+        </p>
+        <h3 class="h3">Exercise Analytics</h3>
+        <p>
+            Detailed analytics for each exercise are available. You can access this view directly from the <a href="/exercises/list" class="anchor">Exercise List</a> page by clicking on an exercise name (if you have performed sets for it). This page shows:
+        </p>
+        <ul class="list-disc list-inside space-y-1">
+            <li>Performance trends across your most recent mesocycles.</li>
+            <li>Maximum weight lifted for different rep ranges.</li>
+            <li>Total number of sets performed within specific rep ranges.</li>
+            <li>Details of your latest set (weight, reps, date) for each rep range.</li>
+            <li>Visual charts illustrating volume and intensity progression for the exercise.</li>
+        </ul>
+        <p>
+            This helps you understand how you're progressing on specific movements.
+        </p>
+        <h3 class="h3">Long-Term Analytics</h3>
+        <p>
+            The <a href="/analytics/long-term" class="anchor">Long-Term Analytics</a> page provides a broader overview of your training history. Here you can find:
+        </p>
+        <ul class="list-disc list-inside space-y-1">
+            <li>Overall training volume and intensity trends across all exercises and mesocycles.</li>
+            <li>Performance metrics broken down by muscle group, showing which areas you're hitting most effectively.</li>
+            <li>Yearly and monthly summaries of your training activity.</li>
+            <li>Charts visualizing long-term trends in volume, intensity, and muscle group focus.</li>
+        </ul>
+        <p>
+            Use this section to monitor your overall training load, ensure balanced development, and track progress towards your long-term fitness goals.
+        </p>
+    </section>
+
+    <hr />
+
+    <section class="card p-3 md:p-4 preset-filled-warning-300-700">
         <h2 class="h2">Final Reminder</h2>
         <p class="mt-2 md:mt-3">
            As mentioned, BASE45 is still evolving. While the core functionality should work, errors can occur. We monitor the application closely and work to fix issues promptly. Thank you for being part of this early phase!
