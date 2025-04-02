@@ -6,7 +6,7 @@
 
     let { data } = $props(); // Let TS infer PageData type from the server load function
 
-    let value = $state(['workoutPerformance', 'subjectiveFeedback']) // Default open sections
+    let value = $state(['workoutPerformance', 'subjectiveFeedback', 'correlations']) // Default open sections
     let activeMuscleGroup = $state('all');
 
     // Reactive derived state to get the analytics data for the currently selected filter
@@ -145,7 +145,58 @@
                 {/snippet}
             </Accordion.Item>
 
-            <!-- Add more AccordionItems here for Correlation plots if needed -->
+            <Accordion.Item value='correlations'>
+                {#snippet lead()}
+                    <Icon icon="fa6-solid:chart-scatter" />
+                {/snippet}
+                {#snippet control()}
+                    <p class="h5">Correlation Analysis ({activeMuscleGroup})</p>
+                {/snippet}
+                {#snippet panel()}
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
+                        {#if currentAnalytics?.weightVsRepsTrace}
+                            <div class='card p-4 preset-filled-surface-100-900'>
+                                <header class="p-4"><h4 class="h4">Weight vs. Reps</h4></header>
+                                <section class="p-4">
+                                    <LinePlot data={[currentAnalytics.weightVsRepsTrace]} xTitle="Reps" yTitle="Weight"/>
+                                </section>
+                            </div>
+                        {:else}
+                            <div class='card p-4 preset-filled-surface-100-900'><p class="p-4 text-center">No Weight vs. Reps data available.</p></div>
+                        {/if}
+                        {#if currentAnalytics?.volumeVsStimulusTrace && currentAnalytics?.volumeVsFatigueTrace}
+                            <div class='card p-4 preset-filled-surface-100-900'>
+                                <header class="p-4"><h4 class="h4">Volume vs. Stimulus/Fatigue</h4></header>
+                                <section class="p-4">
+                                    <LinePlot data={[currentAnalytics.volumeVsStimulusTrace, currentAnalytics.volumeVsFatigueTrace]} xTitle="Volume" yTitle="Stimulus/Fatigue"/>
+                                </section>
+                            </div>
+                        {:else}
+                            <div class='card p-4 preset-filled-surface-100-900'><p class="p-4 text-center">No Volume vs. Stimulus/Fatigue data available.</p></div>
+                        {/if}
+                        {#if currentAnalytics?.targetVsActualRepsTrace}
+                            <div class='card p-4 preset-filled-surface-100-900'>
+                                <header class="p-4"><h4 class="h4">Target vs. Actual Reps</h4></header>
+                                <section class="p-4">
+                                    <LinePlot data={[currentAnalytics.targetVsActualRepsTrace]} xTitle="Target Reps" yTitle="Actual Reps"/>
+                                </section>
+                            </div>
+                        {:else}
+                            <div class='card p-4 preset-filled-surface-100-900'><p class="p-4 text-center">No Target vs. Actual Reps data available.</p></div>
+                        {/if}
+                        {#if currentAnalytics?.repDiffVsStimulusTrace && currentAnalytics?.repDiffVsFatigueTrace}
+                            <div class='card p-4 preset-filled-surface-100-900'>
+                                <header class="p-4"><h4 class="h4">Rep Difference vs. Stimulus/Fatigue</h4></header>
+                                <section class="p-4">
+                                    <LinePlot data={[currentAnalytics.repDiffVsStimulusTrace, currentAnalytics.repDiffVsFatigueTrace]} xTitle="Rep Difference" yTitle="Stimulus/Fatigue"/>
+                                </section>
+                            </div>
+                        {:else}
+                            <div class='card p-4 preset-filled-surface-100-900'><p class="p-4 text-center">No Rep Difference vs. Stimulus/Fatigue data available.</p></div>
+                        {/if}
+                    </div>
+                {/snippet}
+            </Accordion.Item>
 
         </Accordion>
 

@@ -47,7 +47,28 @@ export interface PlotlyTrace {
     type: string;
     mode: string;
     name?: string; // Optional name for legend
-    line?: { color: string }; // Add line color property
+    line?: { color: string }; // Line color property
+    marker?: { color: string }; // Marker color property
+    layout?: {
+        xaxis?: { title: string };
+        yaxis?: { title: string };
+    };
+}
+
+// New interface for workout-level correlation data points
+interface WorkoutCorrelationPoint {
+    date: Date;
+    mesocycleId: string;
+    mesocycleName: string | null;
+    workoutId: string;
+    volume: number;           // Total volume for the workout (filtered by muscle group if applicable)
+    repDifference: number;    // Average (actual_reps - target_reps) for the workout
+    repDiffCount: number;     // Number of sets with valid rep differences
+    stimulus: number | null;  // From user_exercise_metrics.raw_stimulus_magnitude
+    fatigue: number | null;   // From user_exercise_metrics.fatigue_score
+    avgBurn: number | null;   // Workout-level average burn
+    avgPump: number | null;   // Workout-level average pump
+    avgDifficulty: number | null; // Workout-level average difficulty
 }
 
 // Type for the data returned by the load function
@@ -63,7 +84,16 @@ interface LongTermAnalyticsData {
     weeklyAvgDifficultyTraces: PlotlyTrace[];
     weeklyAvgSorenessTraces: PlotlyTrace[];
     weeklyAvgJointPainTraces: PlotlyTrace[];
-    setCorrelationData: SetCorrelationPoint[]; // Keep for potential future use
+    // Correlation data
+    setCorrelationData: SetCorrelationPoint[];      // For Weight vs. Reps and Target vs. Actual Reps plots
+    workoutCorrelationData: WorkoutCorrelationPoint[]; // For Volume vs. Stimulus/Fatigue and Rep Difference vs. Subjective plots
+    // Correlation plot traces
+    weightVsRepsTrace: PlotlyTrace;
+    volumeVsStimulusTrace: PlotlyTrace;
+    volumeVsFatigueTrace: PlotlyTrace;
+    targetVsActualRepsTrace: PlotlyTrace;
+    repDiffVsStimulusTrace: PlotlyTrace;
+    repDiffVsFatigueTrace: PlotlyTrace;
     hasData: boolean;
 }
 
@@ -195,11 +225,13 @@ export const load = (async ({ locals }) => {
     // Store processed data keyed by filter
     const filteredWorkoutProgressData = new Map<string, WorkoutProgressPoint[]>();
     const filteredSetCorrelationData = new Map<string, SetCorrelationPoint[]>();
+    const filteredWorkoutCorrelationPoints = new Map<string, WorkoutCorrelationPoint[]>();
 
     // Initialize maps for each filter
     filters.forEach(filter => {
         filteredWorkoutProgressData.set(filter, []);
         filteredSetCorrelationData.set(filter, []);
+        filteredWorkoutCorrelationPoints.set(filter, []);
     });
 
     // Type for storing aggregated weekly data per mesocycle
@@ -307,10 +339,37 @@ export const load = (async ({ locals }) => {
                     }
                 }
 
+                // Calculate average rep difference for sets with targets
+                let repDifferenceSum = 0;
+                let repDifferenceCount = 0;
+                for (const set of workout.workout_set) {
+                    const isRelevantSet = filter === 'all' || set.exercises?.muscle_group === filter;
+                    if (isRelevantSet && set.reps !== null && set.target_reps !== null) {
+                        repDifferenceSum += (set.reps - set.target_reps);
+                        repDifferenceCount++;
+                    }
+                }
+
                 // If the filter is a specific muscle group and no sets match, skip adding progress data for this workout/filter combination
                 if (filter !== 'all' && relevantSetsCount === 0) {
                     continue;
                 }
+
+                // Add to workout correlation data for the current filter
+                filteredWorkoutCorrelationPoints.get(filter)!.push({
+                    date: workout.date,
+                    mesocycleId: meso.id,
+                    mesocycleName: meso.meso_name,
+                    workoutId: workout.id,
+                    volume: workoutVolume,
+                    repDifference: repDifferenceCount > 0 ? repDifferenceSum / repDifferenceCount : 0,
+                    repDiffCount: repDifferenceCount,
+                    stimulus: workoutStimulus,
+                    fatigue: workoutFatigue,
+                    avgBurn: avgBurn,
+                    avgPump: avgPump,
+                    avgDifficulty: avgDifficulty
+                });
 
                 // Add to workout progress data for the current filter
                 const sfr = workoutStimulus !== null && workoutFatigue !== null && workoutFatigue !== 0
@@ -488,6 +547,72 @@ export const load = (async ({ locals }) => {
         }
 
         // Store the calculated traces for the current filter
+        // Create correlation plot traces
+        const setData = filteredSetCorrelationData.get(filter) || [];
+        const workoutData = filteredWorkoutCorrelationPoints.get(filter) || [];
+
+        // Weight vs Reps trace (set level)
+        const weightVsRepsTrace: PlotlyTrace = {
+            x: setData.map(d => d.reps).filter(x => x !== null) as number[],
+            y: setData.map(d => d.weight).filter(x => x !== null) as number[],
+            mode: 'markers',
+            type: 'scatter',
+            name: 'Weight vs Reps',
+            marker: { color: colorPalette[0] }
+        };
+
+        // Volume vs Stimulus/Fatigue traces (workout level)
+        const volumeVsStimulusTrace: PlotlyTrace = {
+            x: workoutData.map(d => d.volume).filter((_, i) => workoutData[i].stimulus !== null),
+            y: workoutData.map(d => d.stimulus).filter(x => x !== null) as number[],
+            mode: 'markers',
+            type: 'scatter',
+            name: 'Volume vs Stimulus',
+            marker: { color: colorPalette[1] }
+        };
+
+        const volumeVsFatigueTrace: PlotlyTrace = {
+            x: workoutData.map(d => d.volume).filter((_, i) => workoutData[i].fatigue !== null),
+            y: workoutData.map(d => d.fatigue).filter(x => x !== null) as number[],
+            mode: 'markers',
+            type: 'scatter',
+            name: 'Volume vs Fatigue',
+            marker: { color: colorPalette[2] }
+        };
+
+        // Target vs Actual Reps trace (set level)
+        const targetVsActualRepsTrace: PlotlyTrace = {
+            x: setData.map(d => d.targetReps).filter((_, i) => setData[i].reps !== null),
+            y: setData.map(d => d.reps).filter(x => x !== null) as number[],
+            mode: 'markers',
+            type: 'scatter',
+            name: 'Target vs Actual Reps',
+            marker: { color: colorPalette[0] }
+        };
+
+        // Rep Difference vs Stimulus/Fatigue traces (workout level)
+        const repDiffVsStimulusTrace: PlotlyTrace = {
+            x: workoutData.map(d => d.repDifference).filter((_, i) => workoutData[i].stimulus !== null),
+            y: workoutData.map(d => d.stimulus).filter(x => x !== null) as number[],
+            mode: 'markers',
+            type: 'scatter',
+            name: 'Rep Difference vs Stimulus',
+            marker: { color: colorPalette[1] }
+        };
+
+        const repDiffVsFatigueTrace: PlotlyTrace = {
+            x: workoutData.map(d => d.repDifference).filter((_, i) => workoutData[i].fatigue !== null),
+            y: workoutData.map(d => d.fatigue).filter(x => x !== null) as number[],
+            mode: 'markers',
+            type: 'scatter',
+            name: 'Rep Difference vs Fatigue',
+            marker: { color: colorPalette[2] },
+            layout: {
+                xaxis: { title: 'Rep Difference (Actual - Target)' },
+                yaxis: { title: 'Fatigue Rating' }
+            }
+        };
+
         filteredAnalyticsData[filter] = {
             weeklyVolumeTraces,
             weeklyStimulusTraces,
@@ -498,8 +623,16 @@ export const load = (async ({ locals }) => {
             weeklyAvgDifficultyTraces,
             weeklyAvgSorenessTraces,
             weeklyAvgJointPainTraces,
-            setCorrelationData: filteredSetCorrelationData.get(filter) || [], // Use filtered set data
-            hasData: mesocyclesData.length > 0 && mesocyclesData.some(m => m.workouts.length > 0) // Keep original hasData logic for overall check
+            setCorrelationData: setData,
+            workoutCorrelationData: workoutData,
+            // Add correlation traces
+            weightVsRepsTrace,
+            volumeVsStimulusTrace,
+            volumeVsFatigueTrace,
+            targetVsActualRepsTrace,
+            repDiffVsStimulusTrace,
+            repDiffVsFatigueTrace,
+            hasData: mesocyclesData.length > 0 && mesocyclesData.some(m => m.workouts.length > 0)
         };
     } // End filter loop for trace generation
 

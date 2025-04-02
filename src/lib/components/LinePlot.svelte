@@ -5,7 +5,9 @@
     let { 
         data,
         xRange = undefined,
-        yRange = undefined
+        yRange = undefined,
+        xTitle = undefined,
+        yTitle = undefined
     } = $props();
 
     let layout = $state({
@@ -17,12 +19,14 @@
             color: '#cccccc',
             automargin: true, 
             tickangle: 'auto', 
-            ...(xRange && { range: xRange })
+            ...(xRange && { range: xRange }),
+            ...(xTitle && { title: xTitle })
         }, 
         yaxis: {
             color: '#cccccc',
             automargin: true, 
-            ...(yRange && { range: yRange })
+            ...(yRange && { range: yRange }),
+            ...(yTitle && { title: yTitle })
         },
         legend: { 
             orientation: 'h',
