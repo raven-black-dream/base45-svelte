@@ -124,7 +124,7 @@ function setWorkoutLoading(){
     {/each}
     </div>
 
-    <Tabs bind:value={group}>
+    <Tabs value={group} onValueChange={(e) => (group = e.value)}>
       {#snippet list()}
         <Tabs.Control value="stimulus">Stimulus</Tabs.Control>
         <Tabs.Control value='variance'>Variance</Tabs.Control>

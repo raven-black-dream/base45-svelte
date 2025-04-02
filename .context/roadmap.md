@@ -1,7 +1,7 @@
 # Project Roadmap
 
 ---
-last_updated: 2025-04-01T12:37:58-07:00
+last_updated: 2025-04-02T10:48:49-07:00
 ---
 
 ## Current Focus (Q1 2025)
@@ -13,9 +13,9 @@ last_updated: 2025-04-01T12:37:58-07:00
   - Optimize client-side data management
   - Reduce bundle size through code splitting
 - Enhanced Data Visualization
-  - Integrate interactive workout progress charts (Long-Term Analytics page done)
-  - Add muscle group activation heatmaps
-  - Implement personal records tracking dashboard
+  - [x] Integrate interactive workout progress charts (Long-Term Analytics page with muscle group filtering)
+  - [ ] Add muscle group activation heatmaps
+  - [ ] Implement personal records tracking dashboard
 - User Experience Improvements
   - Mobile-first responsive design implementation
   - Offline support for workout tracking
@@ -79,7 +79,7 @@ last_updated: 2025-04-01T12:37:58-07:00
 - Fixed workout progression set ordering (2025 Q1)
 - User documentation (`/how-to` page) updated and enhanced (2025 Q1)
 - Exercise List Enhancements (2025 Q1)
-- Long-Term Analytics Visualization (Core Implementation - 2025 Q1)
+- Long-Term Analytics Visualization (Core Implementation with Muscle Group Filtering - 2025 Q1/Q2)
 
 ---
 ## Notes

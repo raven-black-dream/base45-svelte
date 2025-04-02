@@ -1,4 +1,5 @@
 import  prisma  from "$lib/server/prisma";
+import { Prisma } from '@prisma/client';
 
 
 interface Exercise {
@@ -37,6 +38,7 @@ interface ExerciseSet {
   weight: number,
   set_performance: number
 }
+
 
 /**
  *

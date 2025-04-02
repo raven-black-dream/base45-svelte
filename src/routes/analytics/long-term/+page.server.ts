@@ -42,11 +42,12 @@ interface SetCorrelationPoint {
 
 // Define structure for Plotly trace data
 export interface PlotlyTrace {
-    x: (string | number | Date)[];
+    x: (string | number | Date | null)[];
     y: (number | null)[];
     type: string;
     mode: string;
     name?: string; // Optional name for legend
+    line?: { color: string }; // Add line color property
 }
 
 // Type for the data returned by the load function
@@ -66,6 +67,11 @@ interface LongTermAnalyticsData {
     hasData: boolean;
 }
 
+// New structure to hold analytics data keyed by filter ('all' + individual groups)
+interface FilteredLongTermAnalyticsData {
+    [filterKey: string]: LongTermAnalyticsData;
+}
+
 // More precise type for fetched data based on includes
 type FetchedWorkoutSet = {
     weight: number | null;
@@ -75,6 +81,11 @@ type FetchedWorkoutSet = {
     exercise_id: string | null;
     target_reps: number | null;
     target_weight: number | null;
+    exercises: FetchedExercise;
+};
+
+type FetchedExercise = {
+    muscle_group: string | null;
 };
 
 type FetchedWorkoutFeedback = {
@@ -114,6 +125,14 @@ function getAverageFeedbackValue(feedbackItems: FetchedWorkoutFeedback[], questi
     return sum / relevantFeedback.length;
 }
 
+// Define a color palette for the plots using CSS variables from base45.css
+const colorPalette = [
+    '#0a2d0b',    // Primary
+    '#848484',  // Secondary
+    '#38146d', // Tertiary  
+    '#4682B4' // Quaternary
+];
+
 export const load = (async ({ locals }) => {
     const supabase = locals.supabase;
     const { data: { user } } = await supabase.auth.getUser();
@@ -140,23 +159,48 @@ export const load = (async ({ locals }) => {
                     date: 'asc'
                 },
                 include: {
-                    workout_set: true,
+                    workout_set: {
+                        include: {
+                            exercises: true // Ensure muscle_group is included
+                        }
+                    },
                     workout_feedback: true
                 }
             },
             user_exercise_metrics: { 
                 // Fetch metrics relevant to workout-level stimulus and fatigue
                 where: {
-                    metric_name: 'fatigue_score'
+                    metric_name: 'fatigue_score' // Only fetch fatigue for now, stimulus is calculated
                 }
             }
         },
         take: 4
     });
 
-    // --- Data Processing --- 
-    const workoutProgressData: WorkoutProgressPoint[] = [];
-    const setCorrelationData: SetCorrelationPoint[] = [];
+    // Extract unique muscle groups
+    const muscleGroupsSet = new Set<string>();
+    mesocyclesData.forEach(mesocycle => {
+        mesocycle.workouts.forEach(workout => {
+            workout.workout_set.forEach(workoutSet => {
+                if (workoutSet.exercises?.muscle_group) { // Check if muscle_group exists
+                     muscleGroupsSet.add(workoutSet.exercises.muscle_group);
+                }
+            });
+        });
+    });
+    const muscleGroups = Array.from(muscleGroupsSet);
+    const filters = ['all', ...muscleGroups]; // Include 'all' filter
+
+    // --- Data Processing ---
+    // Store processed data keyed by filter
+    const filteredWorkoutProgressData = new Map<string, WorkoutProgressPoint[]>();
+    const filteredSetCorrelationData = new Map<string, SetCorrelationPoint[]>();
+
+    // Initialize maps for each filter
+    filters.forEach(filter => {
+        filteredWorkoutProgressData.set(filter, []);
+        filteredSetCorrelationData.set(filter, []);
+    });
 
     // Type for storing aggregated weekly data per mesocycle
     type WeeklyAggregates = {
@@ -171,9 +215,9 @@ export const load = (async ({ locals }) => {
         workoutCount: number;
     }
 
-    // Map for aggregating metrics by mesocycle and then by week number
-    // mesoId -> weekNum -> WeeklyAggregates
-    const mesoWeeklyAggregates = new Map<string, Map<number, WeeklyAggregates>>();
+    // Map for aggregating metrics by filter, mesocycle, and then by week number
+    // filter -> mesoId -> weekNum -> WeeklyAggregates
+    const filteredMesoWeeklyAggregates = new Map<string, Map<string, Map<number, WeeklyAggregates>>>();
 
     // Type for storing aggregated weekly subjective feedback per mesocycle
     type WeeklySubjectiveAggregates = {
@@ -190,11 +234,16 @@ export const load = (async ({ locals }) => {
         workoutCount: number;
     }
 
-    // Map for aggregating subjective feedback by mesocycle and then by week number
-    // mesoId -> weekNum -> WeeklySubjectiveAggregates
-    const mesoWeeklySubjectiveAggregates = new Map<string, Map<number, WeeklySubjectiveAggregates>>();
+    // Map for aggregating subjective feedback by filter, mesocycle, and then by week number
+    // filter -> mesoId -> weekNum -> WeeklySubjectiveAggregates
+    const filteredMesoWeeklySubjectiveAggregates = new Map<string, Map<string, Map<number, WeeklySubjectiveAggregates>>>();
 
-    // Process the fetched data
+    // Initialize maps for each filter
+    filters.forEach(filter => {
+        filteredMesoWeeklyAggregates.set(filter, new Map<string, Map<number, WeeklyAggregates>>());
+        filteredMesoWeeklySubjectiveAggregates.set(filter, new Map<string, Map<number, WeeklySubjectiveAggregates>>());
+    });
+
     for (const meso of mesocyclesData) {
         // Create a map for quick lookup of workout-level FATIGUE metrics for this mesocycle
         const workoutFatigueMap = new Map<string, number>();
@@ -209,287 +258,260 @@ export const load = (async ({ locals }) => {
             if (!workout.date || workout.week_number === null || workout.week_number === undefined) continue;
 
             // --- Calculate Stimulus Proxy directly from feedback ---
-            const relevantFeedbackForStimulus = workout.workout_feedback.filter(f =>
-                f.value != null &&
-                ['mg_pump', 'mg_soreness', 'ex_mmc'].includes(f.question_type)
-            );
-            const stimulusProxy = relevantFeedbackForStimulus.reduce((sum, f) => sum + (f.value ?? 0), 0);
-            // Use 0 if no relevant feedback found, otherwise use the sum
-            const calculatedStimulus = stimulusProxy > 0 ? stimulusProxy : null;
-            // -------------------------------------------------------
-
-            // Calculate Total Volume for the workout
-            const volume = workout.workout_set.reduce((sum: number, set: FetchedWorkoutSet) => { 
-                const weight = set.weight ?? 0;
-                const reps = set.reps ?? 0;
-                return sum + (weight * reps);
-            }, 0);
-
-            // Get workout-level fatigue from the map
-            const fatigue = workoutFatigueMap.get(workout.id) ?? null;
-
-            // Calculate Workout-Level SFR using calculated stimulus
-            let sfr: number | null = null;
-            if (calculatedStimulus != null && fatigue != null) {
-                if (fatigue > 0) {
-                    sfr = calculatedStimulus / fatigue;
-                } else if (calculatedStimulus > 0) {
-                    sfr = Infinity; // High stimulus, zero fatigue
-                } else {
-                    sfr = 0; // Zero stimulus, zero fatigue
-                }
-            }
-
-            // Calculate Average Subjective Feedback Scores
             const avgBurn = getAverageFeedbackValue(workout.workout_feedback, 'ex_mmc');
             const avgPump = getAverageFeedbackValue(workout.workout_feedback, 'mg_pump');
             const avgDifficulty = getAverageFeedbackValue(workout.workout_feedback, 'mg_difficulty');
+            const workoutStimulus = avgBurn !== null && avgPump !== null && avgDifficulty !== null
+                ? (avgBurn + avgPump + avgDifficulty) / 3 // Simple average as proxy
+                : null;
+
+            // --- Get workout-level Fatigue ---
+            const workoutFatigue = workoutFatigueMap.get(workout.id) ?? null;
+
+            // --- Subjective Feedback Averages ---
+            // These are calculated per workout and don't need muscle group filtering *yet*
             const avgSoreness = getAverageFeedbackValue(workout.workout_feedback, 'mg_soreness');
             const avgJointPain = getAverageFeedbackValue(workout.workout_feedback, 'ex_soreness');
 
-            // Add workout-level data point (primarily for subjective feedback now)
-            workoutProgressData.push({
-                date: workout.date,
-                volume, // Keep volume here for potential other uses, but aggregate separately
-                stimulus: calculatedStimulus, // Keep for potential other uses
-                fatigue, // Keep for potential other uses
-                avgBurn,
-                avgPump,
-                avgDifficulty,
-                avgSoreness,
-                avgJointPain,
-                sfr, // Keep for potential other uses
-                mesocycleId: meso.id,
-                mesocycleName: meso.meso_name,
-                workoutId: workout.id
-            });
+            // --- Process data for EACH filter ('all' + muscle groups) ---
+            for (const filter of filters) {
+                let workoutVolume = 0;
+                let relevantSetsCount = 0; // Count sets relevant to the current filter
 
-            // --- Aggregate performance metrics by Mesocycle and Week ---
-            const weekNum = workout.week_number; // Use week_number from DB
+                // Calculate Volume & Process Sets (filtered)
+                for (const set of workout.workout_set) {
+                    const isRelevantSet = filter === 'all' || set.exercises?.muscle_group === filter;
 
-            // Get or create the map for the current mesocycle
-            let weeklyMap = mesoWeeklyAggregates.get(meso.id);
-            if (!weeklyMap) {
-                weeklyMap = new Map<number, WeeklyAggregates>();
-                mesoWeeklyAggregates.set(meso.id, weeklyMap);
-            }
+                    if (isRelevantSet) {
+                        if (set.reps !== null && set.weight !== null) {
+                            workoutVolume += set.reps * set.weight;
+                        }
+                        relevantSetsCount++; // Increment even if volume calculation fails
 
-            // Get or create the aggregate data object for the specific week within the meso
-            let weekAggData = weeklyMap.get(weekNum);
-            if (!weekAggData) {
-                weekAggData = { volumeSum: 0, stimulusSum: 0, fatigueSum: 0, sfrSumNumerator: 0, sfrSumDenominator: 0, sfrValidCount: 0, stimulusCount: 0, fatigueCount: 0, workoutCount: 0 };
-                weeklyMap.set(weekNum, weekAggData);
-            }
+                        // Add to set correlation data for the current filter
+                        filteredSetCorrelationData.get(filter)!.push({
+                            date: workout.date,
+                            mesocycleId: meso.id,
+                            mesocycleName: meso.meso_name,
+                            workoutId: workout.id,
+                            exerciseId: set.exercise_id,
+                            setId: set.id,
+                            setNum: set.set_num,
+                            reps: set.reps,
+                            weight: set.weight,
+                            targetReps: set.target_reps,
+                            targetWeight: set.target_weight,
+                            workoutStimulus: workoutStimulus, // Workout level, repeated per set
+                            workoutFatigue: workoutFatigue, // Workout level, repeated per set
+                        });
+                    }
+                }
 
-            // Add current workout's metrics to the aggregate totals for this meso/week
-            weekAggData.volumeSum += volume;
-            weekAggData.workoutCount++;
+                // If the filter is a specific muscle group and no sets match, skip adding progress data for this workout/filter combination
+                if (filter !== 'all' && relevantSetsCount === 0) {
+                    continue;
+                }
 
-            if (calculatedStimulus !== null) {
-                weekAggData.stimulusSum += calculatedStimulus;
-                weekAggData.stimulusCount++;
-            }
-            if (fatigue !== null) {
-                weekAggData.fatigueSum += fatigue;
-                weekAggData.fatigueCount++;
-            }
+                // Add to workout progress data for the current filter
+                const sfr = workoutStimulus !== null && workoutFatigue !== null && workoutFatigue !== 0
+                    ? workoutStimulus / workoutFatigue
+                    : null;
 
-            // Aggregate for average SFR calculation (only include if both stimulus and fatigue are valid)
-            if (calculatedStimulus !== null && fatigue !== null) {
-                weekAggData.sfrSumNumerator += calculatedStimulus;
-                weekAggData.sfrSumDenominator += fatigue;
-                weekAggData.sfrValidCount++;
-            }
-
-            // Initialize weekly subjective aggregates for this meso/week if not present
-            if (!mesoWeeklySubjectiveAggregates.has(meso.id)) {
-                mesoWeeklySubjectiveAggregates.set(meso.id, new Map<number, WeeklySubjectiveAggregates>());
-            }
-            if (!mesoWeeklySubjectiveAggregates.get(meso.id)!.has(weekNum)) {
-                mesoWeeklySubjectiveAggregates.get(meso.id)!.set(weekNum, {
-                    burnSum: 0,
-                    pumpSum: 0,
-                    difficultySum: 0,
-                    sorenessSum: 0,
-                    jointPainSum: 0,
-                    burnCount: 0,
-                    pumpCount: 0,
-                    difficultyCount: 0,
-                    sorenessCount: 0,
-                    jointPainCount: 0,
-                    workoutCount: 0
-                });
-            }
-
-            // Get references to the weekly aggregate objects
-            const weeklyAgg = mesoWeeklyAggregates.get(meso.id)!.get(weekNum)!;
-            const weeklySubjAgg = mesoWeeklySubjectiveAggregates.get(meso.id)!.get(weekNum)!;
-
-            // Update weekly subjective aggregates
-            weeklySubjAgg.workoutCount++;
-            if (avgBurn !== null) {
-                weeklySubjAgg.burnSum += avgBurn;
-                weeklySubjAgg.burnCount++;
-            }
-            if (avgPump !== null) {
-                weeklySubjAgg.pumpSum += avgPump;
-                weeklySubjAgg.pumpCount++;
-            }
-            if (avgDifficulty !== null) {
-                weeklySubjAgg.difficultySum += avgDifficulty;
-                weeklySubjAgg.difficultyCount++;
-            }
-            if (avgSoreness !== null) {
-                weeklySubjAgg.sorenessSum += avgSoreness;
-                weeklySubjAgg.sorenessCount++;
-            }
-            if (avgJointPain !== null) {
-                weeklySubjAgg.jointPainSum += avgJointPain;
-                weeklySubjAgg.jointPainCount++;
-            }
-
-            // Add set-level data points
-            workout.workout_set.forEach((set) => { 
-                setCorrelationData.push({
-                    date: workout.date!, 
+                filteredWorkoutProgressData.get(filter)!.push({
+                    date: workout.date,
+                    volume: workoutVolume, // Filtered volume
+                    stimulus: workoutStimulus, // Workout-level, not filtered
+                    fatigue: workoutFatigue, // Workout-level, not filtered
+                    avgBurn: avgBurn, // Workout-level
+                    avgPump: avgPump, // Workout-level
+                    avgDifficulty: avgDifficulty, // Workout-level
+                    avgSoreness: avgSoreness, // Workout-level
+                    avgJointPain: avgJointPain, // Workout-level
+                    sfr: sfr, // Workout-level
                     mesocycleId: meso.id,
                     mesocycleName: meso.meso_name,
                     workoutId: workout.id,
-                    exerciseId: set.exercise_id,
-                    setId: set.id,
-                    setNum: set.set_num,
-                    reps: set.reps,
-                    weight: set.weight,
-                    targetReps: set.target_reps,
-                    targetWeight: set.target_weight,
-                    workoutStimulus: calculatedStimulus,
-                    workoutFatigue: fatigue
                 });
-            });
+
+                // --- Aggregate Weekly Data (Filtered) ---
+                const weekNum = workout.week_number;
+
+                // Performance Aggregates
+                const mesoAggregatesMap = filteredMesoWeeklyAggregates.get(filter)!;
+                if (!mesoAggregatesMap.has(meso.id)) {
+                    mesoAggregatesMap.set(meso.id, new Map<number, WeeklyAggregates>());
+                }
+                const weeklyAggregatesMap = mesoAggregatesMap.get(meso.id)!;
+                if (!weeklyAggregatesMap.has(weekNum)) {
+                    weeklyAggregatesMap.set(weekNum, {
+                        volumeSum: 0, stimulusSum: 0, fatigueSum: 0, sfrSumNumerator: 0, sfrSumDenominator: 0,
+                        sfrValidCount: 0, stimulusCount: 0, fatigueCount: 0, workoutCount: 0
+                    });
+                }
+                const weekAgg = weeklyAggregatesMap.get(weekNum)!;
+
+                weekAgg.volumeSum += workoutVolume; // Use filtered volume
+                if (workoutStimulus !== null) {
+                    weekAgg.stimulusSum += workoutStimulus;
+                    weekAgg.stimulusCount++;
+                }
+                if (workoutFatigue !== null) {
+                    weekAgg.fatigueSum += workoutFatigue;
+                    weekAgg.fatigueCount++;
+                }
+                if (sfr !== null) {
+                    // More robust SFR average: Sum Numerator / Sum Denominator if available
+                    if (workoutStimulus !== null && workoutFatigue !== null && workoutFatigue !== 0) {
+                        weekAgg.sfrSumNumerator += workoutStimulus;
+                        weekAgg.sfrSumDenominator += workoutFatigue;
+                    }
+                    weekAgg.sfrValidCount++; // Count valid SFRs calculated via simple average method too
+                }
+                weekAgg.workoutCount++;
+
+                // Subjective Feedback Aggregates (Remains Workout-Level for now)
+                const mesoSubjectiveMap = filteredMesoWeeklySubjectiveAggregates.get(filter)!;
+                if (!mesoSubjectiveMap.has(meso.id)) {
+                    mesoSubjectiveMap.set(meso.id, new Map<number, WeeklySubjectiveAggregates>());
+                }
+                const weeklySubjectiveMap = mesoSubjectiveMap.get(meso.id)!;
+                if (!weeklySubjectiveMap.has(weekNum)) {
+                    weeklySubjectiveMap.set(weekNum, {
+                        burnSum: 0, pumpSum: 0, difficultySum: 0, sorenessSum: 0, jointPainSum: 0,
+                        burnCount: 0, pumpCount: 0, difficultyCount: 0, sorenessCount: 0, jointPainCount: 0,
+                        workoutCount: 0 // Fix: Added missing workoutCount initialization
+                    });
+                }
+                const weekSubjAgg = weeklySubjectiveMap.get(weekNum)!;
+
+                if (avgBurn !== null) { weekSubjAgg.burnSum += avgBurn; weekSubjAgg.burnCount++; }
+                if (avgPump !== null) { weekSubjAgg.pumpSum += avgPump; weekSubjAgg.pumpCount++; }
+                if (avgDifficulty !== null) { weekSubjAgg.difficultySum += avgDifficulty; weekSubjAgg.difficultyCount++; }
+                if (avgSoreness !== null) { weekSubjAgg.sorenessSum += avgSoreness; weekSubjAgg.sorenessCount++; }
+                if (avgJointPain !== null) { weekSubjAgg.jointPainSum += avgJointPain; weekSubjAgg.jointPainCount++; }
+            } // End of filter loop
         }
     }
 
-    // --- Prepare Weekly Aggregated Traces (Separate trace per Mesocycle) ---
-    const weeklyVolumeTraces: PlotlyTrace[] = [];
-    const weeklyStimulusTraces: PlotlyTrace[] = [];
-    const weeklyFatigueTraces: PlotlyTrace[] = [];
-    const weeklySfrTraces: PlotlyTrace[] = [];
-    const weeklyAvgBurnTraces: PlotlyTrace[] = [];
-    const weeklyAvgPumpTraces: PlotlyTrace[] = [];
-    const weeklyAvgDifficultyTraces: PlotlyTrace[] = [];
-    const weeklyAvgSorenessTraces: PlotlyTrace[] = [];
-    const weeklyAvgJointPainTraces: PlotlyTrace[] = [];
+    // --- Prepare Weekly Aggregated Traces for each filter ---
+    const filteredAnalyticsData: FilteredLongTermAnalyticsData = {};
 
-    // Iterate through each mesocycle's aggregated data
-    for (const [mesoId, weeklyMap] of mesoWeeklyAggregates.entries()) {
-        // Find the mesocycle name for the trace label
-        const mesoDetails = mesocyclesData.find(m => m.id === mesoId);
-        const mesoDate = mesoDetails?.start_date.toISOString().split('T')[0];
+    for (const filter of filters) {
+        const weeklyVolumeTraces: PlotlyTrace[] = [];
+        const weeklyStimulusTraces: PlotlyTrace[] = [];
+        const weeklyFatigueTraces: PlotlyTrace[] = [];
+        const weeklySfrTraces: PlotlyTrace[] = [];
 
-        // Prepare data points for this specific mesocycle's traces
-        const mesoVolumePoints: { week: number; value: number | null }[] = [];
-        const mesoStimulusPoints: { week: number; value: number | null }[] = [];
-        const mesoFatiguePoints: { week: number; value: number | null }[] = [];
-        const mesoSfrPoints: { week: number; value: number | null }[] = [];
+        const mesoAggregatesMap = filteredMesoWeeklyAggregates.get(filter);
 
-        const sortedWeeks = Array.from(weeklyMap.keys()).sort((a, b) => a - b);
+        if (mesoAggregatesMap) {
+            Array.from(mesoAggregatesMap.entries()).forEach(([mesoId, weeklyData], index) => {
+                const meso = mesocyclesData.find(m => m.id === mesoId);
+                const mesoName = meso?.meso_name || `Mesocycle ${mesoId.substring(0, 4)}`;
+                const traceColor = colorPalette[index % colorPalette.length]; // Assign color based on index
 
-        for (const week of sortedWeeks) {
-            const data = weeklyMap.get(week)!; // We know it exists because we iterate over keys
+                const weeks = Array.from(weeklyData.keys()).sort((a, b) => a - b);
+                const weekLabels = weeks.map(w => `Week ${w}`); // Use for x-axis
 
-            // Calculate averages for this week within this mesocycle
-            const avgVolume = data.workoutCount > 0 ? data.volumeSum / data.workoutCount : null;
-            const avgStimulus = data.stimulusCount > 0 ? data.stimulusSum / data.stimulusCount : null;
-            const avgFatigue = data.fatigueCount > 0 ? data.fatigueSum / data.fatigueCount : null;
+                const volumeY: (number | null)[] = [];
+                const stimulusY: (number | null)[] = [];
+                const fatigueY: (number | null)[] = [];
+                const sfrY: (number | null)[] = [];
 
-            let avgSfr: number | null = null;
-            if (data.sfrValidCount > 0) {
-                const avgStimulusForSfr = data.sfrSumNumerator / data.sfrValidCount;
-                const avgFatigueForSfr = data.sfrSumDenominator / data.sfrValidCount;
-                if (avgFatigueForSfr > 0) {
-                    avgSfr = avgStimulusForSfr / avgFatigueForSfr;
-                } else if (avgStimulusForSfr > 0) {
-                    avgSfr = Infinity; // High stimulus, zero fatigue
-                } else {
-                    avgSfr = 0; // Zero stimulus, zero fatigue
+                weeks.forEach(weekNum => {
+                    const weekAgg = weeklyData.get(weekNum)!;
+                    volumeY.push(weekAgg.workoutCount > 0 ? weekAgg.volumeSum / weekAgg.workoutCount : null);
+                    stimulusY.push(weekAgg.stimulusCount > 0 ? weekAgg.stimulusSum / weekAgg.stimulusCount : null);
+                    fatigueY.push(weekAgg.fatigueCount > 0 ? weekAgg.fatigueSum / weekAgg.fatigueCount : null);
+                    // Calculate SFR average: Prefer robust method if denominator is non-zero, otherwise use simple average count
+                    const sfrAvg = weekAgg.sfrSumDenominator !== 0
+                        ? weekAgg.sfrSumNumerator / weekAgg.sfrSumDenominator
+                        : (weekAgg.sfrValidCount > 0 ? (weekAgg.sfrSumNumerator / weekAgg.sfrValidCount) : null); // Fallback needed? Check sfr calculation
+                    sfrY.push(sfrAvg);
+
+                });
+
+                if (volumeY.some(y => y !== null)) {
+                    weeklyVolumeTraces.push({ x: weekLabels, y: volumeY, type: 'scatter', mode: 'lines+markers', name: mesoName, line: { color: traceColor } });
                 }
-            }
-            const plotSafeSfr = (avgSfr === null || avgSfr === Infinity || isNaN(avgSfr)) ? null : avgSfr;
-
-            // Add points for this week
-            mesoVolumePoints.push({ week, value: avgVolume });
-            mesoStimulusPoints.push({ week, value: avgStimulus });
-            mesoFatiguePoints.push({ week, value: avgFatigue });
-            mesoSfrPoints.push({ week, value: plotSafeSfr });
+                if (stimulusY.some(y => y !== null)) {
+                    weeklyStimulusTraces.push({ x: weekLabels, y: stimulusY, type: 'scatter', mode: 'lines+markers', name: mesoName, line: { color: traceColor } });
+                }
+                if (fatigueY.some(y => y !== null)) {
+                    weeklyFatigueTraces.push({ x: weekLabels, y: fatigueY, type: 'scatter', mode: 'lines+markers', name: mesoName, line: { color: traceColor } });
+                }
+                if (sfrY.some(y => y !== null)) {
+                    weeklySfrTraces.push({ x: weekLabels, y: sfrY, type: 'scatter', mode: 'lines+markers', name: mesoName, line: { color: traceColor } });
+                }
+            });
         }
 
-        // Create traces for this mesocycle
-        weeklyVolumeTraces.push({
-            x: mesoVolumePoints.map(p => p.week),
-            y: mesoVolumePoints.map(p => p.value),
-            type: 'scatter', mode: 'lines+markers', name: `${mesoDate} Volume`
-        });
-        weeklyStimulusTraces.push({
-            x: mesoStimulusPoints.map(p => p.week),
-            y: mesoStimulusPoints.map(p => p.value),
-            type: 'scatter', mode: 'lines+markers', name: `${mesoDate} Stimulus`
-        });
-        weeklyFatigueTraces.push({
-            x: mesoFatiguePoints.map(p => p.week),
-            y: mesoFatiguePoints.map(p => p.value),
-            type: 'scatter', mode: 'lines+markers', name: `${mesoDate} Fatigue`
-        });
-        weeklySfrTraces.push({
-            x: mesoSfrPoints.map(p => p.week),
-            y: mesoSfrPoints.map(p => p.value),
-            type: 'scatter', mode: 'lines+markers', name: `${mesoDate} SFR`
-        });
-    };
+        // --- Prepare Weekly Subjective Feedback Traces (Filter-specific) ---
+        const weeklyAvgBurnTraces: PlotlyTrace[] = [];
+        const weeklyAvgPumpTraces: PlotlyTrace[] = [];
+        const weeklyAvgDifficultyTraces: PlotlyTrace[] = [];
+        const weeklyAvgSorenessTraces: PlotlyTrace[] = [];
+        const weeklyAvgJointPainTraces: PlotlyTrace[] = [];
 
-    // Generate subjective feedback metric traces
-    mesoWeeklySubjectiveAggregates.forEach((weeklyData, mesoId) => {
-        const meso = mesocyclesData.find(m => m.id === mesoId);
-        const mesoName = meso?.meso_name || `Mesocycle ${mesoId.substring(0, 4)}`;
+        const mesoSubjectiveMap = filteredMesoWeeklySubjectiveAggregates.get(filter);
 
-        const weeks = Array.from(weeklyData.keys()).sort((a, b) => a - b);
-        const avgBurnY = weeks.map(week => weeklyData.get(week)!.burnCount > 0 ? weeklyData.get(week)!.burnSum / weeklyData.get(week)!.burnCount : null);
-        const avgPumpY = weeks.map(week => weeklyData.get(week)!.pumpCount > 0 ? weeklyData.get(week)!.pumpSum / weeklyData.get(week)!.pumpCount : null);
-        const avgDifficultyY = weeks.map(week => weeklyData.get(week)!.difficultyCount > 0 ? weeklyData.get(week)!.difficultySum / weeklyData.get(week)!.difficultyCount : null);
-        const avgSorenessY = weeks.map(week => weeklyData.get(week)!.sorenessCount > 0 ? weeklyData.get(week)!.sorenessSum / weeklyData.get(week)!.sorenessCount : null);
-        const avgJointPainY = weeks.map(week => weeklyData.get(week)!.jointPainCount > 0 ? weeklyData.get(week)!.jointPainSum / weeklyData.get(week)!.jointPainCount : null);
+        if (mesoSubjectiveMap) {
+            Array.from(mesoSubjectiveMap.entries()).forEach(([mesoId, weeklyData], index) => {
+                const meso = mesocyclesData.find(m => m.id === mesoId);
+                const mesoName = meso?.meso_name || `Mesocycle ${mesoId.substring(0, 4)}`;
+                const traceColor = colorPalette[index % colorPalette.length]; // Assign color based on index
 
-        const burnTrace: PlotlyTrace = { x: weeks, y: avgBurnY, type: 'scatter', mode: 'lines+markers', name: `${mesoName} Burn` };
-        const pumpTrace: PlotlyTrace = { x: weeks, y: avgPumpY, type: 'scatter', mode: 'lines+markers', name: `${mesoName} Pump` };
-        const difficultyTrace: PlotlyTrace = { x: weeks, y: avgDifficultyY, type: 'scatter', mode: 'lines+markers', name: `${mesoName} Difficulty` };
-        const sorenessTrace: PlotlyTrace = { x: weeks, y: avgSorenessY, type: 'scatter', mode: 'lines+markers', name: `${mesoName} Soreness` };
-        const jointPainTrace: PlotlyTrace = { x: weeks, y: avgJointPainY, type: 'scatter', mode: 'lines+markers', name: `${mesoName} Joint Pain` };
+                const weeks = Array.from(weeklyData.keys()).sort((a, b) => a - b);
+                const weekLabels = weeks.map(w => `Week ${w}`);
 
-        weeklyAvgBurnTraces.push(burnTrace);
-        weeklyAvgPumpTraces.push(pumpTrace);
-        weeklyAvgDifficultyTraces.push(difficultyTrace);
-        weeklyAvgSorenessTraces.push(sorenessTrace);
-        weeklyAvgJointPainTraces.push(jointPainTrace);
-    });
+                const burnY: (number | null)[] = [];
+                const pumpY: (number | null)[] = [];
+                const difficultyY: (number | null)[] = [];
+                const sorenessY: (number | null)[] = [];
+                const jointPainY: (number | null)[] = [];
 
-    // Determine if there's data based on weekly performance traces or subjective feedback
-    const hasPerformanceData = weeklyVolumeTraces.length > 0 || weeklyStimulusTraces.length > 0 || weeklyFatigueTraces.length > 0 || weeklySfrTraces.length > 0;
-    const hasSubjectiveData = workoutProgressData.some(d =>
-        d.avgBurn !== null || d.avgPump !== null || d.avgDifficulty !== null || d.avgSoreness !== null || d.avgJointPain !== null
-    );
-    const hasData = hasPerformanceData || hasSubjectiveData;
+                weeks.forEach(weekNum => {
+                    const weekSubjAgg = weeklyData.get(weekNum)!;
+                    burnY.push(weekSubjAgg.burnCount > 0 ? weekSubjAgg.burnSum / weekSubjAgg.burnCount : null);
+                    pumpY.push(weekSubjAgg.pumpCount > 0 ? weekSubjAgg.pumpSum / weekSubjAgg.pumpCount : null);
+                    difficultyY.push(weekSubjAgg.difficultyCount > 0 ? weekSubjAgg.difficultySum / weekSubjAgg.difficultyCount : null);
+                    sorenessY.push(weekSubjAgg.sorenessCount > 0 ? weekSubjAgg.sorenessSum / weekSubjAgg.sorenessCount : null);
+                    jointPainY.push(weekSubjAgg.jointPainCount > 0 ? weekSubjAgg.jointPainSum / weekSubjAgg.jointPainCount : null);
+                });
 
+                if (burnY.some(y => y !== null)) weeklyAvgBurnTraces.push({ x: weekLabels, y: burnY, type: 'scatter', mode: 'lines+markers', name: mesoName, line: { color: traceColor } });
+                if (pumpY.some(y => y !== null)) weeklyAvgPumpTraces.push({ x: weekLabels, y: pumpY, type: 'scatter', mode: 'lines+markers', name: mesoName, line: { color: traceColor } });
+                if (difficultyY.some(y => y !== null)) weeklyAvgDifficultyTraces.push({ x: weekLabels, y: difficultyY, type: 'scatter', mode: 'lines+markers', name: mesoName, line: { color: traceColor } });
+                if (sorenessY.some(y => y !== null)) weeklyAvgSorenessTraces.push({ x: weekLabels, y: sorenessY, type: 'scatter', mode: 'lines+markers', name: mesoName, line: { color: traceColor } });
+                if (jointPainY.some(y => y !== null)) weeklyAvgJointPainTraces.push({ x: weekLabels, y: jointPainY, type: 'scatter', mode: 'lines+markers', name: mesoName, line: { color: traceColor } });
+            });
+        }
+
+        // Store the calculated traces for the current filter
+        filteredAnalyticsData[filter] = {
+            weeklyVolumeTraces,
+            weeklyStimulusTraces,
+            weeklyFatigueTraces,
+            weeklySfrTraces,
+            weeklyAvgBurnTraces,
+            weeklyAvgPumpTraces,
+            weeklyAvgDifficultyTraces,
+            weeklyAvgSorenessTraces,
+            weeklyAvgJointPainTraces,
+            setCorrelationData: filteredSetCorrelationData.get(filter) || [], // Use filtered set data
+            hasData: mesocyclesData.length > 0 && mesocyclesData.some(m => m.workouts.length > 0) // Keep original hasData logic for overall check
+        };
+    } // End filter loop for trace generation
+
+    const hasOverallData = filteredAnalyticsData['all']?.hasData ?? false;
+
+    // --- Return Data ---
     return {
-        // Return arrays of weekly traces (one trace per meso per metric)
-        weeklyVolumeTraces,
-        weeklyStimulusTraces,
-        weeklyFatigueTraces,
-        weeklySfrTraces,
-        weeklyAvgBurnTraces,
-        weeklyAvgPumpTraces,
-        weeklyAvgDifficultyTraces,
-        weeklyAvgSorenessTraces,
-        weeklyAvgJointPainTraces,
-        setCorrelationData, // Keep this, might be used later
-        hasData // Updated condition
+        // mesocyclesData: mesocyclesData, // No longer needed directly if frontend uses filteredAnalyticsData
+        // workoutProgressData: workoutProgressData, // Use filteredWorkoutProgressData if needed later
+        // setCorrelationData: setCorrelationData, // Use filteredSetCorrelationData if needed later
+        filteredAnalyticsData, // Structured data keyed by filter
+        muscleGroups,
+        hasData: hasOverallData // Base 'hasData' on the 'all' filter
     };
 }) satisfies PageServerLoad;
