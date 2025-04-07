@@ -140,6 +140,7 @@ model user_exercise_metrics {
   value       Float?    @db.Real
   workout     String    @db.Uuid
   id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  last_update DateTime? @default(now()) @db.Timestamp(6)
   exercises   exercises @relation(fields: [exercise], references: [id], onDelete: NoAction, onUpdate: NoAction)
   mesocycles  mesocycle @relation("user_exercise_metrics_mesocycleTomesocycle", fields: [mesocycle], references: [id], onDelete: Cascade, onUpdate: NoAction)
   workouts    workouts  @relation(fields: [workout], references: [id], onDelete: NoAction, onUpdate: NoAction)
@@ -182,6 +183,7 @@ model workout_feedback {
   exercise      String    @db.Uuid
   muscle_group  String
   exercise_name String?
+  last_update   DateTime? @default(now()) @db.Timestamp(6)
   exercises     exercises @relation(fields: [exercise], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "public_workout_feedback_exercise_fkey")
   workouts      workouts  @relation(fields: [workout], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "public_workout_feedback_workout_fkey")
 }
@@ -202,6 +204,7 @@ model workout_set {
   completed       Boolean?   @default(false)
   set_performance Int        @default(0) @db.SmallInt
   skipped         Boolean    @default(false)
+  last_update     DateTime   @default(now()) @db.Timestamp(6)
   exercises       exercises? @relation(fields: [exercise], references: [id], onDelete: Restrict)
   workouts        workouts?  @relation(fields: [workout], references: [id], onDelete: Cascade)
 }
@@ -220,6 +223,7 @@ model workouts {
   deload                Boolean?                @default(false)
   week_number           Int?                    @default(0) @db.SmallInt
   skipped               Boolean                 @default(false)
+  last_update           DateTime                @default(now()) @db.Timestamp(6)
   exercise_comments     exercise_comments[]
   user_exercise_metrics user_exercise_metrics[]
   workout_feedback      workout_feedback[]
@@ -241,6 +245,7 @@ view recent_workout_id {
 /// The underlying view does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
 view user_muscle_group_metrics {
   workout_date DateTime? @db.Timestamptz(6)
+  week_number  Int?      @db.SmallInt
   mesocycle    String    @db.Uuid
   workout      String    @db.Uuid
   muscle_group String

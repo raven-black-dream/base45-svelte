@@ -30,17 +30,14 @@ Currently, there's a need to determine the most effective data visualizations fo
 ## Visualization Options to Evaluate (Revised based on discussion)
 - [x] **Mesocycle Progress Charts:** Separate line charts tracking Total Volume, Subjective Stimulus Score, and Subjective Fatigue Score week-by-week, comparing the last several mesocycles.
 - [x] **Rep Range/Load vs. Stimulus Distribution:** Analyze which rep ranges or load percentages yield the highest subjective Stimulus Score per set (e.g., grouped bar chart or scatter plot), filterable by muscle group/exercise.
-- [ ] **Subjective Feedback Trends:** Individual line charts tracking the trends of Burn, Pump, Perturbation, Joint Pain, and Recovery ratings over time (weekly averages across mesocycles).
+- [x] **Subjective Feedback Trends:** Individual line charts tracking the trends of Burn, Pump, Perturbation, Joint Pain, and Recovery ratings over time (weekly averages across mesocycles).
 - [x] **Exercise Stimulus-to-Fatigue Ratio (SFR) Ranking:** Rank exercises based on a calculated SFR (Stimulus Score / Fatigue Score), using subjective feedback metrics (e.g., sortable list or scatter plot).
 - [ ] **Workout Adherence Visualization:** Compare planned vs. actual sets/reps/load achieved (e.g., gauges or progress bars).
-- [ ] **Correlation Plots (Objective vs. Subjective):** Explore relationships between objective variables (Volume, Intensity) and subjective feedback scores (e.g., scatter plots).
-- [ ] **Training Frequency/Recency Heatmap:** Simple calendar view showing which days muscle groups were trained.
+- [x] **Correlation Plots (Objective vs. Subjective):** Explore relationships between objective variables (Volume, Intensity) and subjective feedback scores (e.g., scatter plots).
+- [x] **Training Frequency/Recency Heatmap:** Simple calendar view showing which days muscle groups were trained.
 - [ ] **Personal Record (PR) Timeline/Feed:** Chronological list/feed of key performance records achieved.
-- [ ] **SFR Management Features:** (Further discussion needed on implementation)
-    - [x] SFR Trend Chart (per exercise)
-    - [ ] SFR Threshold Indicators
-    - [ ] Low SFR Diagnostics
-    - [ ] SFR-Guided Exercise Suggestions
+- [x] **SFR Trend Chart:** Basic SFR visualization per exercise
+- [ ] **Advanced SFR Features:** See task `015_sfr_management_features.md` for detailed implementation of threshold indicators, diagnostics, and exercise suggestions
 
 ## Validation
 - [ ] Test visualizations with sample data sets

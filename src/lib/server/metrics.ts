@@ -428,7 +428,7 @@ export async function calculateExerciseMetrics(
         updatePromises.push(
           prisma.user_exercise_metrics.update({
             where: { id: existingMetric.id },
-            data: { value: metric.value }
+            data: { value: metric.value, last_update: new Date() }
           })
         );
       } else {
@@ -438,7 +438,8 @@ export async function calculateExerciseMetrics(
           mesocycle: mesocycleId,
           metric_name: metric.name,
           value: metric.value,
-          workout: workoutId
+          workout: workoutId,
+          last_update: new Date()
         });
       }
     });

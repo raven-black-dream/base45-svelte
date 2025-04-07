@@ -1,7 +1,7 @@
 # Current Project State
 
 ---
-last_updated: 2025-04-02T10:49:58-07:00
+last_updated: 2025-04-02T14:30:05-07:00
 current_phase: "Development"
 sprint_status: "In Progress"
 ---
@@ -25,11 +25,17 @@ sprint_status: "In Progress"
   - Conditionally highlights performed exercises
   - Displays a performance summary table within each accordion panel (for performed exercises) showing set count, max weight, latest set (weight x reps), and latest date per rep range
 - Long-Term Analytics Visualization:
-  - Integrated `LinePlot` component for various performance and subjective feedback metrics.
-  - Reshaped server-side data into Plotly trace format.
-  - Ensured data passed to plots is sorted chronologically.
-  - Used Skeleton UI `Accordion` for organizing plots.
-  - Implemented server-side logic and frontend updates for filtering by muscle group.
+  - Integrated `LinePlot` component for various performance and subjective feedback metrics
+  - Reshaped server-side data into Plotly trace format
+  - Ensured data passed to plots is sorted chronologically
+  - Used Skeleton UI `Accordion` for organizing plots
+  - Implemented server-side logic and frontend updates for filtering by muscle group
+  - Added correlation analysis plots:
+    - Weight vs. Reps
+    - Volume vs. Stimulus/Fatigue
+    - Target vs. Actual Reps
+    - Rep Difference vs. Stimulus/Fatigue
+  - Enhanced plot readability with axis titles and consistent color scheme
 
 ### In Progress
 - Recent bug fixes and improvements to core functionality
