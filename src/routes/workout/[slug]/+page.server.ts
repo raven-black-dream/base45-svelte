@@ -408,6 +408,7 @@ export const actions = {
       data: {
         complete: true,
         // date: new Date(),
+        last_update: new Date(),
       },
       include: {
         workout_set: {
@@ -528,6 +529,7 @@ export const actions = {
         else {
           entry.value = 0;
         }
+        entry.last_update = new Date();
       })
 
       const results = await Promise.all(
@@ -545,7 +547,8 @@ export const actions = {
       reps: Number(data.get("actualReps")),
       weight: Number(data.get("actualWeight")),
       completed: true,
-      set_performance: performanceValue
+      set_performance: performanceValue,
+      last_update: new Date()
     };
 
     const updatedSet = await prisma.workout_set.update({
@@ -800,7 +803,8 @@ async function progression(workout: CompleteWorkout, mesocycle: ProgressionMesoc
         update: {
           target_reps: set.target_reps,
           target_weight: set.target_weight,
-          is_last: set.is_last
+          is_last: set.is_last,
+          last_update: new Date() // Added last_update
         },
         create: {
           workout: set.workout,
