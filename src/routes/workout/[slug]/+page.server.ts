@@ -386,6 +386,7 @@ export const actions = {
           is_last: true,  // New set is always the last
           set_num: nextSetNum,
           completed: false
+          last_update: new Date()
         }
       });
       
@@ -486,7 +487,8 @@ export const actions = {
             id: mgSoreness.id
           },
           data: {
-            value: Number(data.get('mg_soreness')) - 1
+            value: Number(data.get('mg_soreness')) - 1,
+            last_update: new Date()
           }
         })
       }
